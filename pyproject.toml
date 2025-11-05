@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cover-letter-generator"
+version = "0.1.0"
+description = "AI-powered cover letter generator using RAG"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    {name = "Cory Fitzpatrick", email = "your.email@example.com"}
+]
+
+dependencies = [
+    "groq>=0.11.0",
+    "google-generativeai>=0.3.0",
+    "chromadb==0.4.18",
+    "sentence-transformers>=2.2.0",
+    "torch>=2.0.0",
+    "numpy<2.0.0",
+    "pydantic>=2.5.0",
+    "python-dotenv>=1.0.0",
+    "pypdf2>=3.0.0",
+    "reportlab>=4.0.0",
+    "pypdf>=4.0.0",
+    "langchain>=0.1.0",
+    "langchain-community>=0.0.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.3",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+cover-letter-cli = "cover_letter_generator.cli:main"
+prepare-data = "cover_letter_generator.prepare_data:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

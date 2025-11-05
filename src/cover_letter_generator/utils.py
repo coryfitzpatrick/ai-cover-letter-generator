@@ -1,0 +1,139 @@
+"""Utility functions for cover letter generation."""
+
+import os
+import re
+from typing import Optional, Tuple
+
+
+def extract_company_name(cover_letter_text: str) -> Optional[str]:
+    """Extract company name from cover letter salutation.
+
+    Args:
+        cover_letter_text: The cover letter content
+
+    Returns:
+        Company name or None if not found
+    """
+    # Look for "Dear [Company Name] Hiring Team" pattern
+    match = re.search(r'Dear\s+(.+?)\s+Hiring\s+Team', cover_letter_text, re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+
+    # Try alternative patterns
+    match = re.search(r'Dear\s+(.+?)\s+Recruitment', cover_letter_text, re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+
+    match = re.search(r'Dear\s+(.+?)\s+Team', cover_letter_text, re.IGNORECASE)
+    if match:
+        company = match.group(1).strip()
+        # Filter out generic terms
+        if company.lower() not in ['hiring', 'recruitment', 'talent']:
+            return company
+
+    return None
+
+
+def extract_job_title(job_description: str) -> Optional[str]:
+    """Extract job title from job description.
+
+    Args:
+        job_description: The job description text
+
+    Returns:
+        Job title or None if not found
+    """
+    # Common patterns for job titles at the start of job descriptions
+    patterns = [
+        r'^(.+?)\s+(?:position|role|opportunity)',
+        r'(?:position|role|job\s+title|title):\s*(.+?)(?:\n|$)',
+        r'(?:hiring|seeking|looking\s+for)\s+(?:a|an)\s+(.+?)(?:\s+to|\n|$)',
+        r'(?:apply|application)\s+for\s+(?:the\s+)?(.+?)(?:\s+position|\s+role|\n|$)',
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, job_description, re.IGNORECASE | re.MULTILINE)
+        if match:
+            title = match.group(1).strip()
+            # Clean up the title
+            title = re.sub(r'\s+', ' ', title)  # Normalize whitespace
+            title = title.strip('.,;:-')  # Remove trailing punctuation
+            if len(title) > 5 and len(title) < 100:  # Reasonable length
+                return title
+
+    return None
+
+
+def create_folder_name_from_details(
+    company_name: Optional[str],
+    job_title: Optional[str],
+    timestamp: str
+) -> str:
+    """Create a folder name from company name and job title.
+
+    Args:
+        company_name: Company name
+        job_title: Job title
+        timestamp: Timestamp string
+
+    Returns:
+        Formatted folder name like "Company Name - Job Title" or fallback
+    """
+    if company_name and job_title:
+        # Clean for folder name (keep spaces, remove problematic chars)
+        clean_company = re.sub(r'[<>:"/\\|?*]', '', company_name).strip()
+        clean_title = re.sub(r'[<>:"/\\|?*]', '', job_title).strip()
+
+        folder_name = f"{clean_company} - {clean_title}"
+
+        # Limit length
+        if len(folder_name) > 100:
+            folder_name = folder_name[:100]
+
+        return folder_name
+    elif company_name:
+        # Just company name if no job title
+        clean_company = re.sub(r'[<>:"/\\|?*]', '', company_name).strip()
+        return clean_company
+    else:
+        # Fallback to timestamp-based name
+        return f"Application_{timestamp}"
+
+
+def create_filename_from_details(
+    company_name: Optional[str],
+    job_title: Optional[str],
+    timestamp: str
+) -> str:
+    """Create a filename from company name and job title.
+
+    Args:
+        company_name: Company name
+        job_title: Job title
+        timestamp: Timestamp string
+
+    Returns:
+        Formatted filename
+    """
+    # Get user name from environment variable (required)
+    user_name = os.getenv("USER_NAME")
+    return f"{user_name} Cover Letter"
+
+
+def extract_cover_letter_details(
+    cover_letter_text: str,
+    job_description: str
+) -> Tuple[Optional[str], Optional[str]]:
+    """Extract company name and job title from texts.
+
+    Args:
+        cover_letter_text: The generated cover letter
+        job_description: The original job description
+
+    Returns:
+        Tuple of (company_name, job_title)
+    """
+    company = extract_company_name(cover_letter_text)
+    job_title = extract_job_title(job_description)
+
+    return company, job_title
