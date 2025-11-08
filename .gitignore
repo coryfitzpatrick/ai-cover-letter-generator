@@ -51,4 +51,7 @@ test_*.pdf
 Thumbs.db
 
 system_prompt.txt
+system_prompt.txt.backup
+system_prompt_example.txt.backup
+.feedback_history.json
 *.iml

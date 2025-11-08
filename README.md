@@ -9,6 +9,8 @@ An AI-powered cover letter generator that uses Retrieval-Augmented Generation (R
 - **JSON Data Support**: Processes JSON files containing professional information
 - **Google Drive Sync**: Optional Google Drive storage for data files with automatic sync
 - **Iterative Feedback Loop**: Provide feedback and refine cover letters until perfect
+- **AI Feedback Enhancement**: Automatically improves your revision feedback to make it more specific and actionable
+- **Meta-Learning System**: Detects feedback patterns and suggests permanent improvements to the system prompt
 - **Customizable System Prompts**: Easily modify the generation behavior and output style
 - **Streaming Output**: See the cover letter being generated in real-time
 - **Template-based PDF Output**: Uses your custom PDF template with professional formatting
@@ -16,6 +18,8 @@ An AI-powered cover letter generator that uses Retrieval-Augmented Generation (R
 - **iCloud Sync**: Saves to iCloud Documents/Cover Letters for access across all your Apple devices
 - **CLI Interface**: Simple command-line interface for quick generation
 - **Multi-format Input**: Processes PDFs and CSV files from your professional background
+- **URL Job Parsing**: Paste a job posting URL and automatically extract company, title, and description using AI
+- **AI Signature Validation**: Optional Claude vision-powered detection of cut-off signatures with automatic regeneration
 
 ## Tech Stack
 
@@ -23,6 +27,8 @@ An AI-powered cover letter generator that uses Retrieval-Augmented Generation (R
 - **Vector Database**: ChromaDB for storing and retrieving document embeddings
 - **Embeddings**: Sentence Transformers (all-MiniLM-L6-v2)
 - **PDF Processing**: PyPDF2 for extracting text from documents
+- **Web Scraping**: BeautifulSoup4 and Requests for parsing job posting URLs
+- **Signature Validation**: Claude AI Vision for detecting cut-off signatures (optional)
 - **Python**: 3.11+
 
 ## Installation
@@ -32,33 +38,67 @@ An AI-powered cover letter generator that uses Retrieval-Augmented Generation (R
 cd cover-letter-ai-gen
 ```
 
-2. Create a virtual environment:
+2. **(Optional) Install system dependencies for signature validation:**
+
+If you want to use the AI-powered signature validation feature, install poppler:
+
+**macOS:**
 ```bash
-python -m venv venv
+brew install poppler
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install poppler-utils
+```
+
+**Windows:**
+Download from: http://blog.alivate.com.au/poppler-windows/
+
+> **Note:** Signature validation is optional. If poppler or the Anthropic API key is not available, the tool will skip validation and still save PDFs normally.
+
+3. Create a virtual environment:
+```bash
+python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-3. Install the package in development mode:
+> **Note:** Use `python3` if `python` doesn't work on your system.
+
+4. Verify the virtual environment is activated:
+```bash
+which pip  # Should show: /path/to/your/project/venv/bin/pip
+```
+
+5. Install the package in development mode:
 ```bash
 pip install -e .
 ```
 
-4. Set up your environment variables:
+6. Set up your environment variables:
 ```bash
 cp .env.example .env
 ```
 
-5. Edit `.env` and add your configuration:
+7. Edit `.env` and add your configuration:
 ```bash
+# Required
 GROQ_API_KEY=your_groq_api_key_here
 USER_NAME=Your Full Name
+
+# Optional - for signature validation feature
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 ```
 
-Get your Groq API key from: https://console.groq.com/keys (free tier available)
+**Required API Keys:**
+- **GROQ_API_KEY**: Get from https://console.groq.com/keys (free tier available)
+- **USER_NAME**: Your full name used for cover letter filenames (e.g., "John Smith Cover Letter.pdf")
 
-The `USER_NAME` will be used for your cover letter filenames (e.g., "John Smith Cover Letter.pdf")
+**Optional API Keys:**
+- **ANTHROPIC_API_KEY**: Get from https://console.anthropic.com/ (for signature validation feature)
+  - If not set, signature validation will be skipped (PDFs will still be generated normally)
 
-6. **Create your personalized system prompt** (Required):
+8. **Create your personalized system prompt** (Required):
 
 ```bash
 cp system_prompt_example.txt system_prompt.txt
@@ -128,11 +168,12 @@ cover-letter-cli
 ```
 
 The tool will:
-1. Prompt you to enter the company name and job title
-2. Prompt you to paste the job description (press Ctrl+D when done)
-3. Retrieve relevant information from your knowledge base
-4. Generate a personalized cover letter with streaming output
-5. Allow you to provide feedback for revisions or save the PDF directly
+1. Ask if you want to provide a URL or enter details manually
+2. If URL: Automatically extract company name, job title, and description from the webpage
+3. If manual: Prompt for company name, job title, and job description
+4. Retrieve relevant information from your knowledge base
+5. Generate a personalized cover letter with streaming output
+6. Allow you to provide feedback for revisions or save the PDF directly
 
 #### Example Usage:
 
@@ -146,9 +187,9 @@ Cover Letter Generator
 This tool generates personalized cover letters based on job descriptions.
 
 Instructions:
-  1. Enter the company name and job title
-  2. Paste the job description (press Ctrl+D when done)
-  3. The cover letter will be generated and displayed
+  1. Paste a job posting URL OR enter details manually
+  2. The cover letter will be generated and displayed
+  3. Provide feedback or save the final version
 
 Type 'quit' or 'exit' to exit the program.
 ================================================================================
@@ -159,12 +200,30 @@ Connecting to ChromaDB...
 ✓ Generator initialized successfully
 
 --------------------------------------------------------------------------------
-Company Name: Circle
-Job Title: Software Engineering Manager
+How would you like to provide the job posting?
+  (1) Paste a URL to the job posting
+  (2) Enter details manually
 
-Paste the job description below (press Ctrl+D when done):
-[Paste your job description here]
-[Press Ctrl+D]
+Choice [1]: 1
+
+Job Posting URL: https://jobs.lever.co/circle/abc123
+
+Fetching job posting from URL...
+Extracting text from webpage...
+Analyzing job posting with AI (extracted 5234 characters)...
+✓ Successfully parsed job posting:
+  Company: Circle
+  Title: Software Engineering Manager
+  Description length: 3421 characters
+
+================================================================================
+EXTRACTED JOB DETAILS
+================================================================================
+Company: Circle
+Title: Software Engineering Manager
+Description length: 3421 characters
+
+Are these details correct? (y/n) [y]: y
 
 Retrieving relevant context from knowledge base...
 Generating cover letter...
@@ -186,9 +245,32 @@ Describe the changes you'd like to see in the cover letter.
  'Make the tone more formal', 'Emphasize technical skills')
 
 Your feedback (press Ctrl+D when done):
-Add more specific metrics about the unit test improvements at J&J
+Add more about my leadership experience
 [Press Ctrl+D]
 
+Analyzing your feedback to make it more specific and actionable...
+
+================================================================================
+FEEDBACK ENHANCEMENT SUGGESTION
+================================================================================
+
+Your original feedback:
+  "Add more about my leadership experience"
+
+Enhanced suggestion:
+  "Add specific examples of your leadership at Johnson & Johnson, particularly
+  how you led the QA team and mentored engineers. Include the metric about
+  improving unit test coverage from 30% to 95% and connect it to the job's
+  requirement for technical leadership."
+
+Which feedback would you like to use?
+  (1) Use enhanced suggestion (recommended)
+  (2) Use my original feedback
+  (3) Cancel revision
+
+Choice [1]: 1
+
+Using enhanced feedback...
 Retrieving relevant context from knowledge base...
 Revising cover letter based on your feedback...
 --------------------------------------------------------------------------------
@@ -204,6 +286,92 @@ Options:
 What would you like to do? [2]: 2
 
 ✓ Cover letter saved to: ~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Cover Letters/Circle - Software Engineering Manager/{Your Name} Cover Letter.pdf
+```
+
+### URL Job Parsing
+
+The tool can automatically extract job details from most job posting URLs:
+
+**Supported platforms:**
+- Lever (jobs.lever.co)
+- Greenhouse (boards.greenhouse.io)
+- LinkedIn Jobs
+- Indeed
+- Company career pages
+- Most other job boards
+
+**How it works:**
+1. Paste the URL to any job posting
+2. The tool fetches the webpage content
+3. AI extracts the company name, job title, and full description
+4. Review the extracted details with the **full description displayed**
+5. Choose to:
+   - Use as-is
+   - Edit individual fields (company, title, or description)
+   - View the complete description
+   - Switch to manual entry
+
+**Benefits:**
+- Saves time - no need to copy/paste job descriptions
+- Ensures complete context - captures the full posting
+- Reduces errors - no manual transcription mistakes
+- Works with most job boards automatically
+- Granular control - edit individual fields without starting over
+- Transparent - see the full description before accepting
+
+**Example:**
+```
+Job Posting URL: https://jobs.lever.co/company/position-id
+
+Fetching job posting from URL...
+✓ Successfully parsed job posting:
+  Company: Acme Corp
+  Title: Senior Software Engineer
+  Description length: 2847 characters
+
+================================================================================
+EXTRACTED JOB DETAILS
+================================================================================
+
+Company Name: Acme Corp
+Job Title: Senior Software Engineer
+
+Job Description (2847 characters):
+--------------------------------------------------------------------------------
+We are looking for a Senior Software Engineer to join our platform team...
+[Full description shown here - first 2000 characters if longer]
+--------------------------------------------------------------------------------
+
+What would you like to do?
+  (1) Use these details as-is
+  (2) Edit company name
+  (3) Edit job title
+  (4) Edit description
+  (5) View full description
+  (6) Start over - enter all details manually
+
+Choice [1]: 1
+
+✓ Using extracted details
+```
+
+**Editing fields:**
+- **Option 2-4**: Edit individual fields if extraction wasn't perfect
+- **Option 5**: View the complete description (useful for long postings)
+- **Option 6**: Switch to manual entry if extraction completely failed
+
+**Example - Editing a field:**
+```
+Choice [1]: 2
+
+Current Company Name: Acme Corp
+Enter new Company Name (or press Enter to keep current): Acme Corporation
+
+✓ Updated company name
+
+What would you like to do?
+  (1) Use these details as-is
+  ...
 ```
 
 ### Iterative Feedback Loop
@@ -229,6 +397,143 @@ After generating a cover letter, you can provide feedback to refine it:
 **Option 4: Exit**
 - Exits the program
 
+### AI Feedback Enhancement
+
+When you provide feedback for a revision, the AI automatically analyzes and enhances your feedback to make it more specific and actionable:
+
+**How it works:**
+1. You provide feedback (e.g., "Add more about leadership")
+2. AI analyzes your feedback, the current cover letter, and the job description
+3. AI suggests an enhanced version with specific, actionable improvements
+4. You choose which version to use:
+   - Enhanced suggestion (recommended) - More specific and actionable
+   - Your original feedback - Stick with what you said
+   - Cancel revision - Go back without changes
+
+**Example:**
+
+```
+Your feedback: Add more about my leadership experience
+
+Analyzing your feedback to make it more specific and actionable...
+
+================================================================================
+FEEDBACK ENHANCEMENT SUGGESTION
+================================================================================
+
+Your original feedback:
+  "Add more about my leadership experience"
+
+Enhanced suggestion:
+  "Add specific examples of your leadership experience, particularly your work
+  leading the Quality Assurance team at Johnson & Johnson. Emphasize how you
+  improved unit test coverage from 30% to 95% and mentored junior engineers.
+  Connect these experiences to the job's requirement for team leadership and
+  technical mentorship."
+
+Which feedback would you like to use?
+  (1) Use enhanced suggestion (recommended)
+  (2) Use my original feedback
+  (3) Cancel revision
+
+Choice [1]: 1
+
+Using enhanced feedback...
+Revising cover letter based on your feedback...
+```
+
+**Benefits:**
+- **More specific revisions**: Turns vague feedback into concrete actions
+- **Better results**: Enhanced feedback leads to more targeted improvements
+- **Saves time**: No need to think through every detail yourself
+- **Context-aware**: Considers both the job requirements and your background
+- **You're in control**: Always option to use your original feedback
+
+### Meta-Learning System
+
+The tool learns from your feedback patterns and suggests permanent improvements to the system prompt:
+
+**How it works:**
+1. Every time you provide feedback, it's tracked and categorized (e.g., "leadership", "technical_depth", "tone")
+2. When you give similar feedback 3+ times, the system detects the pattern
+3. AI analyzes the pattern and suggests a permanent modification to `system_prompt.txt`
+4. You review the proposed change (with diff)
+5. If approved, the system prompt is updated automatically
+6. Future cover letters automatically incorporate this improvement
+
+**Example Workflow:**
+
+```
+[After providing feedback about leadership for the 3rd time]
+
+================================================================================
+💡 SYSTEM IMPROVEMENT SUGGESTION
+================================================================================
+
+I've noticed you've given similar feedback 3 times:
+Category: Leadership
+
+Examples:
+  - "Add more about my leadership experience"
+  - "Emphasize leadership and team management"
+  - "Include leadership examples from J&J"
+
+Analyzing patterns to suggest a permanent system improvement...
+
+================================================================================
+PROPOSED SYSTEM PROMPT UPDATE
+================================================================================
+
+Explanation: Add explicit instruction to prominently feature leadership experience
+in the opening paragraphs with specific examples and metrics.
+
+This would modify your system_prompt.txt file to automatically
+address this feedback pattern in future cover letters.
+
+Changes that would be made:
+--------------------------------------------------------------------------------
++
++# AUTO-GENERATED IMPROVEMENT (based on user feedback patterns)
++When generating cover letters, prominently feature leadership experience and
++team management skills in the opening paragraphs. Include specific examples
++of leading teams, mentoring others, and measurable impacts on team performance.
++Reference concrete metrics when available (e.g., team size, productivity gains,
++quality improvements).
++
+--------------------------------------------------------------------------------
+
+Would you like to apply this permanent improvement?
+  (y) Yes, update the system prompt
+  (n) No, keep asking me each time
+  (v) View full diff
+
+Choice [n]: y
+
+✓ System prompt updated successfully!
+✓ Future cover letters will automatically incorporate this improvement.
+✓ Cleared 3 feedback entries for 'leadership' category.
+```
+
+**Benefits:**
+- 🎓 **System learns from you**: Gets better over time based on your preferences
+- ⚡ **Permanent improvements**: No need to repeat the same feedback
+- 🔍 **Transparent**: Shows exactly what will change before applying
+- 🎛️ **You're in control**: Review and approve all changes
+- 💾 **Safe**: Creates backups before modifying files
+- 📊 **Pattern detection**: Identifies trends across multiple sessions
+
+**Categories tracked:**
+- **Leadership**: Team management, mentoring, delegation
+- **Technical depth**: Technologies, architectures, coding skills
+- **Tone**: Formality, professionalism, voice
+- **Length**: Conciseness, brevity
+- **Specificity**: Examples, metrics, details
+
+**Files modified:**
+- `system_prompt.txt` - Your personalized system prompt
+- `.feedback_history.json` - Tracks feedback patterns (automatically managed)
+- `system_prompt.txt.backup` - Backup created before each change
+
 ### PDF Output
 
 The tool generates professional PDF cover letters using your custom template with your contact information formatted at the top. When you choose to save a cover letter, it's automatically saved as a PDF in the organized folder structure.
@@ -239,6 +544,41 @@ The PDF will include:
 - Clickable links for email, LinkedIn, and portfolio
 - Current date
 - Clean, readable layout optimized for ATS systems
+
+### Signature Validation (Optional)
+
+If you have the Anthropic API key configured and poppler installed, the tool automatically validates that your signature is visible and not cut off in the PDF:
+
+**How it works:**
+1. After saving the PDF, the tool converts it to an image
+2. Claude's vision AI analyzes the image to check if the signature is fully visible
+3. If the signature appears cut off, you'll see a warning with options:
+   - Automatically regenerate a shorter version
+   - Keep the current version
+
+**Example workflow:**
+```
+✓ Cover letter saved to: ~/Documents/Cover Letters/...
+
+Validating signature visibility...
+⚠ Warning: The signature appears to be cut off or not fully visible.
+Details: Text is too long and signature is partially cut off at bottom
+
+Would you like to regenerate a shorter version?
+  (1) Yes, regenerate with shorter content
+  (2) No, keep the current version
+
+Choice [1]: 1
+
+Regenerating with request to shorten content...
+[Shortened cover letter appears here]
+✓ Signature validation passed
+```
+
+**Setup:**
+- Install poppler: `brew install poppler` (macOS) or `sudo apt-get install poppler-utils` (Linux)
+- Set `ANTHROPIC_API_KEY` in your `.env` file
+- If either is missing, validation is gracefully skipped
 
 ### File Organization
 
@@ -379,6 +719,10 @@ cover-letter-ai-gen/
 │       ├── cli.py                 # Command-line interface
 │       ├── pdf_generator.py       # Basic PDF generation
 │       ├── pdf_generator_template.py  # Template-based PDF generation
+│       ├── signature_validator.py # AI-powered signature validation
+│       ├── job_parser.py          # URL job posting parser
+│       ├── feedback_tracker.py    # Feedback pattern tracking
+│       ├── system_improver.py     # System prompt improvement suggester
 │       └── utils.py               # Utility functions
 ├── system_prompt_example.txt      # System prompt template (example)
 ├── system_prompt.txt              # Your personalized system prompt (not in git)
@@ -428,6 +772,46 @@ Make sure you've created a `.env` file and added your Groq API key from https://
 - Your documents may not contain information relevant to the job
 - Try lowering the `distance_threshold` in `generator.py`
 - Add more comprehensive documents to your knowledge base
+
+### Signature validation not working
+**Symptoms:** Validation is skipped or you see warnings about missing dependencies
+
+**Solutions:**
+- Install poppler: `brew install poppler` (macOS) or `sudo apt-get install poppler-utils` (Linux)
+- Set `ANTHROPIC_API_KEY` in your `.env` file (get from https://console.anthropic.com/)
+- Verify poppler is installed: `which pdftoppm` should show a path
+- The tool will work fine without signature validation - it's an optional feature
+
+### URL parsing not working
+**Symptoms:** "Could not parse job posting from URL" or incorrect details extracted
+
+**Solutions:**
+- Some job boards require login or have anti-scraping measures
+- Try copying the URL from an incognito/private browser window
+- As a fallback, choose option (2) to enter details manually
+- The tool will prompt you to enter manually if URL parsing fails
+- Works best with: Lever, Greenhouse, company career pages, LinkedIn (public postings)
+
+### pip not working in virtual environment
+**Symptoms:** `pip not found` or commands installing to system Python instead of venv
+
+**Solution:**
+```bash
+# Remove broken venv
+rm -rf venv
+
+# Create new venv
+python3 -m venv venv
+
+# Activate it
+source venv/bin/activate
+
+# Verify it's working (should show path inside your project)
+which pip
+
+# Reinstall dependencies
+pip install -e .
+```
 
 ## License
 

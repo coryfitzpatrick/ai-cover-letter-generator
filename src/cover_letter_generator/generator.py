@@ -29,7 +29,7 @@ class CoverLetterGenerator:
     # Model configuration constants
     MODEL_NAME = "llama-3.3-70b-versatile"
     TEMPERATURE = 0.7
-    MAX_TOKENS = 1000
+    MAX_TOKENS = 2000  # Tokens for formatting; actual word count enforced in prompt (350 words)
     TOP_P = 0.9
 
     # RAG configuration constants
@@ -200,7 +200,7 @@ class CoverLetterGenerator:
                 model=self.MODEL_NAME,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": "Please write the cover letter now. Remember to explicitly reference specific job requirements in each paragraph and show how the experience matches what they're asking for. Make the connections obvious."},
+                    {"role": "user", "content": "Please write the cover letter now. CRITICAL: Aim for approximately 350 words (full page) - do not be too brief. Be comprehensive and impactful - show how the experience matches job requirements naturally using their terminology, without meta-commentary."},
                 ],
                 temperature=self.TEMPERATURE,
                 max_tokens=self.MAX_TOKENS,
@@ -208,12 +208,71 @@ class CoverLetterGenerator:
                 stream=True,
             )
 
+            chunk_count = 0
             for chunk in stream:
                 if chunk.choices[0].delta.content:
                     yield chunk.choices[0].delta.content
+                    chunk_count += 1
+
+            # Warn if generation seems incomplete (very few chunks)
+            if chunk_count < 10:
+                yield f"\n\n⚠️ WARNING: Generation may be incomplete ({chunk_count} chunks received). This could indicate an API rate limit or connection issue."
 
         except Exception as e:
             raise RuntimeError(f"Error generating cover letter: {e}") from e
+
+    def enhance_feedback(
+        self,
+        user_feedback: str,
+        original_cover_letter: str,
+        job_description: str
+    ) -> str:
+        """Enhance user feedback to make it more specific and actionable.
+
+        Args:
+            user_feedback: The user's original feedback
+            original_cover_letter: The current cover letter
+            job_description: The job description
+
+        Returns:
+            Enhanced feedback that is more specific and actionable
+        """
+        prompt = f"""You are a helpful assistant that improves cover letter revision feedback to make it more specific and actionable.
+
+Original user feedback: "{user_feedback}"
+
+Current cover letter:
+{original_cover_letter[:1500]}...
+
+Job description (excerpt):
+{job_description[:800]}...
+
+Your task: Enhance the user's feedback to make it more specific, actionable, and likely to result in a better cover letter revision. Consider:
+- What specific examples or details could be added?
+- What aspects of the job description should be addressed?
+- How can the feedback be more concrete and measurable?
+- What specific improvements would make the cover letter stronger?
+
+Provide ONLY the enhanced feedback in 2-4 sentences. Make it clear, specific, and actionable. Do not add explanations or meta-commentary."""
+
+        try:
+            response = self.groq_client.chat.completions.create(
+                model=self.MODEL_NAME,
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant that improves feedback for cover letter revisions."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=300,
+            )
+
+            enhanced_feedback = response.choices[0].message.content.strip()
+            return enhanced_feedback
+
+        except Exception as e:
+            # If enhancement fails, return original feedback
+            print(f"Warning: Could not enhance feedback: {e}")
+            return user_feedback
 
     def revise_cover_letter_stream(
         self,
