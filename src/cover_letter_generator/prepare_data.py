@@ -3,6 +3,7 @@
 import csv
 import json
 import os
+import shutil
 from pathlib import Path
 from typing import List, Tuple
 
@@ -13,6 +14,7 @@ os.environ["CHROMA_TELEMETRY_DISABLED"] = "True"
 
 import chromadb
 from chromadb.config import Settings
+from docx import Document
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
@@ -46,6 +48,33 @@ def extract_text_from_pdf(pdf_path: str) -> str:
         return text.strip()
     except Exception as e:
         print(f"Error reading {pdf_path}: {e}")
+        return ""
+
+
+def extract_text_from_docx(docx_path: str) -> str:
+    """Extract text content from a DOCX file (Word document or exported Google Doc).
+
+    Args:
+        docx_path: Path to the DOCX file
+
+    Returns:
+        Extracted text content
+    """
+    try:
+        doc = Document(docx_path)
+        text = ""
+        for paragraph in doc.paragraphs:
+            text += paragraph.text + "\n"
+
+        # Also extract text from tables
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    text += cell.text + "\n"
+
+        return text.strip()
+    except Exception as e:
+        print(f"Error reading {docx_path}: {e}")
         return ""
 
 
@@ -357,18 +386,17 @@ def main():
 
     chroma_dir = data_dir / "chroma_db"
 
+    # Delete entire chroma_db folder if it exists to clean up old data
+    if chroma_dir.exists():
+        print(f"Removing old ChromaDB at {chroma_dir}...")
+        shutil.rmtree(chroma_dir)
+        print("✓ Old database deleted")
+
     print(f"Initializing ChromaDB at {chroma_dir}...")
     client = chromadb.PersistentClient(
         path=str(chroma_dir),
         settings=Settings(anonymized_telemetry=False)
     )
-
-    # Delete existing collection if it exists
-    try:
-        client.delete_collection(name="cover_letter_context")
-        print("Deleted existing collection")
-    except Exception:
-        pass
 
     # Create new collection
     collection = client.create_collection(
@@ -388,10 +416,10 @@ def main():
         if "template" not in str(f).lower()
     ]
 
+    doc_id = 0
     if not pdf_files:
         print("No PDF files found in data directory!")
     else:
-        doc_id = 0
         for pdf_file in pdf_files:
             print(f"\nProcessing {pdf_file.name}...")
             text = extract_text_from_pdf(str(pdf_file))
@@ -412,6 +440,42 @@ def main():
                 metadatas.append({
                     "source": str(relative_path),
                     "type": "pdf",
+                    "chunk_index": i,
+                    "total_chunks": len(chunks)
+                })
+                ids.append(f"doc_{doc_id}")
+                doc_id += 1
+
+    # Process DOCX files (Word documents and exported Google Docs)
+    print(f"\nScanning {data_dir} and subdirectories for DOCX files...")
+    docx_files = [
+        f for f in data_dir.glob("**/*.docx")
+        if "template" not in str(f).lower() and not f.name.startswith("~$")  # Exclude temp files
+    ]
+
+    if not docx_files:
+        print("No DOCX files found in data directory!")
+    else:
+        for docx_file in docx_files:
+            print(f"\nProcessing {docx_file.name}...")
+            text = extract_text_from_docx(str(docx_file))
+
+            if not text:
+                print(f"  Skipped (empty or error)")
+                continue
+
+            # Chunk the text
+            chunks = chunk_text(text)
+            print(f"  Created {len(chunks)} chunks")
+
+            # Add each chunk as a document
+            for i, chunk in enumerate(chunks):
+                documents.append(chunk)
+                # Use relative path from data_dir for source
+                relative_path = docx_file.relative_to(data_dir)
+                metadatas.append({
+                    "source": str(relative_path),
+                    "type": "docx",
                     "chunk_index": i,
                     "total_chunks": len(chunks)
                 })
@@ -454,9 +518,12 @@ def main():
 
     # Count file types
     pdf_count = len(pdf_files) if pdf_files else 0
+    docx_count = len(docx_files) if docx_files else 0
     csv_count = len([m for m in metadatas if m.get('type') in ['profile_summary', 'headline', 'recommendation']])
 
     print(f"\n✓ Successfully processed {pdf_count} PDF files")
+    if docx_count > 0:
+        print(f"✓ Successfully processed {docx_count} DOCX files (Word/Google Docs)")
     if csv_count > 0:
         print(f"✓ Processed {csv_count} LinkedIn entries (profile + recommendations)")
     print(f"✓ Created {len(documents)} total document chunks")

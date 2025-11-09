@@ -77,7 +77,37 @@ def extract_text_from_html(html: str) -> str:
     """
     soup = BeautifulSoup(html, 'html.parser')
 
-    # Remove script and style elements
+    # First, try to extract JSON-LD structured data (common on job boards like Ashby, Greenhouse, etc.)
+    json_ld_scripts = soup.find_all('script', type='application/ld+json')
+    for script in json_ld_scripts:
+        try:
+            import json
+            data = json.loads(script.string)
+            # Check if it's a JobPosting
+            if isinstance(data, dict) and data.get('@type') == 'JobPosting':
+                # Extract the description and clean HTML tags from it
+                description = data.get('description', '')
+                if description:
+                    # Parse the description HTML to get clean text
+                    desc_soup = BeautifulSoup(description, 'html.parser')
+                    description_text = desc_soup.get_text()
+
+                    # Build a structured text with key fields
+                    structured_text = f"""
+Job Title: {data.get('title', 'Unknown')}
+Company: {data.get('hiringOrganization', {}).get('name', 'Unknown')}
+Location: {data.get('jobLocation', {}).get('address', {}).get('addressLocality', 'Unknown')}
+Employment Type: {data.get('employmentType', 'Unknown')}
+
+Job Description:
+{description_text}
+"""
+                    return structured_text.strip()
+        except Exception:
+            # If JSON-LD parsing fails, fall back to regular HTML extraction
+            pass
+
+    # Fallback: Remove script and style elements
     for script in soup(["script", "style", "header", "footer", "nav"]):
         script.decompose()
 
@@ -135,7 +165,7 @@ Important:
 """
 
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="meta-llama/llama-4-maverick-17b-128e-instruct",
             messages=[
                 {"role": "system", "content": "You are a precise job posting parser. Extract information exactly as requested."},
                 {"role": "user", "content": prompt}

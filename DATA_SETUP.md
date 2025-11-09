@@ -26,8 +26,9 @@ If you haven't already, install Google Drive for Desktop:
 
 **Files** (place directly in `AI Data/`):
 - Resume (e.g., `Cory Fitzpatrick Resume.pdf`)
-- Achievements document (e.g., `Achievements.pdf`)
+- Achievements document (e.g., `Achievements.pdf` or `Achievements.docx`)
 - Interview questions/answers (e.g., `Interview_Questions_and_Answers.pdf`)
+- Google Docs (exported as `.docx` files)
 - Any other professional documents
   - LinkedIn_Profile.csv
   - Recommendations_Received.csv
@@ -37,9 +38,15 @@ If you haven't already, install Google Drive for Desktop:
 
 The system will automatically:
 - Extract text from all PDF files
+- Extract text from all DOCX files (Word documents and exported Google Docs)
 - Process LinkedIn_Profile.csv for your professional summary and headline
 - Process Recommendations_Received.csv for testimonials from colleagues
 - Process Website_Data.json for relevant info
+
+**Note:** To export Google Docs as DOCX:
+1. Open the Google Doc in Google Drive
+2. Click File → Download → Microsoft Word (.docx)
+3. Save the .docx file in your `AI Data` folder
 
 ### Step 3: Find Your Google Drive Path
 
@@ -123,7 +130,8 @@ cover-letter-cli
 
 Whenever you update documents in Google Drive:
 
-1. Save the new/updated PDF to your Google Drive `AI Data` folder
+1. Save the new/updated file (PDF or DOCX) to your Google Drive `AI Data` folder
+   - For Google Docs: File → Download → Microsoft Word (.docx)
 2. Run `prepare-data` to rebuild the database
 3. The new information will be available for cover letter generation
 

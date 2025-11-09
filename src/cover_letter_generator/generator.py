@@ -23,11 +23,11 @@ class CoverLetterGenerator:
 
     This class uses Retrieval-Augmented Generation (RAG) to create personalized
     cover letters by retrieving relevant context from a vector database and
-    generating content using Groq's Llama 3.3 70B model.
+    generating content using Groq's Llama 4 Maverick model.
     """
 
     # Model configuration constants
-    MODEL_NAME = "llama-3.3-70b-versatile"
+    MODEL_NAME = "meta-llama/llama-4-maverick-17b-128e-instruct"
     TEMPERATURE = 0.7
     MAX_TOKENS = 2000  # Tokens for formatting; actual word count enforced in prompt (350 words)
     TOP_P = 0.9
