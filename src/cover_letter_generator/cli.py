@@ -436,15 +436,24 @@ def main():
                 # Combine the body
                 cover_letter_body = ''.join(cover_letter_parts)
 
-                # Check if date is already in the generated content
+                # Remove any date the LLM might have generated (it should not, but sometimes does)
                 body_stripped = cover_letter_body.strip()
 
-                # Always add date at the top with proper formatting
-                # The LLM should generate "Dear Company..." and we add the date
-                if not body_stripped.startswith(current_date):
-                    cover_letter = f"{current_date}\n{cover_letter_body}"
-                else:
-                    cover_letter = cover_letter_body
+                # Check if first line contains the date and remove it
+                lines = body_stripped.split('\n')
+                if lines and current_date in lines[0]:
+                    # Remove the date from the first line
+                    first_line = lines[0].replace(current_date, '').strip()
+                    if first_line:
+                        # Date was on same line as other text, keep the rest
+                        lines[0] = first_line
+                    else:
+                        # Date was alone on first line, remove the whole line
+                        lines = lines[1:]
+                    cover_letter_body = '\n'.join(lines)
+
+                # Now add our date at the top
+                cover_letter = f"{current_date}\n{cover_letter_body}"
 
                 # Ensure it ends with signature
                 if not cover_letter.strip().endswith(USER_NAME):
@@ -497,14 +506,24 @@ def main():
                             # Combine the body
                             cover_letter_body = ''.join(cover_letter_parts)
 
-                            # Check if date is already in the generated content
+                            # Remove any date the LLM might have generated
                             body_stripped = cover_letter_body.strip()
 
-                            # Always add date at the top with proper formatting
-                            if not body_stripped.startswith(current_date):
-                                cover_letter = f"{current_date}\n{cover_letter_body}"
-                            else:
-                                cover_letter = cover_letter_body
+                            # Check if first line contains the date and remove it
+                            lines = body_stripped.split('\n')
+                            if lines and current_date in lines[0]:
+                                # Remove the date from the first line
+                                first_line = lines[0].replace(current_date, '').strip()
+                                if first_line:
+                                    # Date was on same line as other text, keep the rest
+                                    lines[0] = first_line
+                                else:
+                                    # Date was alone on first line, remove the whole line
+                                    lines = lines[1:]
+                                cover_letter_body = '\n'.join(lines)
+
+                            # Now add our date at the top
+                            cover_letter = f"{current_date}\n{cover_letter_body}"
 
                             # Ensure it ends with signature
                             if not cover_letter.strip().endswith(USER_NAME):
@@ -694,14 +713,24 @@ def main():
                                 # Combine the body
                                 cover_letter_body = ''.join(cover_letter_parts)
 
-                                # Check if date is already in the generated content
+                                # Remove any date the LLM might have generated
                                 body_stripped = cover_letter_body.strip()
 
-                                # Always add date at the top with proper formatting
-                                if not body_stripped.startswith(current_date):
-                                    cover_letter = f"{current_date}\n{cover_letter_body}"
-                                else:
-                                    cover_letter = cover_letter_body
+                                # Check if first line contains the date and remove it
+                                lines = body_stripped.split('\n')
+                                if lines and current_date in lines[0]:
+                                    # Remove the date from the first line
+                                    first_line = lines[0].replace(current_date, '').strip()
+                                    if first_line:
+                                        # Date was on same line as other text, keep the rest
+                                        lines[0] = first_line
+                                    else:
+                                        # Date was alone on first line, remove the whole line
+                                        lines = lines[1:]
+                                    cover_letter_body = '\n'.join(lines)
+
+                                # Now add our date at the top
+                                cover_letter = f"{current_date}\n{cover_letter_body}"
 
                                 # Ensure it ends with signature
                                 if not cover_letter.strip().endswith(USER_NAME):
