@@ -421,10 +421,9 @@ def main():
                 cover_letter_parts = []
                 first_chunk = True
                 for chunk in generator.generate_cover_letter_stream(job_description, company_name, job_title):
-                    # Print date and greeting before first chunk (after dashed line)
+                    # Print date before first chunk (after dashed line)
                     if first_chunk:
                         print(f"\n{current_date}\n")
-                        print(f"{greeting}\n")
                         first_chunk = False
                     print(chunk, end='', flush=True)
                     cover_letter_parts.append(chunk)
@@ -486,10 +485,9 @@ def main():
                                 company_name,
                                 job_title
                             ):
-                                # Print date and greeting before first chunk
+                                # Print date before first chunk
                                 if first_chunk:
                                     print(f"\n{current_date}\n")
-                                    print(f"{greeting}\n")
                                     first_chunk = False
                                 print(chunk, end='', flush=True)
                                 cover_letter_parts.append(chunk)
@@ -688,10 +686,9 @@ def main():
                                     company_name,
                                     job_title
                                 ):
-                                    # Print date and greeting before first chunk
+                                    # Print date before first chunk
                                     if first_chunk:
                                         print(f"\n{current_date}\n")
-                                        print(f"{greeting}\n")
                                         first_chunk = False
                                     print(chunk, end='', flush=True)
                                     cover_letter_parts.append(chunk)
