@@ -73,59 +73,71 @@ def fetch_webpage_with_playwright(url: str, timeout: int = 30000) -> Optional[Tu
             print("  Using headless browser (stealth mode not available)...")
 
         with sync_playwright() as p:
-            # Launch browser with more realistic settings to avoid bot detection
-            browser = p.chromium.launch(
-                headless=True,
-                args=[
-                    '--disable-blink-features=AutomationControlled',
-                    '--disable-dev-shm-usage',
-                    '--no-sandbox',
-                    '--disable-web-security',
-                    '--disable-features=IsolateOrigins,site-per-process'
-                ]
-            )
+            browser = None
+            context = None
+            try:
+                # Launch browser with more realistic settings to avoid bot detection
+                browser = p.chromium.launch(
+                    headless=True,
+                    args=[
+                        '--disable-blink-features=AutomationControlled',
+                        '--disable-dev-shm-usage',
+                        '--no-sandbox',
+                        '--disable-web-security',
+                        '--disable-features=IsolateOrigins,site-per-process'
+                    ]
+                )
 
-            # Create context with realistic browser settings
-            context = browser.new_context(
-                viewport={'width': 1920, 'height': 1080},
-                user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                locale='en-US',
-                timezone_id='America/New_York',
-                # Add permissions to avoid detection
-                permissions=['geolocation']
-            )
+                # Create context with realistic browser settings
+                context = browser.new_context(
+                    viewport={'width': 1920, 'height': 1080},
+                    user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    locale='en-US',
+                    timezone_id='America/New_York',
+                    # Add permissions to avoid detection
+                    permissions=['geolocation']
+                )
 
-            page = context.new_page()
+                page = context.new_page()
 
-            # Apply stealth mode if available
-            if has_stealth:
-                stealth.apply_stealth_sync(page)
+                # Apply stealth mode if available
+                if has_stealth:
+                    stealth.apply_stealth_sync(page)
 
-            # Set extra headers
-            page.set_extra_http_headers({
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Upgrade-Insecure-Requests': '1'
-            })
+                # Set extra headers
+                page.set_extra_http_headers({
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Upgrade-Insecure-Requests': '1'
+                })
 
-            # Navigate to URL with timeout
-            page.goto(url, timeout=timeout, wait_until='networkidle')
+                # Navigate to URL with timeout
+                page.goto(url, timeout=timeout, wait_until='networkidle')
 
-            # Wait for content to load (longer wait for ADP and similar sites)
-            page.wait_for_timeout(8000)  # 8 seconds for dynamic content
+                # Wait for content to load (longer wait for ADP and similar sites)
+                page.wait_for_timeout(8000)  # 8 seconds for dynamic content
 
-            # Get both HTML and clean text
-            html = page.content()
-            text = page.inner_text('body')  # Get clean rendered text without HTML tags
+                # Get both HTML and clean text
+                html = page.content()
+                text = page.inner_text('body')  # Get clean rendered text without HTML tags
 
-            # Close browser
-            context.close()
-            browser.close()
+                return html, text
 
-            return html, text
+            finally:
+                # Ensure browser and context are properly closed even if an error occurs
+                if context:
+                    try:
+                        context.close()
+                    except Exception:
+                        pass  # Ignore errors during cleanup
+                if browser:
+                    try:
+                        browser.close()
+                    except Exception:
+                        pass  # Ignore errors during cleanup
 
     except ImportError:
         print("  Error: Playwright not installed. Install with: pip install playwright")

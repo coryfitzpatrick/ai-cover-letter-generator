@@ -1,6 +1,7 @@
 """Command-line interface for cover letter generation."""
 
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -213,8 +214,37 @@ def save_cover_letter(
     return validation_result
 
 
+def ensure_signature(cover_letter: str, user_name: str, print_preview: bool = True) -> str:
+    """Ensure cover letter ends with signature and optionally print it in preview.
+
+    Args:
+        cover_letter: The cover letter text
+        user_name: User's full name for signature
+        print_preview: Whether to print the signature to console if added
+
+    Returns:
+        Cover letter with signature guaranteed at the end
+    """
+    signature_added = False
+    if not cover_letter.strip().endswith(user_name):
+        cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{user_name}'
+        signature_added = True
+
+    # Show signature in preview if we added it
+    if signature_added and print_preview:
+        print(f"\n\nSincerely,\n{user_name}")
+
+    return cover_letter
+
+
 def main():
     """Main CLI function."""
+    # Validate required environment variables
+    if not USER_NAME:
+        print("\nError: USER_NAME not set in .env file")
+        print("Please add USER_NAME=\"Your Full Name\" to your .env file")
+        sys.exit(1)
+
     try:
         # Print welcome message
         print_welcome()
@@ -432,14 +462,7 @@ def main():
                 cover_letter = ''.join(cover_letter_parts)
 
                 # Ensure it ends with signature
-                signature_added = False
-                if not cover_letter.strip().endswith(USER_NAME):
-                    cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{USER_NAME}'
-                    signature_added = True
-
-                # Always show signature in preview if we added it
-                if signature_added:
-                    print(f"\n\nSincerely,\n{USER_NAME}")
+                cover_letter = ensure_signature(cover_letter, USER_NAME)
 
                 print("\n" + "-" * 80)
 
@@ -485,14 +508,7 @@ def main():
                             cover_letter = ''.join(cover_letter_parts)
 
                             # Ensure it ends with signature
-                            signature_added = False
-                            if not cover_letter.strip().endswith(USER_NAME):
-                                cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{USER_NAME}'
-                                signature_added = True
-
-                            # Always show signature in preview if we added it
-                            if signature_added:
-                                print(f"\n\nSincerely,\n{USER_NAME}")
+                            cover_letter = ensure_signature(cover_letter, USER_NAME)
 
                             print("\n" + "-" * 80)
 
@@ -637,7 +653,6 @@ def main():
                                 message_lower = validation_result.message.lower()
 
                                 # Try to extract word count from details
-                                import re
                                 word_match = re.search(r'approximately\s+(\d+)\s+words?\s+(?:are\s+)?cut\s+off', details_lower)
 
                                 if word_match:
@@ -675,14 +690,7 @@ def main():
                                 cover_letter = ''.join(cover_letter_parts)
 
                                 # Ensure it ends with signature
-                                signature_added = False
-                                if not cover_letter.strip().endswith(USER_NAME):
-                                    cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{USER_NAME}'
-                                    signature_added = True
-
-                                # Always show signature in preview if we added it
-                                if signature_added:
-                                    print(f"\n\nSincerely,\n{USER_NAME}")
+                                cover_letter = ensure_signature(cover_letter, USER_NAME)
 
                                 print("\n" + "-" * 80)
 

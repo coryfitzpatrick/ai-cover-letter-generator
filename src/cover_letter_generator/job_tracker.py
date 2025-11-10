@@ -13,6 +13,19 @@ from googleapiclient.discovery import build
 load_dotenv()
 
 
+def escape_formula_string(text: str) -> str:
+    """Escape quotes for safe use in Google Sheets formulas.
+
+    Args:
+        text: String to escape
+
+    Returns:
+        Escaped string safe for use in formulas
+    """
+    # Google Sheets uses "" to escape a single " character
+    return text.replace('"', '""')
+
+
 class JobTracker:
     """Track job applications in Google Sheets."""
 
@@ -87,7 +100,10 @@ class JobTracker:
 
             # Create hyperlink formula for job title
             # Google Sheets formula: =HYPERLINK("url", "display text")
-            job_title_with_link = f'=HYPERLINK("{job_url}", "{job_title}")'
+            # Escape quotes to prevent formula injection
+            job_url_escaped = escape_formula_string(job_url)
+            job_title_escaped = escape_formula_string(job_title)
+            job_title_with_link = f'=HYPERLINK("{job_url_escaped}", "{job_title_escaped}")'
 
             # Prepare the row data
             values = [
