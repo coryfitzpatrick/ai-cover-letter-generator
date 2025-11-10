@@ -432,11 +432,13 @@ def main():
                 cover_letter = ''.join(cover_letter_parts)
 
                 # Ensure it ends with signature
+                signature_added = False
                 if not cover_letter.strip().endswith(USER_NAME):
                     cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{USER_NAME}'
+                    signature_added = True
 
-                # Always show signature in preview if not already visible in streamed output
-                if not cover_letter_body.strip().endswith(USER_NAME):
+                # Always show signature in preview if we added it
+                if signature_added:
                     print(f"\n\nSincerely,\n{USER_NAME}")
 
                 print("\n" + "-" * 80)
@@ -483,11 +485,13 @@ def main():
                             cover_letter = ''.join(cover_letter_parts)
 
                             # Ensure it ends with signature
+                            signature_added = False
                             if not cover_letter.strip().endswith(USER_NAME):
                                 cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{USER_NAME}'
+                                signature_added = True
 
-                            # Always show signature in preview if not already visible in streamed output
-                            if not cover_letter_body.strip().endswith(USER_NAME):
+                            # Always show signature in preview if we added it
+                            if signature_added:
                                 print(f"\n\nSincerely,\n{USER_NAME}")
 
                             print("\n" + "-" * 80)
@@ -671,11 +675,13 @@ def main():
                                 cover_letter = ''.join(cover_letter_parts)
 
                                 # Ensure it ends with signature
+                                signature_added = False
                                 if not cover_letter.strip().endswith(USER_NAME):
                                     cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{USER_NAME}'
+                                    signature_added = True
 
-                                # Always show signature in preview if not already visible in streamed output
-                                if not cover_letter_body.strip().endswith(USER_NAME):
+                                # Always show signature in preview if we added it
+                                if signature_added:
                                     print(f"\n\nSincerely,\n{USER_NAME}")
 
                                 print("\n" + "-" * 80)
