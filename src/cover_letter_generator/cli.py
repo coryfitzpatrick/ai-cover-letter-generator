@@ -13,6 +13,7 @@ from .signature_validator import validate_pdf_signature
 from .job_parser import parse_job_from_url, is_valid_url
 from .feedback_tracker import FeedbackTracker
 from .system_improver import SystemImprover
+from .job_tracker import JobTracker
 
 # Load environment variables
 load_dotenv()
@@ -242,11 +243,19 @@ def main():
             feedback_tracker = None
             system_improver = None
 
+        # Initialize job tracker (optional feature)
+        try:
+            job_tracker = JobTracker()
+        except Exception as e:
+            # Silently disable if not configured
+            job_tracker = None
+
         # Main loop
         while True:
             company_name = None
             job_title = None
             job_description = None
+            job_url = None  # Track the job URL for adding to tracker
 
             # Ask for input method
             print("\n" + "-" * 80)
@@ -305,6 +314,7 @@ def main():
                         company_name = job_posting.company_name
                         job_title = job_posting.job_title
                         job_description = job_posting.job_description
+                        job_url = url  # Save the URL for job tracker
 
                         # Review and edit loop
                         while True:
@@ -734,6 +744,31 @@ def main():
                 # If user chose manual revision, go back to feedback loop
                 if save_and_validate_complete == 'manual_revision':
                     continue  # Go back to "while True" feedback loop at line 426
+
+                # Ask if user wants to add to job tracking sheet
+                if job_tracker and job_url:
+                    print("\n" + "=" * 80)
+                    print("Would you like to add this to your job tracking sheet?")
+                    print(f"  Company: {company_name}")
+                    print(f"  Job: {job_title}")
+                    print(f"  URL: {job_url}")
+                    print("\nAdd to tracking sheet? (y/n) [n]: ", end='')
+
+                    try:
+                        track_choice = input().strip().lower() or 'n'
+                        if track_choice == 'y':
+                            success = job_tracker.add_job_application(
+                                company_name=company_name,
+                                job_title=job_title,
+                                job_url=job_url
+                            )
+                            if not success:
+                                print("Could not add to tracking sheet. See error messages above.")
+                    except (EOFError, KeyboardInterrupt):
+                        print("\n\nSkipping job tracker.")
+                    except Exception as e:
+                        print(f"\nError adding to tracking sheet: {e}")
+                    print()
 
                 # Loop continues to prompt for another job description
 
