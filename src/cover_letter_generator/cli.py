@@ -431,13 +431,20 @@ def main():
                 # Combine the body
                 cover_letter_body = ''.join(cover_letter_parts)
 
-                # Check if greeting is already in the generated content
-                if not cover_letter_body.strip().startswith("Dear"):
-                    # Prepend greeting and date to the body
-                    cover_letter = f"{current_date}\n\n{greeting}\n\n{cover_letter_body}"
+                # Check if date and greeting are already in the generated content
+                body_stripped = cover_letter_body.strip()
+                has_date = body_stripped.startswith(current_date)
+                has_greeting = "Dear " in body_stripped[:100]  # Check first 100 chars
+
+                if has_date:
+                    # LLM already included everything, use as-is
+                    cover_letter = cover_letter_body
+                elif has_greeting:
+                    # Has greeting but no date, prepend date only
+                    cover_letter = f"{current_date}\n{cover_letter_body}"
                 else:
-                    # Just prepend date if greeting is already there
-                    cover_letter = f"{current_date}\n\n{cover_letter_body}"
+                    # Missing both, prepend date and greeting
+                    cover_letter = f"{current_date}\n{greeting}\n\n{cover_letter_body}"
 
                 # Ensure it ends with signature
                 if not cover_letter.strip().endswith(USER_NAME):
@@ -495,13 +502,20 @@ def main():
                             # Combine the body
                             cover_letter_body = ''.join(cover_letter_parts)
 
-                            # Check if greeting is already in the generated content
-                            if not cover_letter_body.strip().startswith("Dear"):
-                                # Prepend greeting and date to the body
-                                cover_letter = f"{current_date}\n\n{greeting}\n\n{cover_letter_body}"
+                            # Check if date and greeting are already in the generated content
+                            body_stripped = cover_letter_body.strip()
+                            has_date = body_stripped.startswith(current_date)
+                            has_greeting = "Dear " in body_stripped[:100]  # Check first 100 chars
+
+                            if has_date:
+                                # LLM already included everything, use as-is
+                                cover_letter = cover_letter_body
+                            elif has_greeting:
+                                # Has greeting but no date, prepend date only
+                                cover_letter = f"{current_date}\n{cover_letter_body}"
                             else:
-                                # Just prepend date if greeting is already there
-                                cover_letter = f"{current_date}\n\n{cover_letter_body}"
+                                # Missing both, prepend date and greeting
+                                cover_letter = f"{current_date}\n{greeting}\n\n{cover_letter_body}"
 
                             # Ensure it ends with signature
                             if not cover_letter.strip().endswith(USER_NAME):
@@ -696,13 +710,20 @@ def main():
                                 # Combine the body
                                 cover_letter_body = ''.join(cover_letter_parts)
 
-                                # Check if greeting is already in the generated content
-                                if not cover_letter_body.strip().startswith("Dear"):
-                                    # Prepend greeting and date to the body
-                                    cover_letter = f"{current_date}\n\n{greeting}\n\n{cover_letter_body}"
+                                # Check if date and greeting are already in the generated content
+                                body_stripped = cover_letter_body.strip()
+                                has_date = body_stripped.startswith(current_date)
+                                has_greeting = "Dear " in body_stripped[:100]  # Check first 100 chars
+
+                                if has_date:
+                                    # LLM already included everything, use as-is
+                                    cover_letter = cover_letter_body
+                                elif has_greeting:
+                                    # Has greeting but no date, prepend date only
+                                    cover_letter = f"{current_date}\n{cover_letter_body}"
                                 else:
-                                    # Just prepend date if greeting is already there
-                                    cover_letter = f"{current_date}\n\n{cover_letter_body}"
+                                    # Missing both, prepend date and greeting
+                                    cover_letter = f"{current_date}\n{greeting}\n\n{cover_letter_body}"
 
                                 # Ensure it ends with signature
                                 if not cover_letter.strip().endswith(USER_NAME):
