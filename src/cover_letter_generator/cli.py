@@ -412,12 +412,12 @@ def main():
                 continue
 
             try:
-                # Add date and greeting to display
+                # Prepare date and greeting
                 from datetime import datetime
                 current_date = datetime.now().strftime("%B %d, %Y")
                 greeting = f"Dear {company_name} Hiring Team,"
 
-                # Display date and greeting
+                # Display complete cover letter preview with date and greeting
                 print(f"\n{current_date}\n")
                 print(f"{greeting}\n")
 
@@ -427,9 +427,7 @@ def main():
                     print(chunk, end='', flush=True)
                     cover_letter_parts.append(chunk)
 
-                print("\n" + "-" * 80)
-
-                # Combine all parts
+                # Combine the body
                 cover_letter_body = ''.join(cover_letter_parts)
 
                 # Check if greeting is already in the generated content
@@ -443,6 +441,12 @@ def main():
                 # Ensure it ends with signature
                 if not cover_letter.strip().endswith(USER_NAME):
                     cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{USER_NAME}'
+
+                # Always show signature in preview if not already visible in streamed output
+                if not cover_letter_body.strip().endswith(USER_NAME):
+                    print(f"\n\nSincerely,\n{USER_NAME}")
+
+                print("\n" + "-" * 80)
 
                 # Feedback loop
                 while True:
@@ -489,7 +493,7 @@ def main():
                                 print(chunk, end='', flush=True)
                                 cover_letter_parts.append(chunk)
 
-                            print("\n" + "-" * 80)
+                            # Combine the body
                             cover_letter_body = ''.join(cover_letter_parts)
 
                             # Check if greeting is already in the generated content
@@ -503,6 +507,12 @@ def main():
                             # Ensure it ends with signature
                             if not cover_letter.strip().endswith(USER_NAME):
                                 cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{USER_NAME}'
+
+                            # Always show signature in preview if not already visible in streamed output
+                            if not cover_letter_body.strip().endswith(USER_NAME):
+                                print(f"\n\nSincerely,\n{USER_NAME}")
+
+                            print("\n" + "-" * 80)
 
                             # META-LEARNING: Track feedback and check for patterns
                             if feedback_tracker and system_improver:
@@ -683,7 +693,7 @@ def main():
                                     print(chunk, end='', flush=True)
                                     cover_letter_parts.append(chunk)
 
-                                print("\n" + "-" * 80)
+                                # Combine the body
                                 cover_letter_body = ''.join(cover_letter_parts)
 
                                 # Check if greeting is already in the generated content
@@ -697,6 +707,12 @@ def main():
                                 # Ensure it ends with signature
                                 if not cover_letter.strip().endswith(USER_NAME):
                                     cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{USER_NAME}'
+
+                                # Always show signature in preview if not already visible in streamed output
+                                if not cover_letter_body.strip().endswith(USER_NAME):
+                                    print(f"\n\nSincerely,\n{USER_NAME}")
+
+                                print("\n" + "-" * 80)
 
                                 # Track this automatic feedback for meta-learning
                                 if feedback_tracker:
