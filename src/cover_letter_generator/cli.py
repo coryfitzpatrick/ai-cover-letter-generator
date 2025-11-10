@@ -412,6 +412,15 @@ def main():
                 continue
 
             try:
+                # Add date and greeting to display
+                from datetime import datetime
+                current_date = datetime.now().strftime("%B %d, %Y")
+                greeting = f"Dear {company_name} Hiring Team,"
+
+                # Display date and greeting
+                print(f"\n{current_date}\n")
+                print(f"{greeting}\n")
+
                 # Generate cover letter with streaming
                 cover_letter_parts = []
                 for chunk in generator.generate_cover_letter_stream(job_description, company_name, job_title):
@@ -421,7 +430,15 @@ def main():
                 print("\n" + "-" * 80)
 
                 # Combine all parts
-                cover_letter = ''.join(cover_letter_parts)
+                cover_letter_body = ''.join(cover_letter_parts)
+
+                # Check if greeting is already in the generated content
+                if not cover_letter_body.strip().startswith("Dear"):
+                    # Prepend greeting and date to the body
+                    cover_letter = f"{current_date}\n\n{greeting}\n\n{cover_letter_body}"
+                else:
+                    # Just prepend date if greeting is already there
+                    cover_letter = f"{current_date}\n\n{cover_letter_body}"
 
                 # Ensure it ends with signature
                 if not cover_letter.strip().endswith(USER_NAME):
@@ -456,6 +473,10 @@ def main():
                             print("\nRevising cover letter based on your feedback...\n")
                             print("-" * 80)
 
+                            # Display date and greeting again
+                            print(f"\n{current_date}\n")
+                            print(f"{greeting}\n")
+
                             # Regenerate with user's feedback AS-IS
                             cover_letter_parts = []
                             for chunk in generator.revise_cover_letter_stream(
@@ -469,7 +490,15 @@ def main():
                                 cover_letter_parts.append(chunk)
 
                             print("\n" + "-" * 80)
-                            cover_letter = ''.join(cover_letter_parts)
+                            cover_letter_body = ''.join(cover_letter_parts)
+
+                            # Check if greeting is already in the generated content
+                            if not cover_letter_body.strip().startswith("Dear"):
+                                # Prepend greeting and date to the body
+                                cover_letter = f"{current_date}\n\n{greeting}\n\n{cover_letter_body}"
+                            else:
+                                # Just prepend date if greeting is already there
+                                cover_letter = f"{current_date}\n\n{cover_letter_body}"
 
                             # Ensure it ends with signature
                             if not cover_letter.strip().endswith(USER_NAME):
@@ -638,6 +667,10 @@ def main():
                                 print(f"Feedback: {shortening_feedback}")
                                 print()
 
+                                # Display date and greeting again
+                                print(f"\n{current_date}\n")
+                                print(f"{greeting}\n")
+
                                 # Regenerate with automatic feedback to shorten
                                 cover_letter_parts = []
                                 for chunk in generator.revise_cover_letter_stream(
@@ -651,7 +684,15 @@ def main():
                                     cover_letter_parts.append(chunk)
 
                                 print("\n" + "-" * 80)
-                                cover_letter = ''.join(cover_letter_parts)
+                                cover_letter_body = ''.join(cover_letter_parts)
+
+                                # Check if greeting is already in the generated content
+                                if not cover_letter_body.strip().startswith("Dear"):
+                                    # Prepend greeting and date to the body
+                                    cover_letter = f"{current_date}\n\n{greeting}\n\n{cover_letter_body}"
+                                else:
+                                    # Just prepend date if greeting is already there
+                                    cover_letter = f"{current_date}\n\n{cover_letter_body}"
 
                                 # Ensure it ends with signature
                                 if not cover_letter.strip().endswith(USER_NAME):
