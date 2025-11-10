@@ -419,32 +419,22 @@ def main():
 
                 # Generate cover letter with streaming
                 cover_letter_parts = []
-                first_chunk = True
                 for chunk in generator.generate_cover_letter_stream(job_description, company_name, job_title):
-                    # Print date before first chunk (after dashed line)
-                    if first_chunk:
-                        print(f"\n{current_date}")
-                        first_chunk = False
                     print(chunk, end='', flush=True)
                     cover_letter_parts.append(chunk)
 
                 # Combine the body
                 cover_letter_body = ''.join(cover_letter_parts)
 
-                # Check if date and greeting are already in the generated content
+                # Check if date is already in the generated content
                 body_stripped = cover_letter_body.strip()
-                has_date = body_stripped.startswith(current_date)
-                has_greeting = "Dear " in body_stripped[:100]  # Check first 100 chars
 
-                if has_date:
-                    # LLM already included everything, use as-is
-                    cover_letter = cover_letter_body
-                elif has_greeting:
-                    # Has greeting but no date, prepend date only
+                # Always add date at the top with proper formatting
+                # The LLM should generate "Dear Company..." and we add the date
+                if not body_stripped.startswith(current_date):
                     cover_letter = f"{current_date}\n{cover_letter_body}"
                 else:
-                    # Missing both, prepend date and greeting
-                    cover_letter = f"{current_date}\n{greeting}\n\n{cover_letter_body}"
+                    cover_letter = cover_letter_body
 
                 # Ensure it ends with signature
                 if not cover_letter.strip().endswith(USER_NAME):
@@ -458,18 +448,18 @@ def main():
 
                 # Feedback loop
                 while True:
-                    # Ask if user wants to provide feedback or save
+                    # Ask if user wants to save or provide feedback
                     print("\nOptions:")
-                    print("  (1) Provide feedback for revision")
-                    print("  (2) Save this version")
+                    print("  (1) Save this version")
+                    print("  (2) Provide feedback for revision")
                     print("  (3) Start over with new job description")
                     print("  (4) Exit")
-                    print("\nWhat would you like to do? [2]: ", end='')
+                    print("\nWhat would you like to do? [1]: ", end='')
 
                     try:
-                        choice = input().strip() or '2'
+                        choice = input().strip() or '1'
 
-                        if choice == '1':
+                        if choice == '2':
                             # Get feedback
                             print("\nDescribe the changes you'd like to see in the cover letter.")
                             print("(Be specific: e.g., 'Add more about my leadership experience',")
@@ -484,7 +474,6 @@ def main():
                             # Use feedback directly (no enhancement)
                             # Regenerate with user's feedback AS-IS
                             cover_letter_parts = []
-                            first_chunk = True
                             for chunk in generator.revise_cover_letter_stream(
                                 cover_letter,
                                 user_feedback,
@@ -492,30 +481,20 @@ def main():
                                 company_name,
                                 job_title
                             ):
-                                # Print date before first chunk
-                                if first_chunk:
-                                    print(f"\n{current_date}")
-                                    first_chunk = False
                                 print(chunk, end='', flush=True)
                                 cover_letter_parts.append(chunk)
 
                             # Combine the body
                             cover_letter_body = ''.join(cover_letter_parts)
 
-                            # Check if date and greeting are already in the generated content
+                            # Check if date is already in the generated content
                             body_stripped = cover_letter_body.strip()
-                            has_date = body_stripped.startswith(current_date)
-                            has_greeting = "Dear " in body_stripped[:100]  # Check first 100 chars
 
-                            if has_date:
-                                # LLM already included everything, use as-is
-                                cover_letter = cover_letter_body
-                            elif has_greeting:
-                                # Has greeting but no date, prepend date only
+                            # Always add date at the top with proper formatting
+                            if not body_stripped.startswith(current_date):
                                 cover_letter = f"{current_date}\n{cover_letter_body}"
                             else:
-                                # Missing both, prepend date and greeting
-                                cover_letter = f"{current_date}\n{greeting}\n\n{cover_letter_body}"
+                                cover_letter = cover_letter_body
 
                             # Ensure it ends with signature
                             if not cover_letter.strip().endswith(USER_NAME):
@@ -609,7 +588,7 @@ def main():
 
                             # Continue the loop to ask again
 
-                        elif choice == '2':
+                        elif choice == '1':
                             # Save the cover letter
                             break  # Exit feedback loop to save
 
@@ -692,7 +671,6 @@ def main():
 
                                 # Regenerate with automatic feedback to shorten
                                 cover_letter_parts = []
-                                first_chunk = True
                                 for chunk in generator.revise_cover_letter_stream(
                                     cover_letter,
                                     shortening_feedback,
@@ -700,30 +678,20 @@ def main():
                                     company_name,
                                     job_title
                                 ):
-                                    # Print date before first chunk
-                                    if first_chunk:
-                                        print(f"\n{current_date}")
-                                        first_chunk = False
                                     print(chunk, end='', flush=True)
                                     cover_letter_parts.append(chunk)
 
                                 # Combine the body
                                 cover_letter_body = ''.join(cover_letter_parts)
 
-                                # Check if date and greeting are already in the generated content
+                                # Check if date is already in the generated content
                                 body_stripped = cover_letter_body.strip()
-                                has_date = body_stripped.startswith(current_date)
-                                has_greeting = "Dear " in body_stripped[:100]  # Check first 100 chars
 
-                                if has_date:
-                                    # LLM already included everything, use as-is
-                                    cover_letter = cover_letter_body
-                                elif has_greeting:
-                                    # Has greeting but no date, prepend date only
+                                # Always add date at the top with proper formatting
+                                if not body_stripped.startswith(current_date):
                                     cover_letter = f"{current_date}\n{cover_letter_body}"
                                 else:
-                                    # Missing both, prepend date and greeting
-                                    cover_letter = f"{current_date}\n{greeting}\n\n{cover_letter_body}"
+                                    cover_letter = cover_letter_body
 
                                 # Ensure it ends with signature
                                 if not cover_letter.strip().endswith(USER_NAME):
