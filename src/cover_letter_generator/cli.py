@@ -417,13 +417,15 @@ def main():
                 current_date = datetime.now().strftime("%B %d, %Y")
                 greeting = f"Dear {company_name} Hiring Team,"
 
-                # Display complete cover letter preview with date and greeting
-                print(f"\n{current_date}\n")
-                print(f"{greeting}\n")
-
                 # Generate cover letter with streaming
                 cover_letter_parts = []
+                first_chunk = True
                 for chunk in generator.generate_cover_letter_stream(job_description, company_name, job_title):
+                    # Print date and greeting before first chunk (after dashed line)
+                    if first_chunk:
+                        print(f"\n{current_date}\n")
+                        print(f"{greeting}\n")
+                        first_chunk = False
                     print(chunk, end='', flush=True)
                     cover_letter_parts.append(chunk)
 
@@ -474,15 +476,9 @@ def main():
                                 continue
 
                             # Use feedback directly (no enhancement)
-                            print("\nRevising cover letter based on your feedback...\n")
-                            print("-" * 80)
-
-                            # Display date and greeting again
-                            print(f"\n{current_date}\n")
-                            print(f"{greeting}\n")
-
                             # Regenerate with user's feedback AS-IS
                             cover_letter_parts = []
+                            first_chunk = True
                             for chunk in generator.revise_cover_letter_stream(
                                 cover_letter,
                                 user_feedback,
@@ -490,6 +486,11 @@ def main():
                                 company_name,
                                 job_title
                             ):
+                                # Print date and greeting before first chunk
+                                if first_chunk:
+                                    print(f"\n{current_date}\n")
+                                    print(f"{greeting}\n")
+                                    first_chunk = False
                                 print(chunk, end='', flush=True)
                                 cover_letter_parts.append(chunk)
 
@@ -677,12 +678,9 @@ def main():
                                 print(f"Feedback: {shortening_feedback}")
                                 print()
 
-                                # Display date and greeting again
-                                print(f"\n{current_date}\n")
-                                print(f"{greeting}\n")
-
                                 # Regenerate with automatic feedback to shorten
                                 cover_letter_parts = []
+                                first_chunk = True
                                 for chunk in generator.revise_cover_letter_stream(
                                     cover_letter,
                                     shortening_feedback,
@@ -690,6 +688,11 @@ def main():
                                     company_name,
                                     job_title
                                 ):
+                                    # Print date and greeting before first chunk
+                                    if first_chunk:
+                                        print(f"\n{current_date}\n")
+                                        print(f"{greeting}\n")
+                                        first_chunk = False
                                     print(chunk, end='', flush=True)
                                     cover_letter_parts.append(chunk)
 
