@@ -48,6 +48,106 @@ def fetch_webpage(url: str, timeout: int = 10) -> Optional[str]:
         return None
 
 
+def fetch_webpage_with_playwright(url: str, timeout: int = 30000) -> Optional[Tuple[str, str]]:
+    """Fetch webpage content using Playwright (handles JavaScript-rendered pages).
+
+    Args:
+        url: URL to fetch
+        timeout: Page load timeout in milliseconds (default: 30 seconds)
+
+    Returns:
+        Tuple of (HTML content, plain text) or (None, None) if failed
+    """
+    try:
+        from playwright.sync_api import sync_playwright
+
+        # Try to import stealth plugin for better bot detection bypass
+        try:
+            from playwright_stealth.stealth import Stealth
+            stealth = Stealth()
+            has_stealth = True
+            print("  Using headless browser with stealth mode enabled...")
+        except ImportError:
+            has_stealth = False
+            stealth = None
+            print("  Using headless browser (stealth mode not available)...")
+
+        with sync_playwright() as p:
+            browser = None
+            context = None
+            try:
+                # Launch browser with more realistic settings to avoid bot detection
+                browser = p.chromium.launch(
+                    headless=True,
+                    args=[
+                        '--disable-blink-features=AutomationControlled',
+                        '--disable-dev-shm-usage',
+                        '--no-sandbox',
+                        '--disable-web-security',
+                        '--disable-features=IsolateOrigins,site-per-process'
+                    ]
+                )
+
+                # Create context with realistic browser settings
+                context = browser.new_context(
+                    viewport={'width': 1920, 'height': 1080},
+                    user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    locale='en-US',
+                    timezone_id='America/New_York',
+                    # Add permissions to avoid detection
+                    permissions=['geolocation']
+                )
+
+                page = context.new_page()
+
+                # Apply stealth mode if available
+                if has_stealth:
+                    stealth.apply_stealth_sync(page)
+
+                # Set extra headers
+                page.set_extra_http_headers({
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Upgrade-Insecure-Requests': '1'
+                })
+
+                # Navigate to URL with timeout
+                page.goto(url, timeout=timeout, wait_until='networkidle')
+
+                # Wait for content to load (longer wait for ADP and similar sites)
+                page.wait_for_timeout(8000)  # 8 seconds for dynamic content
+
+                # Get both HTML and clean text
+                html = page.content()
+                text = page.inner_text('body')  # Get clean rendered text without HTML tags
+
+                return html, text
+
+            finally:
+                # Ensure browser and context are properly closed even if an error occurs
+                if context:
+                    try:
+                        context.close()
+                    except Exception:
+                        pass  # Ignore errors during cleanup
+                if browser:
+                    try:
+                        browser.close()
+                    except Exception:
+                        pass  # Ignore errors during cleanup
+
+    except ImportError:
+        print("  Error: Playwright not installed. Install with: pip install playwright")
+        print("  Then run: playwright install chromium")
+        return None, None
+    except Exception as e:
+        print(f"  Error fetching with Playwright: {e}")
+        return None, None
+
+
 def clean_job_title(title: str) -> str:
     """Clean job title by removing parenthetical content.
 
@@ -140,28 +240,42 @@ def parse_job_posting_with_llm(text: str, url: str) -> Optional[JobPosting]:
     try:
         client = Groq(api_key=api_key)
 
+        # Show what text we're working with for debugging
+        print(f"\n  First 500 characters of text being analyzed:")
+        print("  " + "=" * 76)
+        print("  " + text[:500].replace('\n', '\n  '))
+        print("  " + "=" * 76)
+        print()
+
         # Limit text length to avoid token limits (keep first 8000 chars which is plenty for a job posting)
         text_sample = text[:8000]
 
-        prompt = f"""Analyze this job posting and extract the following information:
-1. Company Name
-2. Job Title
-3. Full Job Description (complete text of the job posting)
+        prompt = f"""Extract the company name and job title from this job posting.
+
+CRITICAL INSTRUCTIONS:
+- Look at the BEGINNING of the text - the job title is usually in the first few lines
+- Respond with ONLY the company name and job title - NO explanations, NO extra text
+- If you cannot find something, write exactly "Unknown" and nothing else
+- Do NOT write "The company is..." or "The job title is..." - just write the actual values
 
 Job Posting Text:
 {text_sample}
 
-Respond in this EXACT format:
-COMPANY: [company name]
-TITLE: [job title]
+Respond in this EXACT format (no extra words):
+COMPANY: [just the company name]
+TITLE: [just the job title]
 DESCRIPTION:
-[complete job description starting here and continuing for as many lines as needed]
+[complete job description]
 
-Important:
-- Extract the EXACT company name as it appears
-- Extract the EXACT job title as it appears
-- Include the COMPLETE job description with all details
-- If you cannot find a field, use "Unknown" for that field
+Example good response:
+COMPANY: Google
+TITLE: Software Engineer
+DESCRIPTION:
+[full description here]
+
+Example BAD response (DO NOT DO THIS):
+COMPANY: The company name is Google
+TITLE: The job title appears to be Software Engineer
 """
 
         response = client.chat.completions.create(
@@ -182,21 +296,52 @@ Important:
         description_match = re.search(r'DESCRIPTION:\s*\n(.+)', result, re.IGNORECASE | re.DOTALL)
 
         if not company_match or not title_match or not description_match:
-            print("Warning: Could not parse all fields from LLM response")
-            print(f"LLM Response:\n{result}")
-            return None
+            print("\n⚠ Warning: Could not parse all fields from LLM response")
+            print("=" * 80)
+            print("LLM Response (first 1000 chars):")
+            print(result[:1000])
+            print("=" * 80)
+            print(f"Company match: {bool(company_match)}")
+            print(f"Title match: {bool(title_match)}")
+            print(f"Description match: {bool(description_match)}")
+            print()
+
+            # Try more flexible parsing
+            if not company_match:
+                company_match = re.search(r'company[:\s]+(.+?)(?:\n|$)', result, re.IGNORECASE)
+            if not title_match:
+                title_match = re.search(r'(?:job\s+)?title[:\s]+(.+?)(?:\n|$)', result, re.IGNORECASE)
+            if not description_match:
+                description_match = re.search(r'(?:job\s+)?description[:\s]*\n(.+)', result, re.IGNORECASE | re.DOTALL)
+
+            if not company_match or not title_match or not description_match:
+                print("Could not parse even with flexible matching")
+                return None
+            else:
+                print("✓ Parsed with flexible matching")
 
         company_name = company_match.group(1).strip()
         job_title = title_match.group(1).strip()
         job_description = description_match.group(1).strip()
 
+        # Clean up verbose LLM responses
+        # Remove explanatory prefixes like "The company name is..." or "The job title is..."
+        company_name = re.sub(r'^(?:The\s+)?company(?:\s+name)?\s+(?:is|appears to be)\s+', '', company_name, flags=re.IGNORECASE).strip()
+        job_title = re.sub(r'^(?:The\s+)?job\s+title\s+(?:is|appears to be)\s+', '', job_title, flags=re.IGNORECASE).strip()
+
+        # Remove trailing explanations like ". Therefore, it is Unknown"
+        company_name = re.sub(r'\.\s+Therefore.*$', '', company_name, flags=re.IGNORECASE).strip()
+        job_title = re.sub(r'\.\s+Therefore.*$', '', job_title, flags=re.IGNORECASE).strip()
+
         # Clean job title (remove parenthetical content)
         job_title = clean_job_title(job_title)
 
-        # Validate we got real data
+        # Check if we got real data - but continue even if Unknown
         if company_name.lower() == "unknown" or job_title.lower() == "unknown":
-            print("Warning: Could not extract company name or job title from the posting")
-            return None
+            print(f"\n⚠ Note: Could not extract company name or job title from the posting")
+            print(f"  Company: '{company_name}'")
+            print(f"  Title: '{job_title}'")
+            print(f"  You'll be able to edit these in the next step.")
 
         return JobPosting(
             company_name=company_name,
@@ -221,7 +366,7 @@ def parse_job_from_url(url: str) -> Optional[JobPosting]:
     """
     print(f"\nFetching job posting from URL...")
 
-    # Fetch webpage
+    # Try normal fetch first
     html = fetch_webpage(url)
     if not html:
         return None
@@ -230,14 +375,65 @@ def parse_job_from_url(url: str) -> Optional[JobPosting]:
 
     # Extract text
     text = extract_text_from_html(html)
+
+    # Check if we got meaningful content
+    needs_playwright = False
+    text_lower = text.lower()[:1000] if text else ""
+
+    # Detect bot blocking or JavaScript requirement messages
+    bot_detection_phrases = [
+        "please switch to a supported browser",
+        "you need to enable javascript",
+        "javascript is required",
+        "enable javascript",
+        "browser is not supported",
+        "please enable javascript",
+        "this site requires javascript",
+    ]
+
+    has_bot_detection = any(phrase in text_lower for phrase in bot_detection_phrases)
+
     if not text or len(text) < 100:
-        print("Error: Could not extract sufficient text from webpage")
-        return None
+        print("⚠ Insufficient text extracted from static HTML")
+        needs_playwright = True
+    elif has_bot_detection:
+        print("⚠ Bot detection or JavaScript requirement detected")
+        needs_playwright = True
+    elif "javascript" in text_lower and len(text) < 500:
+        print("⚠ Page appears to require JavaScript")
+        needs_playwright = True
+
+    # Try Playwright fallback if needed
+    if needs_playwright:
+        print("\nRetrying with JavaScript rendering...")
+        html, playwright_text = fetch_webpage_with_playwright(url)
+        if not html or not playwright_text:
+            print("Error: Could not fetch page with JavaScript rendering")
+            return None
+
+        # Use the clean text from Playwright instead of parsing HTML
+        text = playwright_text
+
+        if not text or len(text) < 100:
+            print("Error: Could not extract sufficient text even with JavaScript rendering")
+            return None
 
     print(f"Analyzing job posting with AI (extracted {len(text)} characters)...")
 
     # Parse with LLM
     job_posting = parse_job_posting_with_llm(text, url)
+
+    # If parsing failed (returned None), try Playwright if we haven't already
+    if not job_posting and not needs_playwright:
+        print("\n⚠ Initial parsing failed. Retrying with JavaScript rendering...")
+
+        html, playwright_text = fetch_webpage_with_playwright(url)
+        if html and playwright_text:
+            # Use the clean text from Playwright
+            text = playwright_text
+            if text and len(text) >= 100:
+                print(f"Analyzing job posting with AI (extracted {len(text)} characters)...")
+                job_posting = parse_job_posting_with_llm(text, url)
 
     if job_posting:
         print(f"✓ Successfully parsed job posting:")

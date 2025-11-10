@@ -1,6 +1,7 @@
 """Command-line interface for cover letter generation."""
 
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -213,8 +214,37 @@ def save_cover_letter(
     return validation_result
 
 
+def ensure_signature(cover_letter: str, user_name: str, print_preview: bool = True) -> str:
+    """Ensure cover letter ends with signature and optionally print it in preview.
+
+    Args:
+        cover_letter: The cover letter text
+        user_name: User's full name for signature
+        print_preview: Whether to print the signature to console if added
+
+    Returns:
+        Cover letter with signature guaranteed at the end
+    """
+    signature_added = False
+    if not cover_letter.strip().endswith(user_name):
+        cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{user_name}'
+        signature_added = True
+
+    # Show signature in preview if we added it
+    if signature_added and print_preview:
+        print(f"\n\nSincerely,\n{user_name}")
+
+    return cover_letter
+
+
 def main():
     """Main CLI function."""
+    # Validate required environment variables
+    if not USER_NAME:
+        print("\nError: USER_NAME not set in .env file")
+        print("Please add USER_NAME=\"Your Full Name\" to your .env file")
+        sys.exit(1)
+
     try:
         # Print welcome message
         print_welcome()
@@ -428,29 +458,28 @@ def main():
                     print(chunk, end='', flush=True)
                     cover_letter_parts.append(chunk)
 
-                print("\n" + "-" * 80)
-
-                # Combine all parts
+                # Combine the body - LLM includes the date
                 cover_letter = ''.join(cover_letter_parts)
 
                 # Ensure it ends with signature
-                if not cover_letter.strip().endswith(USER_NAME):
-                    cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{USER_NAME}'
+                cover_letter = ensure_signature(cover_letter, USER_NAME)
+
+                print("\n" + "-" * 80)
 
                 # Feedback loop
                 while True:
-                    # Ask if user wants to provide feedback or save
+                    # Ask if user wants to save or provide feedback
                     print("\nOptions:")
-                    print("  (1) Provide feedback for revision")
-                    print("  (2) Save this version")
+                    print("  (1) Save this version")
+                    print("  (2) Provide feedback for revision")
                     print("  (3) Start over with new job description")
                     print("  (4) Exit")
-                    print("\nWhat would you like to do? [2]: ", end='')
+                    print("\nWhat would you like to do? [1]: ", end='')
 
                     try:
-                        choice = input().strip() or '2'
+                        choice = input().strip() or '1'
 
-                        if choice == '1':
+                        if choice == '2':
                             # Get feedback
                             print("\nDescribe the changes you'd like to see in the cover letter.")
                             print("(Be specific: e.g., 'Add more about my leadership experience',")
@@ -463,9 +492,6 @@ def main():
                                 continue
 
                             # Use feedback directly (no enhancement)
-                            print("\nRevising cover letter based on your feedback...\n")
-                            print("-" * 80)
-
                             # Regenerate with user's feedback AS-IS
                             cover_letter_parts = []
                             for chunk in generator.revise_cover_letter_stream(
@@ -478,12 +504,13 @@ def main():
                                 print(chunk, end='', flush=True)
                                 cover_letter_parts.append(chunk)
 
-                            print("\n" + "-" * 80)
+                            # Combine the body - LLM includes the date
                             cover_letter = ''.join(cover_letter_parts)
 
                             # Ensure it ends with signature
-                            if not cover_letter.strip().endswith(USER_NAME):
-                                cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{USER_NAME}'
+                            cover_letter = ensure_signature(cover_letter, USER_NAME)
+
+                            print("\n" + "-" * 80)
 
                             # META-LEARNING: Track feedback and check for patterns
                             if feedback_tracker and system_improver:
@@ -567,7 +594,7 @@ def main():
 
                             # Continue the loop to ask again
 
-                        elif choice == '2':
+                        elif choice == '1':
                             # Save the cover letter
                             break  # Exit feedback loop to save
 
@@ -626,7 +653,6 @@ def main():
                                 message_lower = validation_result.message.lower()
 
                                 # Try to extract word count from details
-                                import re
                                 word_match = re.search(r'approximately\s+(\d+)\s+words?\s+(?:are\s+)?cut\s+off', details_lower)
 
                                 if word_match:
@@ -660,12 +686,13 @@ def main():
                                     print(chunk, end='', flush=True)
                                     cover_letter_parts.append(chunk)
 
-                                print("\n" + "-" * 80)
+                                # Combine the body - LLM includes the date
                                 cover_letter = ''.join(cover_letter_parts)
 
                                 # Ensure it ends with signature
-                                if not cover_letter.strip().endswith(USER_NAME):
-                                    cover_letter = cover_letter.rstrip() + f'\n\nSincerely,\n{USER_NAME}'
+                                cover_letter = ensure_signature(cover_letter, USER_NAME)
+
+                                print("\n" + "-" * 80)
 
                                 # Track this automatic feedback for meta-learning
                                 if feedback_tracker:
