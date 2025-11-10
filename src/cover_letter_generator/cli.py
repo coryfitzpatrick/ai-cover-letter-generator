@@ -422,27 +422,14 @@ def main():
                 continue
 
             try:
-                # Prepare date and greeting
-                from datetime import datetime
-                current_date = datetime.now().strftime("%B %d, %Y")
-                greeting = f"Dear {company_name} Hiring Team,"
-
                 # Generate cover letter with streaming
                 cover_letter_parts = []
                 for chunk in generator.generate_cover_letter_stream(job_description, company_name, job_title):
                     print(chunk, end='', flush=True)
                     cover_letter_parts.append(chunk)
 
-                # Combine the body
-                cover_letter_body = ''.join(cover_letter_parts)
-
-                # Only add date if LLM didn't already include it
-                if current_date in cover_letter_body[:50]:
-                    # LLM already included the date, use as-is
-                    cover_letter = cover_letter_body
-                else:
-                    # Add date at the top
-                    cover_letter = f"{current_date}\n{cover_letter_body}"
+                # Combine the body - LLM includes the date
+                cover_letter = ''.join(cover_letter_parts)
 
                 # Ensure it ends with signature
                 if not cover_letter.strip().endswith(USER_NAME):
@@ -492,16 +479,8 @@ def main():
                                 print(chunk, end='', flush=True)
                                 cover_letter_parts.append(chunk)
 
-                            # Combine the body
-                            cover_letter_body = ''.join(cover_letter_parts)
-
-                            # Only add date if LLM didn't already include it
-                            if current_date in cover_letter_body[:50]:
-                                # LLM already included the date, use as-is
-                                cover_letter = cover_letter_body
-                            else:
-                                # Add date at the top
-                                cover_letter = f"{current_date}\n{cover_letter_body}"
+                            # Combine the body - LLM includes the date
+                            cover_letter = ''.join(cover_letter_parts)
 
                             # Ensure it ends with signature
                             if not cover_letter.strip().endswith(USER_NAME):
@@ -688,16 +667,8 @@ def main():
                                     print(chunk, end='', flush=True)
                                     cover_letter_parts.append(chunk)
 
-                                # Combine the body
-                                cover_letter_body = ''.join(cover_letter_parts)
-
-                                # Only add date if LLM didn't already include it
-                                if current_date in cover_letter_body[:50]:
-                                    # LLM already included the date, use as-is
-                                    cover_letter = cover_letter_body
-                                else:
-                                    # Add date at the top
-                                    cover_letter = f"{current_date}\n{cover_letter_body}"
+                                # Combine the body - LLM includes the date
+                                cover_letter = ''.join(cover_letter_parts)
 
                                 # Ensure it ends with signature
                                 if not cover_letter.strip().endswith(USER_NAME):
