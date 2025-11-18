@@ -50,8 +50,7 @@ test_*.pdf
 .DS_Store
 Thumbs.db
 
-system_prompt.txt
-system_prompt.txt.backup
-system_prompt_example.txt.backup
+system_prompt_claude.txt.backup
+system_prompt_claude.txt.example.backup
 .feedback_history.json
 *.iml

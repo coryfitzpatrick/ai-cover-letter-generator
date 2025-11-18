@@ -1,4 +1,9 @@
-"""PDF generation for cover letters."""
+"""PDF generation for cover letters using ReportLab.
+
+NOTE: This module serves as a fallback when the template-based PDF generator
+(pdf_generator_template.py) cannot find the DOCX template file. The template
+version is preferred for better formatting and consistency.
+"""
 
 import os
 from pathlib import Path

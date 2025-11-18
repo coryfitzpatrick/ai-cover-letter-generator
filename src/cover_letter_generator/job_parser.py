@@ -115,10 +115,19 @@ def fetch_webpage_with_playwright(url: str, timeout: int = 30000) -> Optional[Tu
                 })
 
                 # Navigate to URL with timeout
-                page.goto(url, timeout=timeout, wait_until='networkidle')
+                try:
+                    page.goto(url, timeout=timeout, wait_until='networkidle')
+                except Exception as nav_error:
+                    print(f"  Navigation error: {nav_error}")
+                    # Try with a different wait strategy
+                    try:
+                        page.goto(url, timeout=timeout, wait_until='load')
+                    except Exception as retry_error:
+                        print(f"  Retry failed: {retry_error}")
+                        return None, None
 
                 # Wait for content to load (longer wait for ADP and similar sites)
-                page.wait_for_timeout(8000)  # 8 seconds for dynamic content
+                page.wait_for_timeout(10000)  # 10 seconds for dynamic content
 
                 # Get both HTML and clean text
                 html = page.content()
@@ -247,15 +256,17 @@ def parse_job_posting_with_llm(text: str, url: str) -> Optional[JobPosting]:
         print("  " + "=" * 76)
         print()
 
-        # Limit text length to avoid token limits (keep first 8000 chars which is plenty for a job posting)
-        text_sample = text[:8000]
+        # Limit text length to avoid token limits (12000 chars for detailed job postings)
+        text_sample = text[:12000]
 
-        prompt = f"""Extract the company name and job title from this job posting.
+        prompt = f"""Extract the company name, job title, and FULL job description from this job posting.
 
 CRITICAL INSTRUCTIONS:
 - Look at the BEGINNING of the text - the job title is usually in the first few lines
-- Respond with ONLY the company name and job title - NO explanations, NO extra text
-- If you cannot find something, write exactly "Unknown" and nothing else
+- For DESCRIPTION: Include EVERYTHING - all requirements, responsibilities, qualifications, benefits, etc.
+- DO NOT summarize the description - copy ALL details verbatim
+- Respond with ONLY the requested fields - NO explanations, NO extra text
+- If you cannot find company/title, write exactly "Unknown" and nothing else
 - Do NOT write "The company is..." or "The job title is..." - just write the actual values
 
 Job Posting Text:
@@ -265,27 +276,38 @@ Respond in this EXACT format (no extra words):
 COMPANY: [just the company name]
 TITLE: [just the job title]
 DESCRIPTION:
-[complete job description]
+[INCLUDE EVERYTHING FROM THE JOB POSTING - all requirements, responsibilities, qualifications, benefits, company info, etc. Do NOT summarize - copy all details.]
 
 Example good response:
 COMPANY: Google
 TITLE: Software Engineer
 DESCRIPTION:
-[full description here]
+About the role:
+[full details here]
+
+Responsibilities:
+[full list here]
+
+Requirements:
+[full list here]
+
+Benefits:
+[full list here]
 
 Example BAD response (DO NOT DO THIS):
 COMPANY: The company name is Google
 TITLE: The job title appears to be Software Engineer
+DESCRIPTION: This is a software engineering role... [truncated summary]
 """
 
         response = client.chat.completions.create(
             model="meta-llama/llama-4-maverick-17b-128e-instruct",
             messages=[
-                {"role": "system", "content": "You are a precise job posting parser. Extract information exactly as requested."},
+                {"role": "system", "content": "You are a precise job posting parser. Extract ALL information exactly as requested. Do NOT summarize."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.1,  # Low temperature for consistency
-            max_tokens=4000,
+            max_tokens=6000,  # Increased for full descriptions
         )
 
         result = response.choices[0].message.content.strip()
@@ -366,15 +388,41 @@ def parse_job_from_url(url: str) -> Optional[JobPosting]:
     """
     print(f"\nFetching job posting from URL...")
 
-    # Try normal fetch first
-    html = fetch_webpage(url)
-    if not html:
-        return None
+    # Check if this is a known JavaScript-heavy job board
+    js_heavy_domains = [
+        'greenhouse.io',
+        'lever.co',
+        'ashbyhq.com',
+        'workday.com',
+        'taleo.net',
+        'smartrecruiters.com',
+        'icims.com',
+        'myworkdayjobs.com',
+        'playlist.com'  # Greenhouse-powered
+    ]
 
-    print("Extracting text from webpage...")
+    use_playwright_first = any(domain in url.lower() for domain in js_heavy_domains)
 
-    # Extract text
-    text = extract_text_from_html(html)
+    if use_playwright_first:
+        print("  Detected JavaScript-heavy job board, using headless browser...")
+        html, text = fetch_webpage_with_playwright(url)
+        if not html or not text:
+            print("  Playwright fetch failed, trying basic HTTP...")
+            html = fetch_webpage(url)
+            if not html:
+                print("  ⚠️  Both methods failed. Try copying the job description manually.")
+                return None
+            text = extract_text_from_html(html)
+    else:
+        # Try normal fetch first for simpler sites
+        html = fetch_webpage(url)
+        if not html:
+            return None
+
+        print("Extracting text from webpage...")
+
+        # Extract text
+        text = extract_text_from_html(html)
 
     # Check if we got meaningful content
     needs_playwright = False
@@ -403,8 +451,8 @@ def parse_job_from_url(url: str) -> Optional[JobPosting]:
         print("⚠ Page appears to require JavaScript")
         needs_playwright = True
 
-    # Try Playwright fallback if needed
-    if needs_playwright:
+    # Try Playwright fallback if needed (and not already used)
+    if needs_playwright and not use_playwright_first:
         print("\nRetrying with JavaScript rendering...")
         html, playwright_text = fetch_webpage_with_playwright(url)
         if not html or not playwright_text:
@@ -424,7 +472,7 @@ def parse_job_from_url(url: str) -> Optional[JobPosting]:
     job_posting = parse_job_posting_with_llm(text, url)
 
     # If parsing failed (returned None), try Playwright if we haven't already
-    if not job_posting and not needs_playwright:
+    if not job_posting and not needs_playwright and not use_playwright_first:
         print("\n⚠ Initial parsing failed. Retrying with JavaScript rendering...")
 
         html, playwright_text = fetch_webpage_with_playwright(url)

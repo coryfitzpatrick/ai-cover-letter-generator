@@ -62,7 +62,7 @@ def create_text_overlay(cover_letter_text: str, width: float, height: float) -> 
         leading=14,
         textColor='#333333',
         alignment=TA_LEFT,
-        spaceAfter=4,  # Minimal space after date (soft return effect)
+        spaceAfter=0,  # No extra space after date (tight spacing to Dear line)
     )
 
     body_style = ParagraphStyle(
@@ -85,7 +85,7 @@ def create_text_overlay(cover_letter_text: str, width: float, height: float) -> 
         leading=14,
         textColor='#333333',
         alignment=TA_LEFT,
-        spaceAfter=4,  # Soft return after "Sincerely,"
+        spaceAfter=0,  # Tight spacing after "Sincerely," (no extra space before name)
     )
 
     # Process the cover letter text into paragraphs

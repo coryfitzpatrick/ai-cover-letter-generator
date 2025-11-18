@@ -23,6 +23,10 @@ from sentence_transformers import SentenceTransformer
 _env_path = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(dotenv_path=_env_path)
 
+# Suppress ChromaDB telemetry errors
+from .utils import suppress_telemetry_errors
+suppress_telemetry_errors()
+
 # Chunking configuration
 DEFAULT_CHUNK_SIZE = 1000
 DEFAULT_OVERLAP = 200

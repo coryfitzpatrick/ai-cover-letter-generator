@@ -4,31 +4,31 @@ An AI-powered cover letter generator that uses Retrieval-Augmented Generation (R
 
 ## Features
 
+- **Claude Sonnet 4.5 Generation**: Two-stage generation and refinement process for highest quality output
 - **RAG-based Generation**: Uses vector embeddings to retrieve relevant information from your professional documents
 - **LinkedIn Integration**: Automatically processes LinkedIn CSV exports (profile, recommendations)
 - **JSON Data Support**: Processes JSON files containing professional information
 - **Google Drive Sync**: Optional Google Drive storage for data files with automatic sync
 - **Iterative Feedback Loop**: Provide feedback and refine cover letters until perfect
-- **AI Feedback Enhancement**: Automatically improves your revision feedback to make it more specific and actionable
 - **Meta-Learning System**: Detects feedback patterns and suggests permanent improvements to the system prompt
 - **Customizable System Prompts**: Easily modify the generation behavior and output style
-- **Streaming Output**: See the cover letter being generated in real-time
-- **Template-based PDF Output**: Uses your custom PDF template with professional formatting
-- **Smart Organization**: Automatically creates folders named "{Company} - {Job Title}" for each application
+- **Template-based Output**: Generates both PDF and DOCX files with professional formatting
+- **Smart Organization**: Automatically creates folders named "{Company} - {Job Title} - {Date}" for each application
 - **iCloud Sync**: Saves to iCloud Documents/Cover Letters for access across all your Apple devices
 - **CLI Interface**: Simple command-line interface for quick generation
 - **Multi-format Input**: Processes PDFs and CSV files from your professional background
 - **URL Job Parsing**: Paste a job posting URL and automatically extract company, title, and description using AI
-- **AI Signature Validation**: Optional Claude vision-powered detection of cut-off signatures with automatic regeneration
+- **AI Signature Validation**: Claude vision-powered detection of cut-off signatures with automatic regeneration
 
 ## Tech Stack
 
-- **LLM**: Groq with Llama 3.3 70B Versatile (fast, high-quality, excellent instruction following)
+- **Primary LLM**: Claude Sonnet 4.5 (two-stage generation with refinement for best quality)
+- **Job Analysis**: Groq with Llama 4 Maverick (fast, free job requirement extraction)
 - **Vector Database**: ChromaDB for storing and retrieving document embeddings
 - **Embeddings**: Sentence Transformers (all-MiniLM-L6-v2)
-- **PDF Processing**: PyPDF2 for extracting text from documents
-- **Web Scraping**: BeautifulSoup4 and Requests for parsing job posting URLs
-- **Signature Validation**: Claude AI Vision for detecting cut-off signatures (optional)
+- **PDF/DOCX Generation**: ReportLab and python-docx with custom templates
+- **Web Scraping**: BeautifulSoup4, Requests, and Playwright for job posting URLs
+- **Signature Validation**: Claude AI Vision for detecting cut-off signatures
 - **Python**: 3.11+
 
 ## Installation
@@ -83,41 +83,36 @@ cp .env.example .env
 7. Edit `.env` and add your configuration:
 ```bash
 # Required
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 GROQ_API_KEY=your_groq_api_key_here
 USER_NAME=Your Full Name
-
-# Optional - for signature validation feature
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
 ```
 
 **Required API Keys:**
-- **GROQ_API_KEY**: Get from https://console.groq.com/keys (free tier available)
+- **ANTHROPIC_API_KEY**: Get from https://console.anthropic.com/ (for Claude Sonnet 4.5 generation and signature validation)
+- **GROQ_API_KEY**: Get from https://console.groq.com/keys (free tier available, used for job analysis)
 - **USER_NAME**: Your full name used for cover letter filenames (e.g., "John Smith Cover Letter.pdf")
-
-**Optional API Keys:**
-- **ANTHROPIC_API_KEY**: Get from https://console.anthropic.com/ (for signature validation feature)
-  - If not set, signature validation will be skipped (PDFs will still be generated normally)
 
 8. **Create your personalized system prompt** (Required):
 
 ```bash
-cp system_prompt_example.txt system_prompt.txt
+cp system_prompt_claude.txt.example system_prompt_claude.txt
 ```
 
-**Important:** You MUST edit `system_prompt.txt` and replace all instances of `{YOUR NAME}` with your actual name:
+**Important:** You MUST edit `system_prompt_claude.txt` and replace all instances of `{YOUR NAME}` with your actual name:
 
 - Find: `{YOUR NAME}`
 - Replace with: Your actual name (e.g., "John Smith")
 - Save the file
 
-The `system_prompt.txt` file controls how your cover letters are generated. It's your personal configuration and is **not tracked in git** (only `system_prompt_example.txt` is version controlled as a template).
+The `system_prompt_claude.txt` file controls how your cover letters are generated. It's your personal configuration and is **not tracked in git** (only `system_prompt_claude.txt.example` is version controlled as a template).
 
 **Example:**
 ```
-# Before (in system_prompt.txt)
+# Before (in system_prompt_claude.txt)
 CONTEXT ABOUT {YOUR NAME} (ONLY SOURCE OF TRUTH):
 
-# After (in your system_prompt.txt)
+# After (in your system_prompt_claude.txt)
 CONTEXT ABOUT John Smith (ONLY SOURCE OF TRUTH):
 ```
 
@@ -456,7 +451,7 @@ The tool learns from your feedback patterns and suggests permanent improvements 
 **How it works:**
 1. Every time you provide feedback, it's tracked and categorized (e.g., "leadership", "technical_depth", "tone")
 2. When you give similar feedback 3+ times, the system detects the pattern
-3. AI analyzes the pattern and suggests a permanent modification to `system_prompt.txt`
+3. AI analyzes the pattern and suggests a permanent modification to `system_prompt_claude.txt`
 4. You review the proposed change (with diff)
 5. If approved, the system prompt is updated automatically
 6. Future cover letters automatically incorporate this improvement
@@ -487,7 +482,7 @@ PROPOSED SYSTEM PROMPT UPDATE
 Explanation: Add explicit instruction to prominently feature leadership experience
 in the opening paragraphs with specific examples and metrics.
 
-This would modify your system_prompt.txt file to automatically
+This would modify your system_prompt_claude.txt file to automatically
 address this feedback pattern in future cover letters.
 
 Changes that would be made:
@@ -530,9 +525,9 @@ Choice [n]: y
 - **Specificity**: Examples, metrics, details
 
 **Files modified:**
-- `system_prompt.txt` - Your personalized system prompt
+- `system_prompt_claude.txt` - Your personalized system prompt
 - `.feedback_history.json` - Tracks feedback patterns (automatically managed)
-- `system_prompt.txt.backup` - Backup created before each change
+- `system_prompt_claude.txt.backup` - Backup created before each change
 
 ### PDF Output
 
@@ -620,11 +615,11 @@ The system prompt controls how cover letters are generated.
 **Initial Setup (Required):**
 1. Copy the example template:
    ```bash
-   cp system_prompt_example.txt system_prompt.txt
+   cp system_prompt_claude.txt.example system_prompt_claude.txt
    ```
 
 2. **Replace `{YOUR NAME}` with your actual name:**
-   - Open `system_prompt.txt` in your editor
+   - Open `system_prompt_claude.txt` in your editor
    - Use Find & Replace to change all instances of `{YOUR NAME}` to your actual name
    - Example: `{YOUR NAME}` → `John Smith`
    - This appears in multiple places throughout the file
@@ -632,14 +627,14 @@ The system prompt controls how cover letters are generated.
 3. Customize the prompt further if desired (optional)
 
 **Important:**
-- `system_prompt.txt` is YOUR personal configuration file
+- `system_prompt_claude.txt` is YOUR personal configuration file
 - It is **NOT tracked in git** (already in `.gitignore`)
-- Only `system_prompt_example.txt` is version controlled as a template
-- Never commit your personal `system_prompt.txt` to version control
+- Only `system_prompt_claude.txt.example` is version controlled as a template
+- Never commit your personal `system_prompt_claude.txt` to version control
 
 **Customization Options:**
 
-Edit `system_prompt.txt` to customize:
+Edit `system_prompt_claude.txt` to customize:
 
 - Tone and style
 - Structure and format
@@ -658,7 +653,7 @@ The prompt uses these variables:
 - `{job_title}`: The position you're applying for
 
 **Must be manually replaced during setup:**
-- `{YOUR NAME}`: Replace with your actual name (e.g., "John Smith") throughout the entire `system_prompt.txt` file
+- `{YOUR NAME}`: Replace with your actual name (e.g., "John Smith") throughout the entire `system_prompt_claude.txt` file
 
 ### Adding More Documents
 
@@ -724,8 +719,8 @@ cover-letter-ai-gen/
 │       ├── feedback_tracker.py    # Feedback pattern tracking
 │       ├── system_improver.py     # System prompt improvement suggester
 │       └── utils.py               # Utility functions
-├── system_prompt_example.txt      # System prompt template (example)
-├── system_prompt.txt              # Your personalized system prompt (not in git)
+├── system_prompt_claude.txt.example      # System prompt template (example)
+├── system_prompt_claude.txt              # Your personalized system prompt (not in git)
 ├── setup_google_drive.sh          # Google Drive setup script
 ├── DATA_SETUP.md                  # Google Drive setup guide
 ├── FILE_ORGANIZATION.md           # File organization guide
