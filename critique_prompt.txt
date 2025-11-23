@@ -11,6 +11,12 @@ JOB DESCRIPTION:
 This draft is already strong. Your job is to do a light polish, NOT a major rewrite. Preserve the voice, energy, and natural flow. Ensure the tone is conversational and authentic, not aggressive or sales-y. Only make changes if there are clear issues:
 
 **Check for:**
+- **CRITICAL - The 4 Pillars Check:** Does the letter cover ALL four areas?
+    1. **People:** Mentoring, hiring, conflict resolution, team growth.
+    2. **Process:** Agile, delivery, roadmap planning, efficiency.
+    3. **Technology:** Architecture, technical strategy, debt management.
+    4. **Strategy:** Business alignment, cross-functional impact, ROI.
+    *If any are missing, explicitly ask the user (or infer from context) to fill the gap.*
 - **CRITICAL - Company name:** Does the letter use "{company_name}" consistently? If the job description mentions product names, subsidiaries, or legal entities (e.g., "Aisle Planner Pro", "Fullsteam Operations LLC"), ensure the letter uses ONLY "{company_name}". Replace any incorrect company/product names with "{company_name}".
 - **Achievement fit:** Do the achievements selected actually match what THIS job needs? Or did you default to verification time/process improvement when they need team scaling/technical architecture?
 - **Quantifiable metrics:** Does EVERY achievement include a specific number, percentage, or scale metric? No vague statements like "improved performance" - must be "reduced latency by 45%"

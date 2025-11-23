@@ -749,6 +749,13 @@ cover-letter-ai-gen/
    - Groq's Llama 3.3 70B generates the cover letter
    - Results are streamed to the user in real-time
 
+## Advanced Configuration
+
+### Custom Prompts
+You can customize the behavior of the generator by creating local prompt files in the project root. These files are gitignored to protect your personal strategies.
+
+- **`critique_prompt.txt`**: Customize the refinement instructions used in the second stage of generation.
+
 ## Troubleshooting
 
 ### "ChromaDB not found" error

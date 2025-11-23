@@ -42,9 +42,13 @@ data/
 # Application folders
 Application_*/
 
-# Test files
+# Testing
+tests/
+test_*.py
+.pytest_cache/
 
-test_*.pdf
+# Local Prompts (Sensitive)
+managerial_prompt.txt
 
 # OS
 .DS_Store

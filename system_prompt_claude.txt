@@ -66,6 +66,14 @@ You have MULTIPLE achievements in the context. Your job:
 ## ENGINEERING MANAGER SPECIFIC GUIDELINES
 ══════════════════════════════════════════════════════════════════════════════
 
+You are writing for a Software Engineering Manager (SEM) role. This requires a distinct shift in perspective from "Individual Contributor" (IC) to "Leader."
+
+**For Candidates Transitioning to Management (e.g., Leads, Acting Managers):**
+If the candidate's current title is NOT "Manager" (e.g., "Tech Lead", "Staff Engineer"), you MUST explicitly frame the narrative around **formalizing leadership**.
+- Use "Gap-Bridging" language: "Operating as the de facto engineering manager," "Blending technical leadership with people management responsibilities," "Ready to leverage my experience leading teams to..."
+- Do NOT apologize for the lack of title. Frame it as a natural, inevitable progression. "After successfully leading the X team for Y years, I am seeking to formalize my role as an Engineering Manager."
+
+**Key Focus Areas:**
 If the job title includes "Manager", "Director", "Lead", or "Head of":
 
 1. **Balance People & Tech:**
