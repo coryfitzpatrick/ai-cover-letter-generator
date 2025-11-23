@@ -23,6 +23,11 @@ from sentence_transformers import SentenceTransformer
 _env_path = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(dotenv_path=_env_path)
 
+# Suppress ChromaDB telemetry errors
+from .utils import suppress_telemetry_errors
+
+suppress_telemetry_errors()
+
 # Chunking configuration
 DEFAULT_CHUNK_SIZE = 1000
 DEFAULT_OVERLAP = 200
@@ -218,7 +223,7 @@ def process_csv_files(data_dir: Path) -> List[Tuple[str, dict]]:
     if not csv_files:
         return results
 
-    print(f"\nScanning for LinkedIn CSV files...")
+    print("\nScanning for LinkedIn CSV files...")
 
     for csv_file in csv_files:
         file_name = csv_file.name.lower()
@@ -258,7 +263,7 @@ def process_json_files(data_dir: Path) -> List[Tuple[str, dict]]:
     if not json_files:
         return results
 
-    print(f"\nScanning for JSON files...")
+    print("\nScanning for JSON files...")
 
     for json_file in json_files:
         # Skip contact_info.json (it's configuration, not data)
@@ -425,12 +430,31 @@ def main():
             text = extract_text_from_pdf(str(pdf_file))
 
             if not text:
-                print(f"  Skipped (empty or error)")
+                print("  Skipped (empty or error)")
                 continue
+
+            # Smart Metadata Extraction from Filename
+            # Try to infer company and year from filename (e.g., "2024_Johnson_Performance.pdf")
+            filename_lower = pdf_file.name.lower()
+            inferred_company = "unknown"
+            inferred_year = "unknown"
+
+            # Check for known companies (expand this list based on user's history)
+            known_companies = ["johnson", "j&j", "fitbit", "google", "amazon", "microsoft", "startup"]
+            for company in known_companies:
+                if company in filename_lower:
+                    inferred_company = company
+                    break
+            
+            # Check for year (2010-2030)
+            import re
+            year_match = re.search(r'20[12]\d', filename_lower)
+            if year_match:
+                inferred_year = year_match.group(0)
 
             # Chunk the text
             chunks = chunk_text(text)
-            print(f"  Created {len(chunks)} chunks")
+            print(f"  Created {len(chunks)} chunks (Company: {inferred_company}, Year: {inferred_year})")
 
             # Add each chunk as a document
             for i, chunk in enumerate(chunks):
@@ -441,7 +465,9 @@ def main():
                     "source": str(relative_path),
                     "type": "pdf",
                     "chunk_index": i,
-                    "total_chunks": len(chunks)
+                    "total_chunks": len(chunks),
+                    "company": inferred_company,
+                    "year": inferred_year
                 })
                 ids.append(f"doc_{doc_id}")
                 doc_id += 1
@@ -461,12 +487,27 @@ def main():
             text = extract_text_from_docx(str(docx_file))
 
             if not text:
-                print(f"  Skipped (empty or error)")
+                print("  Skipped (empty or error)")
                 continue
+
+            # Smart Metadata Extraction from Filename
+            filename_lower = docx_file.name.lower()
+            inferred_company = "unknown"
+            inferred_year = "unknown"
+
+            known_companies = ["johnson", "j&j", "fitbit", "google", "amazon", "microsoft", "startup"]
+            for company in known_companies:
+                if company in filename_lower:
+                    inferred_company = company
+                    break
+            
+            year_match = re.search(r'20[12]\d', filename_lower)
+            if year_match:
+                inferred_year = year_match.group(0)
 
             # Chunk the text
             chunks = chunk_text(text)
-            print(f"  Created {len(chunks)} chunks")
+            print(f"  Created {len(chunks)} chunks (Company: {inferred_company}, Year: {inferred_year})")
 
             # Add each chunk as a document
             for i, chunk in enumerate(chunks):
@@ -477,7 +518,9 @@ def main():
                     "source": str(relative_path),
                     "type": "docx",
                     "chunk_index": i,
-                    "total_chunks": len(chunks)
+                    "total_chunks": len(chunks),
+                    "company": inferred_company,
+                    "year": inferred_year
                 })
                 ids.append(f"doc_{doc_id}")
                 doc_id += 1

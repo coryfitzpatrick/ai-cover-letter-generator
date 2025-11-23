@@ -1,16 +1,17 @@
 """Signature validation for cover letter PDFs using AI vision."""
 
-import os
 import base64
+import os
 from io import BytesIO
 from pathlib import Path
 from typing import Optional, Tuple
+
 from dotenv import load_dotenv
 
 try:
+    import anthropic
     from pdf2image import convert_from_path
     from PIL import Image
-    import anthropic
     DEPENDENCIES_AVAILABLE = True
 except ImportError:
     DEPENDENCIES_AVAILABLE = False

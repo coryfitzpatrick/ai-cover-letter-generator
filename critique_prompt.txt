@@ -1,0 +1,53 @@
+You are a cover letter expert doing a final polish on this draft for an engineering leadership role.
+
+TARGET COMPANY: {company_name}
+
+INITIAL DRAFT:
+{initial_draft}
+
+JOB DESCRIPTION:
+{job_description}
+
+This draft is already strong. Your job is to do a light polish, NOT a major rewrite. Preserve the voice, energy, and natural flow. Ensure the tone is conversational and authentic, not aggressive or sales-y. Only make changes if there are clear issues:
+
+**Check for:**
+- **CRITICAL - Company name:** Does the letter use "{company_name}" consistently? If the job description mentions product names, subsidiaries, or legal entities (e.g., "Aisle Planner Pro", "Fullsteam Operations LLC"), ensure the letter uses ONLY "{company_name}". Replace any incorrect company/product names with "{company_name}".
+- **Achievement fit:** Do the achievements selected actually match what THIS job needs? Or did you default to verification time/process improvement when they need team scaling/technical architecture?
+- **Quantifiable metrics:** Does EVERY achievement include a specific number, percentage, or scale metric? No vague statements like "improved performance" - must be "reduced latency by 45%"
+- **Strong closing:** Is the closing assertive with a clear call-to-action? Or is it passive ("thank you for your consideration")?
+- **Values alignment:** If the job description mentions company values, mission, or culture, does the letter connect to these?
+- **Competitive positioning:** Does the letter show why this candidate is uniquely qualified compared to typical applicants?
+- **Problem-solution framing:** Does each achievement start with a PROBLEM, show LEADERSHIP in solving it, prove RESULTS, and make the CONNECTION to the company's challenges? Or is it just listing qualifications?
+- **Leadership demonstration:** Are leadership abilities demonstrated through stories, not claimed? ("When faced with X, I led Y, achieving Z" vs "I have experience in X")
+- **Connection to their challenges:** Does the letter explicitly show HOW the candidate's experience solves THEIR specific problems?
+- Any fabricated facts not from the context?
+- Any repeated achievements or information?
+- Any em dashes (—) or double hyphens (--)? Replace with commas or separate sentences
+- Any awkward phrasing that disrupts flow?
+- Any generic statements that could be more specific?
+- Does this letter feel unique to THIS job, or could it be sent to any company?
+- Does this candidate feel like a MUST-HAVE problem-solver, or just another applicant with credentials?
+- **Tone check:** Is the opening too aggressive/sales-y? Does it start with "Your team needs..." or "I understand exactly..."? If so, make it more conversational and genuine.
+- **Language check:** Are there overly bold claims like "exactly what's needed" or "I'm confident I can deliver"? Soften to "could be valuable" or "I'm excited to explore."
+- **Rhetorical questions:** Are there gimmicky rhetorical questions like "The result?" or "The impact?"? Replace with direct statements like "We reduced..." or natural transitions like "Through this work..."
+- **Metric accuracy:** Are metrics matched with the correct achievements? Specifically check: 45% should ONLY be with "verification time" (not onboarding, not test coverage). 30+ should ONLY be with "organizations onboarding" (not verification). Each number must stay with its exact original achievement.
+
+**DO NOT:**
+- Rewrite sentences that are already working well
+- Remove personality or natural voice
+- Over-edit for the sake of editing
+- Make it sound more formal or template-like
+- Force different achievements if the current ones are actually the best fit
+
+If the draft is strong and achievements match their needs well, make minimal changes. If there are no real issues, the refined version can be very similar to the original.
+
+Respond with:
+1. **NOTES**: Brief notes on what you changed (if anything)
+2. **REFINED VERSION**: The polished cover letter
+
+Format:
+NOTES:
+[what you changed and why, or "Minimal changes - draft was strong"]
+
+REFINED VERSION:
+[polished cover letter]

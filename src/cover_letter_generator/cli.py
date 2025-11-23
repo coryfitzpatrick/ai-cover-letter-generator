@@ -5,16 +5,18 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
+
 from dotenv import load_dotenv
 
-from .generator import CoverLetterGenerator
-from .pdf_generator_template import generate_cover_letter_pdf
-from .utils import create_folder_name_from_details
-from .signature_validator import validate_pdf_signature
-from .job_parser import parse_job_from_url, is_valid_url
+from .docx_generator import generate_cover_letter_docx
 from .feedback_tracker import FeedbackTracker
-from .system_improver import SystemImprover
+from .generator import CoverLetterGenerator
+from .job_parser import is_valid_url, parse_job_from_url
 from .job_tracker import JobTracker
+from .pdf_generator_template import generate_cover_letter_pdf
+from .signature_validator import validate_pdf_signature
+from .system_improver import SystemImprover
+from .utils import create_folder_name_from_details
 
 # Load environment variables
 load_dotenv()
@@ -26,7 +28,7 @@ USER_NAME = os.getenv("USER_NAME")
 # Edit these values to customize your cover letter headers
 DEFAULT_CONTACT_INFO = {
     "name": USER_NAME,
-    "email": "cory@coryfitzpatrick.com",
+    "email": "coryartfitz@gmail.com",
     "phone": "",  # Optional: add phone number
     "location": "Greater Boston",
     "linkedin": "https://www.linkedin.com/in/coryfitzpatrick",
@@ -39,21 +41,28 @@ DEFAULT_OUTPUT_DIR = (
     / "Library/Mobile Documents/com~apple~CloudDocs/Documents/Cover Letters"
 )
 
+# UI formatting constants
+SEPARATOR_LINE = "=" * 80
+DASH_LINE = "-" * 80
 
+# Shortening constants (for automatic length adjustments)
+SHORTENING_BUFFER_MULTIPLIER = 1.15  # Add 15% buffer when calculating words to remove
+MINIMAL_SHORTENING_WORDS = 20  # Minimum words to remove for tight fit
+MODERATE_SHORTENING_WORDS = 40  # Moderate shortening when more space needed
 
 
 def print_welcome():
     """Print welcome message."""
-    print("\n" + "=" * 80)
+    print("\n" + SEPARATOR_LINE)
     print("Cover Letter Generator")
-    print("=" * 80)
+    print(SEPARATOR_LINE)
     print("\nThis tool generates personalized cover letters based on job descriptions.")
     print("\nInstructions:")
     print("  1. Paste a job posting URL OR enter details manually")
     print("  2. The cover letter will be generated and displayed")
     print("  3. Provide feedback or save the final version")
     print("\nType 'quit' or 'exit' to exit the program.")
-    print("=" * 80 + "\n")
+    print(SEPARATOR_LINE + "\n")
 
 
 def read_multiline_input(prompt: str) -> str:
@@ -93,13 +102,13 @@ def show_job_details(company_name: str, job_title: str, job_description: str):
         job_title: Job title
         job_description: Full job description
     """
-    print("\n" + "=" * 80)
+    print("\n" + SEPARATOR_LINE)
     print("EXTRACTED JOB DETAILS")
-    print("=" * 80)
+    print(SEPARATOR_LINE)
     print(f"\nCompany Name: {company_name}")
     print(f"Job Title: {job_title}")
     print(f"\nJob Description ({len(job_description)} characters):")
-    print("-" * 80)
+    print(DASH_LINE)
 
     # Show first 2000 characters of description
     if len(job_description) > 2000:
@@ -108,7 +117,7 @@ def show_job_details(company_name: str, job_title: str, job_description: str):
     else:
         print(job_description)
 
-    print("-" * 80)
+    print(DASH_LINE)
 
 
 def edit_job_field(field_name: str, current_value: str, multiline: bool = False) -> str:
@@ -193,15 +202,23 @@ def save_cover_letter(
     user_name = os.getenv("USER_NAME")
     base_filename = f"{user_name} Cover Letter"
 
-    # Save as PDF only
+    # Save as both PDF and DOCX
     pdf_filepath = application_dir / f"{base_filename}.pdf"
+    docx_filepath = application_dir / f"{base_filename}.docx"
+
     generate_cover_letter_pdf(
         cover_letter, application_dir, f"{base_filename}.pdf", DEFAULT_CONTACT_INFO
     )
 
-    # Print saved file location
+    generate_cover_letter_docx(
+        cover_letter, application_dir, f"{base_filename}.docx"
+    )
+
+    # Print saved file locations
     print()
-    print(f"✓ Cover letter saved to: {pdf_filepath}")
+    print("✓ Cover letter saved:")
+    print(f"  PDF:  {pdf_filepath}")
+    print(f"  DOCX: {docx_filepath}")
 
     # Validate signature (pass cover letter text for precise cut-off calculation)
     validation_result = validate_pdf_signature(
@@ -249,16 +266,32 @@ def main():
         # Print welcome message
         print_welcome()
 
+        # Ask user which Claude model to use
+        print("\n" + "="*80)
+        print("Which Claude model would you like to use?")
+        print("="*80)
+        print("\nAvailable models:")
+        print("  (1) Claude Sonnet 4.5 [Default]")
+        print("      - Excellent quality, fast, cost-effective")
+        print("      - Cost: ~$0.12-0.20 per cover letter")
+        print("  (2) Claude Opus 4")
+        print("      - Maximum power, best reasoning")
+        print("      - Cost: ~$0.50-0.70 per cover letter (4x more expensive)")
+        print()
+
+        model_choice = input("Choice [1]: ").strip() or "1"
+        claude_model = "sonnet" if model_choice == "1" else "opus"
+
         # Initialize generator
         try:
-            generator = CoverLetterGenerator()
+            generator = CoverLetterGenerator(claude_model=claude_model)
         except FileNotFoundError as e:
             print(f"Error: {e}")
             print("\nPlease run 'prepare-data' first to set up the knowledge base.")
             sys.exit(1)
         except ValueError as e:
             print(f"Error: {e}")
-            print("\nPlease set GROQ_API_KEY in your .env file.")
+            print("\nPlease ensure ANTHROPIC_API_KEY and GROQ_API_KEY are set in your .env file.")
             sys.exit(1)
         except Exception as e:
             print(f"Unexpected error during initialization: {e}")
@@ -276,7 +309,7 @@ def main():
         # Initialize job tracker (optional feature)
         try:
             job_tracker = JobTracker()
-        except Exception as e:
+        except Exception:
             # Silently disable if not configured
             job_tracker = None
 
@@ -288,7 +321,7 @@ def main():
             job_url = None  # Track the job URL for adding to tracker
 
             # Ask for input method
-            print("\n" + "-" * 80)
+            print("\n" + DASH_LINE)
             print("How would you like to provide the job posting?")
             print("  (1) Paste a URL to the job posting")
             print("  (2) Enter details manually")
@@ -345,6 +378,7 @@ def main():
                         job_title = job_posting.job_title
                         job_description = job_posting.job_description
                         job_url = url  # Save the URL for job tracker
+                        custom_context = None  # Custom context for this specific job
 
                         # Review and edit loop
                         while True:
@@ -355,6 +389,7 @@ def main():
                             print("  (4) Edit description")
                             print("  (5) View full description")
                             print("  (6) Start over - enter all details manually")
+                            print("  (7) Add custom context for this job" + (" ✓" if custom_context else ""))
                             print("\nChoice [1]: ", end='')
 
                             try:
@@ -379,11 +414,11 @@ def main():
 
                                 elif review_choice == '5':
                                     # Show full description
-                                    print("\n" + "=" * 80)
+                                    print("\n" + SEPARATOR_LINE)
                                     print("FULL JOB DESCRIPTION")
-                                    print("=" * 80)
+                                    print(SEPARATOR_LINE)
                                     print(job_description)
-                                    print("=" * 80)
+                                    print(SEPARATOR_LINE)
 
                                 elif review_choice == '6':
                                     # Start over with manual entry
@@ -394,8 +429,44 @@ def main():
                                     job_description = None
                                     break
 
+                                elif review_choice == '7':
+                                    # Add custom context
+                                    print("\n" + SEPARATOR_LINE)
+                                    print("ADD CUSTOM CONTEXT FOR THIS JOB")
+                                    print(SEPARATOR_LINE)
+                                    print("\nThis context will be used ONLY for this cover letter.")
+                                    print("Use this to add relevant experience not in your resume/data.")
+                                    print("\nExamples:")
+                                    print("  - Previous companies relevant to this industry (e.g., FedEx for shipping jobs)")
+                                    print("  - Side projects or volunteer work")
+                                    print("  - Certifications or training")
+                                    print("  - Domain expertise or knowledge")
+                                    print("\nEnter custom context (or press Ctrl+D when done):")
+                                    print(DASH_LINE)
+
+                                    try:
+                                        lines = []
+                                        while True:
+                                            try:
+                                                line = input()
+                                                lines.append(line)
+                                            except EOFError:
+                                                break
+
+                                        custom_context = '\n'.join(lines).strip()
+
+                                        if custom_context:
+                                            print("\n✓ Custom context added")
+                                            print(f"  Length: {len(custom_context)} characters")
+                                        else:
+                                            print("\n  No context entered")
+                                            custom_context = None
+
+                                    except KeyboardInterrupt:
+                                        print("\n\nCancelled.")
+
                                 else:
-                                    print("Invalid choice. Please select 1-6.")
+                                    print("Invalid choice. Please select 1-7.")
 
                             except (EOFError, KeyboardInterrupt):
                                 print("\n\nCancelled. Using extracted details as-is.")
@@ -407,6 +478,7 @@ def main():
 
             # Handle manual input (either chosen initially or as fallback)
             if input_choice == '2':
+                custom_context = None  # Initialize for manual entry path
                 print("\nCompany Name: ", end='')
                 try:
                     company_name = input().strip()
@@ -451,22 +523,48 @@ def main():
                 print("Missing required information. Please try again.")
                 continue
 
-            try:
-                # Generate cover letter with streaming
-                cover_letter_parts = []
-                for chunk in generator.generate_cover_letter_stream(job_description, company_name, job_title):
-                    print(chunk, end='', flush=True)
-                    cover_letter_parts.append(chunk)
+            # Ask for any final custom instructions
+            print("\n" + DASH_LINE)
+            print("Do you have any specific instructions for this cover letter?")
+            print("(e.g., 'Focus on my startup experience', 'Keep it under 300 words')")
+            print("Press Enter to skip.")
+            print(DASH_LINE)
+            
+            additional_instructions = input("Instructions: ").strip()
+            if additional_instructions:
+                if custom_context:
+                    custom_context += f"\n\nADDITIONAL INSTRUCTIONS:\n{additional_instructions}"
+                else:
+                    custom_context = f"ADDITIONAL INSTRUCTIONS:\n{additional_instructions}"
+                print("✓ Instructions added")
 
-                # Combine the body - LLM includes the date
-                cover_letter = ''.join(cover_letter_parts)
+            # Generate cover letter using Claude Sonnet 4.5
+            print("\nGenerating cover letter with Claude Sonnet 4.5...")
+            print("(Two-stage generation and refinement process)")
+
+            try:
+                cover_letter, cost_info = generator.generate_cover_letter_claude_two_stage(
+                    job_description, company_name, job_title, custom_context=custom_context
+                )
+
+                # Display the generated cover letter
+                print("\n" + SEPARATOR_LINE)
+                print("GENERATED COVER LETTER")
+                print(SEPARATOR_LINE)
+                print(cover_letter)
+                print(SEPARATOR_LINE)
+
+                print("\n" + DASH_LINE)
+                print(f"💰 Cost for this letter: ${cost_info['total_cost']:.4f}")
+                print(f"   Session total: ${cost_info['session_total']:.4f}")
+                print(DASH_LINE)
 
                 # Ensure it ends with signature
                 cover_letter = ensure_signature(cover_letter, USER_NAME)
 
-                print("\n" + "-" * 80)
+                print("\n" + DASH_LINE)
 
-                # Feedback loop
+                # Feedback loop (with save/validate as inner section)
                 while True:
                     # Ask if user wants to save or provide feedback
                     print("\nOptions:")
@@ -491,112 +589,240 @@ def main():
                                 print("No feedback provided, skipping revision.")
                                 continue
 
-                            # Use feedback directly (no enhancement)
-                            # Regenerate with user's feedback AS-IS
-                            cover_letter_parts = []
-                            for chunk in generator.revise_cover_letter_stream(
+                            print()  # Add blank line after multiline input
+
+                            # Revise with Claude (but don't commit yet)
+                            revised_letter, cost_info = generator.revise_cover_letter_claude(
                                 cover_letter,
                                 user_feedback,
                                 job_description,
                                 company_name,
-                                job_title
-                            ):
-                                print(chunk, end='', flush=True)
-                                cover_letter_parts.append(chunk)
+                                job_title,
+                                custom_context=custom_context
+                            )
 
-                            # Combine the body - LLM includes the date
-                            cover_letter = ''.join(cover_letter_parts)
+                            # Display the revised cover letter as preview
+                            print("\n" + SEPARATOR_LINE)
+                            print("REVISED COVER LETTER (PREVIEW)")
+                            print(SEPARATOR_LINE)
+                            print(revised_letter)
+                            print(SEPARATOR_LINE)
 
-                            # Ensure it ends with signature
-                            cover_letter = ensure_signature(cover_letter, USER_NAME)
+                            print("\n" + DASH_LINE)
+                            print(f"💰 Revision cost: ${cost_info['revision_cost']:.4f}")
+                            print(f"   Session total: ${cost_info['session_total']:.4f}")
+                            print(DASH_LINE)
 
-                            print("\n" + "-" * 80)
+                            # Ensure preview has signature
+                            revised_letter = ensure_signature(revised_letter, USER_NAME)
 
-                            # META-LEARNING: Track feedback and check for patterns
-                            if feedback_tracker and system_improver:
+                            # Ask user what to do with the revision
+                            print("\n" + SEPARATOR_LINE)
+                            print("REVIEW REVISION")
+                            print(SEPARATOR_LINE)
+                            print("\nWhat would you like to do?")
+                            print("  (1) Accept - Use this version")
+                            print("  (2) Provide more feedback on this revised version")
+                            print("  (3) Reject - Go back to original")
+                            print()
+
+                            # Wait for explicit user input
+                            approval_received = False
+                            while not approval_received:
+                                print("Enter your choice (1, 2, or 3): ", end='')
+                                sys.stdout.flush()
+
                                 try:
-                                    # Track the feedback
-                                    feedback_tracker.add_feedback(user_feedback, company_name, job_title)
+                                    approve_choice = input().strip()
+                                    if approve_choice in ['1', '2', '3']:
+                                        approval_received = True
+                                    elif not approve_choice:
+                                        print("Please enter 1, 2, or 3")
+                                    else:
+                                        print(f"Invalid choice '{approve_choice}'. Please enter 1, 2, or 3.")
+                                except EOFError:
+                                    print("\nEOF detected. Defaulting to reject (keeping original).")
+                                    approve_choice = '3'
+                                    approval_received = True
+                                except KeyboardInterrupt:
+                                    print("\n\nCancelled. Keeping original version.")
+                                    approve_choice = '3'
+                                    approval_received = True
+                                    break
 
-                                    # Check for recurring patterns
-                                    pattern = feedback_tracker.detect_recurring_pattern(threshold=3)
+                            try:
+                                if approve_choice == '1':
+                                    # Accept the revision - use this as new version
+                                    cover_letter = revised_letter
+                                    print("\n✓ Revision accepted - this is now your current version")
 
-                                    if pattern:
-                                        category, count, examples = pattern
+                                    # META-LEARNING: Track feedback and check for patterns (only if accepted)
+                                    if feedback_tracker and system_improver:
+                                        try:
+                                            # Track the feedback
+                                            feedback_tracker.add_feedback(user_feedback, company_name, job_title)
 
-                                        print("\n" + "=" * 80)
-                                        print("💡 SYSTEM IMPROVEMENT SUGGESTION")
-                                        print("=" * 80)
-                                        print(f"\nI've noticed you've given similar feedback {count} times:")
-                                        print(f"Category: {category.replace('_', ' ').title()}")
-                                        print("\nExamples:")
-                                        for ex in examples[-3:]:
-                                            print(f'  - "{ex}"')
-                                        print()
+                                            # Check for recurring patterns
+                                            pattern = feedback_tracker.detect_recurring_pattern(threshold=3)
 
-                                        # Generate improvement suggestion
-                                        print("Analyzing patterns to suggest permanent improvements to the generator...")
-                                        result = system_improver.suggest_and_show(category, examples, count)
+                                            if pattern:
+                                                category, count, examples = pattern
 
-                                        if result:
-                                            diff_text, improved_prompt, explanation, data_note = result
+                                                print("\n" + SEPARATOR_LINE)
+                                                print("💡 SYSTEM IMPROVEMENT SUGGESTION")
+                                                print(SEPARATOR_LINE)
+                                                print(f"\nI've noticed you've given similar feedback {count} times:")
+                                                print(f"Category: {category.replace('_', ' ').title()}")
+                                                print("\nExamples:")
+                                                for ex in examples[-3:]:
+                                                    print(f'  - "{ex}"')
+                                                print()
 
-                                            print("\n" + "=" * 80)
-                                            print("💡 GENERATOR IMPROVEMENT SUGGESTION")
-                                            print("=" * 80)
-                                            print(f"\nWhy you keep giving this feedback: {explanation}")
-                                            print("\nProposed fix: Update system_prompt.txt to automatically address this")
-                                            print("in all future cover letters, so you never have to ask again.")
+                                                # Generate improvement suggestion
+                                                print("Analyzing patterns to suggest permanent improvements to the generator...")
+                                                result = system_improver.suggest_and_show(category, examples, count)
 
-                                            if data_note and data_note.lower() != "none":
-                                                print(f"\n📊 Data suggestion: {data_note}")
-                                            print()
+                                                if result:
+                                                    diff_text, improved_prompt, explanation, data_note = result
 
-                                            # Show abbreviated diff (just the additions)
-                                            print("Changes that would be made:")
-                                            print("-" * 80)
-                                            diff_lines = diff_text.split('\n')
-                                            for line in diff_lines:
-                                                if line.startswith('+') and not line.startswith('+++'):
-                                                    print(line)
-                                            print("-" * 80)
-                                            print()
+                                                    print("\n" + SEPARATOR_LINE)
+                                                    print("💡 GENERATOR IMPROVEMENT SUGGESTION")
+                                                    print(SEPARATOR_LINE)
+                                                    print(f"\nWhy you keep giving this feedback: {explanation}")
+                                                    print("\nProposed fix: Update system_prompt_claude.txt to automatically address this")
+                                                    print("in all future cover letters, so you never have to ask again.")
 
-                                            print("Would you like to apply this permanent improvement?")
-                                            print("  (y) Yes, update the system prompt")
-                                            print("  (n) No, keep asking me each time")
-                                            print("  (v) View full diff")
-                                            print("\nChoice [n]: ", end='')
+                                                    if data_note and data_note.lower() != "none":
+                                                        print(f"\n📊 Data suggestion: {data_note}")
+                                                    print()
 
-                                            try:
-                                                improve_choice = input().strip().lower() or 'n'
+                                                    # Show abbreviated diff (just the additions)
+                                                    print("Changes that would be made:")
+                                                    print(DASH_LINE)
+                                                    diff_lines = diff_text.split('\n')
+                                                    for line in diff_lines:
+                                                        if line.startswith('+') and not line.startswith('+++'):
+                                                            print(line)
+                                                    print(DASH_LINE)
+                                                    print()
 
-                                                if improve_choice == 'v':
-                                                    print("\nFull diff:")
-                                                    print(diff_text)
-                                                    print("\nApply this improvement? (y/n) [n]: ", end='')
-                                                    improve_choice = input().strip().lower() or 'n'
+                                                    print("Would you like to apply this permanent improvement?")
+                                                    print("  (y) Yes, update the system prompt")
+                                                    print("  (n) No, keep asking me each time")
+                                                    print("  (v) View full diff")
+                                                    print("\nChoice [n]: ", end='')
 
-                                                if improve_choice == 'y':
-                                                    system_improver.apply_improvement(improved_prompt)
-                                                    feedback_tracker.clear_category(category)
-                                                    print("\n✓ System prompt updated successfully!")
-                                                    print("✓ Future cover letters will automatically incorporate this improvement.")
-                                                    print(f"✓ Cleared {count} feedback entries for '{category}' category.")
+                                                    try:
+                                                        improve_choice = input().strip().lower() or 'n'
+
+                                                        if improve_choice == 'v':
+                                                            print("\nFull diff:")
+                                                            print(diff_text)
+                                                            print("\nApply this improvement? (y/n) [n]: ", end='')
+                                                            improve_choice = input().strip().lower() or 'n'
+
+                                                        if improve_choice == 'y':
+                                                            system_improver.apply_improvement(improved_prompt)
+                                                            feedback_tracker.clear_category(category)
+                                                            print("\n✓ System prompt updated successfully!")
+                                                            print("✓ Future cover letters will automatically incorporate this improvement.")
+                                                            print(f"✓ Cleared {count} feedback entries for '{category}' category.")
+                                                        else:
+                                                            print("\nImprovement not applied. I'll keep tracking this feedback.")
+
+                                                    except (EOFError, KeyboardInterrupt):
+                                                        print("\n\nImprovement not applied.")
+
                                                 else:
-                                                    print("\nImprovement not applied. I'll keep tracking this feedback.")
+                                                    print("\nCould not generate an automatic improvement suggestion at this time.")
+                                                    print("Please try again later or add the rule manually.")
 
-                                            except (EOFError, KeyboardInterrupt):
-                                                print("\n\nImprovement not applied.")
+                                        except Exception as e:
+                                            print(f"\nNote: Meta-learning feature encountered an issue: {e}")
 
-                                except Exception as e:
-                                    print(f"\nNote: Meta-learning feature encountered an issue: {e}")
+                                elif approve_choice == '2':
+                                    # Iterate on this revised version - continue providing feedback
+                                    print("\n✓ Continuing to iterate on this revised version")
+                                    print("You can now provide more feedback to further refine it.\n")
+
+                                    # Temporarily use the revised version for the next iteration
+                                    # but don't mark it as "accepted" yet (no meta-learning tracking)
+                                    temp_working_version = revised_letter
+
+                                    # Inner feedback loop - iterate on the revised version
+                                    iterating_on_revision = True
+                                    while iterating_on_revision:
+                                        print("Provide feedback on this version (or type 'accept' to use it, 'cancel' to discard):")
+                                        print("(Press Ctrl+D when done with feedback)")
+
+                                        try:
+                                            refinement_feedback = read_multiline_input("")
+
+                                            if refinement_feedback and refinement_feedback.strip().lower() == 'accept':
+                                                # Accept this iteration
+                                                cover_letter = temp_working_version
+                                                print("\n✓ Accepted this version")
+                                                iterating_on_revision = False
+                                                break
+                                            elif refinement_feedback and refinement_feedback.strip().lower() == 'cancel':
+                                                # Cancel - go back to original
+                                                print("\n✓ Cancelled - keeping original version")
+                                                iterating_on_revision = False
+                                                break
+                                            elif not refinement_feedback or not refinement_feedback.strip():
+                                                print("No feedback provided. Type 'accept' to use current version or 'cancel' to go back.")
+                                                continue
+
+                                            print()  # Blank line after input
+
+                                            # Generate another revision based on this feedback
+                                            further_revised, cost_info = generator.revise_cover_letter_claude(
+                                                temp_working_version,
+                                                refinement_feedback,
+                                                job_description,
+                                                company_name,
+                                                job_title,
+                                                custom_context=custom_context
+                                            )
+
+                                            # Show the further revised version
+                                            print("\n" + SEPARATOR_LINE)
+                                            print("FURTHER REVISED VERSION (PREVIEW)")
+                                            print(SEPARATOR_LINE)
+                                            print(further_revised)
+                                            print(SEPARATOR_LINE)
+
+                                            print("\n" + DASH_LINE)
+                                            print(f"💰 Revision cost: ${cost_info['revision_cost']:.4f}")
+                                            print(f"   Session total: ${cost_info['session_total']:.4f}")
+                                            print(DASH_LINE)
+
+                                            # Ensure signature
+                                            further_revised = ensure_signature(further_revised, USER_NAME)
+
+                                            # Update the temp working version
+                                            temp_working_version = further_revised
+                                            print()
+
+                                        except (EOFError, KeyboardInterrupt):
+                                            print("\n\nCancelled iteration - keeping original version")
+                                            iterating_on_revision = False
+                                            break
+
+                                else:  # approve_choice == '3'
+                                    # Reject the revision - keep the original
+                                    print("\n✓ Revision rejected - keeping original version")
+                                    print("You can provide different feedback on the original.")
+
+                            except Exception as e:
+                                print(f"\n\nError during approval: {e}")
+                                print("Revision rejected - keeping original version")
 
                             # Continue the loop to ask again
 
                         elif choice == '1':
-                            # Save the cover letter
-                            break  # Exit feedback loop to save
+                            # Save the cover letter - fall through to save section
+                            pass  # Don't break - let it fall through to save/validate
 
                         elif choice == '3':
                             # Start over
@@ -618,140 +844,141 @@ def main():
                         print("\n\nOperation cancelled.")
                         break
 
-                # If user chose to start over, skip saving
-                if cover_letter is None:
-                    continue
+                    # If user chose to start over, skip saving
+                    if cover_letter is None:
+                        break  # Exit feedback loop to start over
 
-                # Save/validate loop - allows regenerating if signature is cut off
-                save_and_validate_complete = False
-                while not save_and_validate_complete:
-                    # Save the cover letter as PDF and validate signature
-                    validation_result = save_cover_letter(cover_letter, company_name, job_title)
+                    # Save/validate loop - allows regenerating if signature is cut off
+                    save_and_validate_complete = False
+                    while not save_and_validate_complete:
+                        # Save the cover letter as PDF and validate signature
+                        validation_result = save_cover_letter(cover_letter, company_name, job_title)
 
-                    # Check if signature validation failed
-                    if not validation_result.is_valid and validation_result.confidence in ["high", "medium"]:
-                        print("\n" + "=" * 80)
-                        print("⚠ SIGNATURE ISSUE DETECTED")
-                        print("=" * 80)
-                        print(f"\nThe signature appears to be cut off or not fully visible.")
-                        print(f"Details: {validation_result.message}")
-                        if validation_result.details:
-                            print(f"Additional info: {validation_result.details}")
+                        # Check if signature validation failed
+                        if not validation_result.is_valid and validation_result.confidence in ["high", "medium"]:
+                            print("\n" + SEPARATOR_LINE)
+                            print("⚠ SIGNATURE ISSUE DETECTED")
+                            print(SEPARATOR_LINE)
+                            print("\nThe signature appears to be cut off or not fully visible.")
+                            print(f"Details: {validation_result.message}")
+                            if validation_result.details:
+                                print(f"Additional info: {validation_result.details}")
 
-                        print("\nWhat would you like to do?")
-                        print("  (1) Regenerate a shorter version")
-                        print("  (2) Manually revise to shorten")
-                        print("  (3) Keep the current version")
-                        print("\nChoice [1]: ", end='')
+                            print("\nWhat would you like to do?")
+                            print("  (1) Regenerate a shorter version")
+                            print("  (2) Manually revise to shorten")
+                            print("  (3) Keep the current version")
+                            print("\nChoice [1]: ", end='')
+
+                            try:
+                                shorten_choice = input().strip() or '1'
+
+                                if shorten_choice == '1':
+                                    # Determine shortening approach based on validation details
+                                    details_lower = (validation_result.details or "").lower()
+                                    message_lower = validation_result.message.lower()
+
+                                    # Try to extract word count from details
+                                    word_match = re.search(r'approximately\s+(\d+)\s+words?\s+(?:are\s+)?cut\s+off', details_lower)
+
+                                    if word_match:
+                                        # Precise shortening based on actual word count
+                                        words_cut_off = int(word_match.group(1))
+                                        # Suggest removing slightly more to ensure it fits (add 10-20%)
+                                        words_to_remove = int(words_cut_off * 1.15)
+                                        shortening_feedback = f"Revise the cover letter to be approximately {words_to_remove} words shorter to ensure the signature fits on one page. Keep all key achievements but make the content more concise."
+                                        print(f"\nRegenerating with targeted shortening (approximately {words_cut_off} words cut off, removing ~{words_to_remove} words)...")
+                                    elif "only signature" in details_lower and "body text fits" in details_lower:
+                                        # Just signature cut off, minimal shortening needed
+                                        shortening_feedback = "Revise to be slightly shorter (about 15-25 words) to make room for the signature. Keep all key achievements and important details - just trim minimally."
+                                        print("\nRegenerating with minimal shortening (just signature needs space)...")
+                                    else:
+                                        # Default: moderate shortening
+                                        shortening_feedback = "Make the cover letter more concise to ensure the signature fits. Remove 2-3 sentences or combine points where possible, keeping the most impactful achievements."
+                                        print("\nRegenerating with moderate shortening...")
+
+                                    print(f"Feedback: {shortening_feedback}")
+                                    print()
+
+                                    # Regenerate with automatic feedback to shorten
+                                    cover_letter_parts = []
+                                    for chunk in generator.revise_cover_letter_stream(
+                                        cover_letter,
+                                        shortening_feedback,
+                                        job_description,
+                                        company_name,
+                                        job_title
+                                    ):
+                                        print(chunk, end='', flush=True)
+                                        cover_letter_parts.append(chunk)
+
+                                    # Combine the body - LLM includes the date
+                                    cover_letter = ''.join(cover_letter_parts)
+
+                                    # Ensure it ends with signature
+                                    cover_letter = ensure_signature(cover_letter, USER_NAME)
+
+                                    print("\n" + DASH_LINE)
+
+                                    # Track this automatic feedback for meta-learning
+                                    if feedback_tracker:
+                                        feedback_tracker.add_feedback(shortening_feedback, company_name, job_title)
+
+                                    # Now give user chance to review shortened version before saving
+                                    print("\n✓ Shortened version generated.")
+                                    print("\nReturning to options so you can review and choose to save or revise further...")
+                                    save_and_validate_complete = 'manual_revision'
+                                    break  # Break out to return to feedback loop
+
+                                elif shorten_choice == '2':
+                                    # User wants to manually revise - go back to feedback loop
+                                    print("\nReturning to feedback options. You can now provide manual revisions.")
+                                    # Break out of save/validate loop and set flag to return to feedback loop
+                                    save_and_validate_complete = 'manual_revision'
+                                    break
+
+                                else:  # choice == '3' or other
+                                    print("\nKeeping current version. The PDF has been saved.")
+                                    save_and_validate_complete = True
+
+                            except (EOFError, KeyboardInterrupt):
+                                print("\n\nKeeping current version.")
+                                save_and_validate_complete = True
+                        else:
+                            # Validation passed or was skipped
+                            save_and_validate_complete = True
+
+                    # If user chose manual revision, go back to feedback loop
+                    if save_and_validate_complete == 'manual_revision':
+                        continue  # Go back to feedback loop at line 496
+
+                    # Ask if user wants to add to job tracking sheet
+                    if job_tracker and job_url:
+                        print("\n" + SEPARATOR_LINE)
+                        print("Would you like to add this to your job tracking sheet?")
+                        print(f"  Company: {company_name}")
+                        print(f"  Job: {job_title}")
+                        print(f"  URL: {job_url}")
+                        print("\nAdd to tracking sheet? (y/n) [n]: ", end='')
 
                         try:
-                            shorten_choice = input().strip() or '1'
-
-                            if shorten_choice == '1':
-                                # Determine shortening approach based on validation details
-                                details_lower = (validation_result.details or "").lower()
-                                message_lower = validation_result.message.lower()
-
-                                # Try to extract word count from details
-                                word_match = re.search(r'approximately\s+(\d+)\s+words?\s+(?:are\s+)?cut\s+off', details_lower)
-
-                                if word_match:
-                                    # Precise shortening based on actual word count
-                                    words_cut_off = int(word_match.group(1))
-                                    # Suggest removing slightly more to ensure it fits (add 10-20%)
-                                    words_to_remove = int(words_cut_off * 1.15)
-                                    shortening_feedback = f"Revise the cover letter to be approximately {words_to_remove} words shorter to ensure the signature fits on one page. Keep all key achievements but make the content more concise."
-                                    print(f"\nRegenerating with targeted shortening (approximately {words_cut_off} words cut off, removing ~{words_to_remove} words)...")
-                                elif "only signature" in details_lower and "body text fits" in details_lower:
-                                    # Just signature cut off, minimal shortening needed
-                                    shortening_feedback = "Revise to be slightly shorter (about 15-25 words) to make room for the signature. Keep all key achievements and important details - just trim minimally."
-                                    print("\nRegenerating with minimal shortening (just signature needs space)...")
-                                else:
-                                    # Default: moderate shortening
-                                    shortening_feedback = "Make the cover letter more concise to ensure the signature fits. Remove 2-3 sentences or combine points where possible, keeping the most impactful achievements."
-                                    print("\nRegenerating with moderate shortening...")
-
-                                print(f"Feedback: {shortening_feedback}")
-                                print()
-
-                                # Regenerate with automatic feedback to shorten
-                                cover_letter_parts = []
-                                for chunk in generator.revise_cover_letter_stream(
-                                    cover_letter,
-                                    shortening_feedback,
-                                    job_description,
-                                    company_name,
-                                    job_title
-                                ):
-                                    print(chunk, end='', flush=True)
-                                    cover_letter_parts.append(chunk)
-
-                                # Combine the body - LLM includes the date
-                                cover_letter = ''.join(cover_letter_parts)
-
-                                # Ensure it ends with signature
-                                cover_letter = ensure_signature(cover_letter, USER_NAME)
-
-                                print("\n" + "-" * 80)
-
-                                # Track this automatic feedback for meta-learning
-                                if feedback_tracker:
-                                    feedback_tracker.add_feedback(shortening_feedback, company_name, job_title)
-
-                                # Now give user chance to review shortened version before saving
-                                print("\n✓ Shortened version generated.")
-                                print("\nReturning to options so you can review and choose to save or revise further...")
-                                save_and_validate_complete = 'manual_revision'
-                                break  # Break out to return to feedback loop
-
-                            elif shorten_choice == '2':
-                                # User wants to manually revise - go back to feedback loop
-                                print("\nReturning to feedback options. You can now provide manual revisions.")
-                                # Break out of save/validate loop and set flag to return to feedback loop
-                                save_and_validate_complete = 'manual_revision'
-                                break
-
-                            else:  # choice == '3' or other
-                                print("\nKeeping current version. The PDF has been saved.")
-                                save_and_validate_complete = True
-
+                            track_choice = input().strip().lower() or 'n'
+                            if track_choice == 'y':
+                                success = job_tracker.add_job_application(
+                                    company_name=company_name,
+                                    job_title=job_title,
+                                    job_url=job_url
+                                )
+                                if not success:
+                                    print("Could not add to tracking sheet. See error messages above.")
                         except (EOFError, KeyboardInterrupt):
-                            print("\n\nKeeping current version.")
-                            save_and_validate_complete = True
-                    else:
-                        # Validation passed or was skipped
-                        save_and_validate_complete = True
+                            print("\n\nSkipping job tracker.")
+                        except Exception as e:
+                            print(f"\nError adding to tracking sheet: {e}")
+                        print()
 
-                # If user chose manual revision, go back to feedback loop
-                if save_and_validate_complete == 'manual_revision':
-                    continue  # Go back to "while True" feedback loop at line 426
-
-                # Ask if user wants to add to job tracking sheet
-                if job_tracker and job_url:
-                    print("\n" + "=" * 80)
-                    print("Would you like to add this to your job tracking sheet?")
-                    print(f"  Company: {company_name}")
-                    print(f"  Job: {job_title}")
-                    print(f"  URL: {job_url}")
-                    print("\nAdd to tracking sheet? (y/n) [n]: ", end='')
-
-                    try:
-                        track_choice = input().strip().lower() or 'n'
-                        if track_choice == 'y':
-                            success = job_tracker.add_job_application(
-                                company_name=company_name,
-                                job_title=job_title,
-                                job_url=job_url
-                            )
-                            if not success:
-                                print("Could not add to tracking sheet. See error messages above.")
-                    except (EOFError, KeyboardInterrupt):
-                        print("\n\nSkipping job tracker.")
-                    except Exception as e:
-                        print(f"\nError adding to tracking sheet: {e}")
-                    print()
-
-                # Loop continues to prompt for another job description
+                    # Done with this cover letter, break out to prompt for another job description
+                    break
 
             except KeyboardInterrupt:
                 print("\n\nOperation cancelled.")

@@ -2,7 +2,32 @@
 
 import os
 import re
+import sys
+import warnings
 from typing import Optional, Tuple
+
+
+class TelemetryFilter:
+    """Filter to suppress ChromaDB telemetry errors from stderr."""
+
+    def __init__(self, stream) -> None:
+        self.stream = stream
+
+    def write(self, message: str) -> None:
+        """Write message to stream, filtering out telemetry messages."""
+        # Only suppress telemetry-related messages
+        if 'telemetry' not in message.lower() and 'CollectionQueryEvent' not in message and 'ClientStartEvent' not in message:
+            self.stream.write(message)
+
+    def flush(self) -> None:
+        """Flush the underlying stream."""
+        self.stream.flush()
+
+
+def suppress_telemetry_errors() -> None:
+    """Suppress ChromaDB telemetry error messages."""
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    sys.stderr = TelemetryFilter(sys.stderr)
 
 
 def extract_company_name(cover_letter_text: str) -> Optional[str]:
@@ -69,32 +94,40 @@ def create_folder_name_from_details(
     job_title: Optional[str],
     timestamp: str
 ) -> str:
-    """Create a folder name from company name and job title.
+    """Create a folder name from company name and job title with date applied.
 
     Args:
         company_name: Company name
         job_title: Job title
-        timestamp: Timestamp string
+        timestamp: Timestamp string in format YYYYMMDD_HHMMSS
 
     Returns:
-        Formatted folder name like "Company Name - Job Title" or fallback
+        Formatted folder name like "Company Name - Job Title - YYYY-MM-DD" or fallback
     """
+    # Extract date from timestamp (format: YYYYMMDD_HHMMSS -> YYYY-MM-DD)
+    date_applied = f"{timestamp[:4]}-{timestamp[4:6]}-{timestamp[6:8]}"
+
     if company_name and job_title:
         # Clean for folder name (keep spaces, remove problematic chars)
         clean_company = re.sub(r'[<>:"/\\|?*]', '', company_name).strip()
         clean_title = re.sub(r'[<>:"/\\|?*]', '', job_title).strip()
 
-        folder_name = f"{clean_company} - {clean_title}"
+        folder_name = f"{clean_company} - {clean_title} - {date_applied}"
 
-        # Limit length
-        if len(folder_name) > 100:
-            folder_name = folder_name[:100]
+        # Limit length (leave room for date suffix)
+        if len(folder_name) > 120:
+            # Truncate company and title parts while keeping date
+            max_name_length = 120 - len(date_applied) - 3  # 3 for " - "
+            base_name = f"{clean_company} - {clean_title}"
+            if len(base_name) > max_name_length:
+                base_name = base_name[:max_name_length]
+            folder_name = f"{base_name} - {date_applied}"
 
         return folder_name
     elif company_name:
-        # Just company name if no job title
+        # Just company name with date if no job title
         clean_company = re.sub(r'[<>:"/\\|?*]', '', company_name).strip()
-        return clean_company
+        return f"{clean_company} - {date_applied}"
     else:
         # Fallback to timestamp-based name
         return f"Application_{timestamp}"
