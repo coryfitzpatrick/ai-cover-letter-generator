@@ -440,17 +440,22 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
         )
 
         model_name = "Claude Opus 4" if "opus" in self.claude_model else "Claude Sonnet 4.5"
-        print(f"\nGenerating initial draft with {model_name}...")
-
-        # Generate initial draft
+        # [NEW] Context Pre-processing Layer
+        # Rewrite the context if a custom prompt is provided
+        print("Preprocessing context...")
+        managerial_context = self._preprocess_context(context)
+        
+        # Stage 1: Generate initial draft
+        print(f"Generating initial draft with {self.claude_model}...")
+        
         try:
             response = self.claude_client.messages.create(
                 model=self.claude_model,
-                max_tokens=2000,
+                max_tokens=2500,
                 temperature=0.7,
                 system=system_prompt,
                 messages=[
-                    {"role": "user", "content": "Write an interview-worthy cover letter for this job."}
+                    {"role": "user", "content": f"CONTEXT:\n{managerial_context}\n\nJOB DESCRIPTION:\n{job_description}\n\nWrite an interview-worthy cover letter for this job."}
                 ]
             )
 
@@ -691,20 +696,17 @@ Write the complete revised cover letter."""
         )
 
         # Create revision prompt
-        revision_prompt = f"""Here is the current cover letter:
+        revision_prompt_path = self.project_root / "revision_prompt.txt"
+        if revision_prompt_path.exists():
+            with open(revision_prompt_path, 'r') as f:
+                revision_template = f.read()
+        else:
+            raise FileNotFoundError(f"Revision prompt file not found at {revision_prompt_path}")
 
-{current_letter}
-
-The user has requested the following changes:
-{user_feedback}
-
-Please revise the cover letter to incorporate this feedback while maintaining:
-- All the core principles (impact, specificity, authenticity)
-- Accurate information from the context (no fabrication)
-- Natural flow and compelling narrative
-- Professional tone appropriate for the role
-
-Write the complete revised cover letter."""
+        revision_prompt = revision_template.format(
+            current_letter=current_letter,
+            user_feedback=user_feedback
+        )
 
         try:
             # Stream response from Claude
@@ -730,3 +732,37 @@ Write the complete revised cover letter."""
 
         except Exception as e:
             raise RuntimeError(f"Error streaming revision: {e}") from e
+
+    def _preprocess_context(self, context_str: str) -> str:
+        """
+        Pre-process context string if a custom prompt exists.
+        
+        Args:
+            context_str: Original context string
+            
+        Returns:
+            Processed context string.
+        """
+        managerial_prompt_path = self.project_root / "managerial_prompt.txt"
+        
+        if not managerial_prompt_path.exists():
+            # If the secret prompt file doesn't exist (e.g. public repo), skip translation
+            return context_str
+
+        try:
+            with open(managerial_prompt_path, 'r') as f:
+                translation_prompt = f.read()
+            
+            # Use Groq for speed, or Claude for quality. Using Claude here for quality since it's critical.
+            response = self.claude_client.messages.create(
+                model=self.claude_model,
+                max_tokens=2000,
+                temperature=0.5,
+                messages=[
+                    {"role": "user", "content": translation_prompt.format(context=context_str[:6000])} # Truncate to be safe
+                ]
+            )
+            return response.content[0].text
+        except Exception as e:
+            print(f"Warning: Managerial translation failed ({e}). Using original context.")
+            return context_str

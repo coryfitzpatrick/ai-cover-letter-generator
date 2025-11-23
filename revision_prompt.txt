@@ -1,0 +1,14 @@
+Here is the current cover letter:
+
+{current_letter}
+
+The user has requested the following changes:
+{user_feedback}
+
+Please revise the cover letter to incorporate this feedback while maintaining:
+- All the core principles (impact, specificity, authenticity)
+- Accurate information from the context (no fabrication)
+- Natural flow and compelling narrative
+- Professional tone appropriate for the role
+
+Write the complete revised cover letter.
