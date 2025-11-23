@@ -6,15 +6,16 @@ version is preferred for better formatting and consistency.
 """
 
 import os
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
+
 from dotenv import load_dotenv
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.enums import TA_LEFT, TA_RIGHT
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
 # Load environment variables
 load_dotenv()

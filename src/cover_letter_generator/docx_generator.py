@@ -1,14 +1,12 @@
 """DOCX generation for cover letters."""
 
-from pathlib import Path
-from typing import Optional
-from datetime import datetime
 import os
-from dotenv import load_dotenv
+from datetime import datetime
+from pathlib import Path
 
 from docx import Document
-from docx.shared import Pt, Inches
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Inches, Pt
+from dotenv import load_dotenv
 
 
 def generate_cover_letter_docx(
@@ -73,7 +71,7 @@ def generate_cover_letter_docx(
             p = paragraph._element
             p.getparent().remove(p)
     else:
-        print(f"Warning: DOCX template not found, creating from scratch")
+        print("Warning: DOCX template not found, creating from scratch")
         print(f"  Checked: {[str(l) for l in template_locations]}")
         doc = Document()
 

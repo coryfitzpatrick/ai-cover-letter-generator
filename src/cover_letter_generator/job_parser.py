@@ -2,13 +2,13 @@
 
 import os
 import re
-from typing import Optional, Tuple
 from dataclasses import dataclass
+from typing import Optional, Tuple
 
 import requests
 from bs4 import BeautifulSoup
-from groq import Groq
 from dotenv import load_dotenv
+from groq import Groq
 
 # Load environment variables
 load_dotenv()
@@ -250,7 +250,7 @@ def parse_job_posting_with_llm(text: str, url: str) -> Optional[JobPosting]:
         client = Groq(api_key=api_key)
 
         # Show what text we're working with for debugging
-        print(f"\n  First 500 characters of text being analyzed:")
+        print("\n  First 500 characters of text being analyzed:")
         print("  " + "=" * 76)
         print("  " + text[:500].replace('\n', '\n  '))
         print("  " + "=" * 76)
@@ -360,10 +360,10 @@ DESCRIPTION: This is a software engineering role... [truncated summary]
 
         # Check if we got real data - but continue even if Unknown
         if company_name.lower() == "unknown" or job_title.lower() == "unknown":
-            print(f"\n⚠ Note: Could not extract company name or job title from the posting")
+            print("\n⚠ Note: Could not extract company name or job title from the posting")
             print(f"  Company: '{company_name}'")
             print(f"  Title: '{job_title}'")
-            print(f"  You'll be able to edit these in the next step.")
+            print("  You'll be able to edit these in the next step.")
 
         return JobPosting(
             company_name=company_name,
@@ -386,7 +386,7 @@ def parse_job_from_url(url: str) -> Optional[JobPosting]:
     Returns:
         JobPosting object or None if parsing failed
     """
-    print(f"\nFetching job posting from URL...")
+    print("\nFetching job posting from URL...")
 
     # Check if this is a known JavaScript-heavy job board
     js_heavy_domains = [
@@ -484,7 +484,7 @@ def parse_job_from_url(url: str) -> Optional[JobPosting]:
                 job_posting = parse_job_posting_with_llm(text, url)
 
     if job_posting:
-        print(f"✓ Successfully parsed job posting:")
+        print("✓ Successfully parsed job posting:")
         print(f"  Company: {job_posting.company_name}")
         print(f"  Title: {job_posting.job_title}")
         print(f"  Description length: {len(job_posting.job_description)} characters")

@@ -1,11 +1,7 @@
 """Core cover letter generation logic with RAG and LLM integration."""
 
 import os
-import re
 from pathlib import Path
-from typing import Dict, List, Tuple
-from dataclasses import dataclass
-from enum import Enum
 
 # Disable warnings and telemetry BEFORE importing libraries
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -13,52 +9,21 @@ os.environ["ANONYMIZED_TELEMETRY"] = "False"
 os.environ["CHROMA_TELEMETRY_DISABLED"] = "True"
 
 import chromadb
+from anthropic import Anthropic
 from chromadb.config import Settings
 from dotenv import load_dotenv
 from groq import Groq
-from anthropic import Anthropic
 from sentence_transformers import SentenceTransformer
+
+from .analysis import JobAnalysis, JobLevel, analyze_job_posting
+from .scoring import score_document
+from .utils import suppress_telemetry_errors
 
 # Load environment variables
 load_dotenv()
 
 # Suppress ChromaDB telemetry errors
-from .utils import suppress_telemetry_errors
 suppress_telemetry_errors()
-
-
-class JobLevel(Enum):
-    """Job level classification."""
-    IC_SENIOR = "ic_senior"  # Senior IC roles
-    MANAGER = "manager"  # Engineering Manager
-    SENIOR_MANAGER = "senior_manager"  # Senior Manager / Director
-    DIRECTOR_VP = "director_vp"  # Director / VP / Executive
-
-
-class JobType(Enum):
-    """Job type classification."""
-    STARTUP = "startup"
-    ENTERPRISE = "enterprise"
-    PRODUCT = "product"
-    INFRASTRUCTURE = "infrastructure"
-
-
-@dataclass
-class JobRequirement:
-    """Represents a key requirement from job description."""
-    category: str  # "leadership", "technical", "domain", "cultural"
-    description: str
-    priority: int  # 1 = highest priority
-
-
-@dataclass
-class JobAnalysis:
-    """Analysis of job posting requirements."""
-    level: JobLevel
-    job_type: JobType
-    requirements: List[JobRequirement]
-    key_technologies: List[str]
-    team_size_mentioned: bool
 
 
 class CoverLetterGenerator:
@@ -94,19 +59,6 @@ class CoverLetterGenerator:
     TECHNOLOGIES_TO_QUERY = 5  # Top N technologies to query separately
     TECHNOLOGY_RESULTS = 10  # Results per technology query
     MAX_CHUNKS_PER_SOURCE = 8  # Limit chunks from same source for diversity
-
-    # Scoring boost values
-    ACHIEVEMENT_SOURCE_BOOST = 15
-    RESUME_SOURCE_BOOST = 10
-    RECOMMENDATION_BOOST = 8
-    RECENT_COMPANY_BOOST = 12  # J&J (most recent)
-    PREVIOUS_COMPANY_BOOST = 8  # Fitbit+Google
-    PERCENTAGE_METRIC_BOOST = 10
-    TEAM_SIZE_METRIC_BOOST = 8
-    LEADERSHIP_TERM_BOOST = 5
-    TECHNICAL_TERM_BOOST = 5
-    TECHNOLOGY_MATCH_BOOST = 7
-    PROCESS_IMPROVEMENT_BOOST = 6
 
     def __init__(self, system_prompt_path: str = None, claude_model: str = None):
         """Initialize the cover letter generator.
@@ -206,209 +158,12 @@ class CoverLetterGenerator:
         Returns:
             JobAnalysis object with requirements and classification
         """
-        print("Analyzing job requirements...")
-
-        # Prepare analysis prompt
-        prompt = f"""Analyze this job posting and extract key information.
-
-Job Title: {job_title or "Not specified"}
-
-Job Description:
-{job_description[:4000]}
-
-Extract:
-1. Job Level (IC_SENIOR, MANAGER, SENIOR_MANAGER, DIRECTOR_VP)
-2. Job Type (STARTUP, ENTERPRISE, PRODUCT, INFRASTRUCTURE)
-3. Top 5-7 key requirements categorized as:
-   - leadership (team management, mentorship, cross-functional work)
-   - technical (specific technologies, architectures, systems)
-   - domain (industry knowledge, specific domains like healthcare, fintech)
-   - cultural (values, work style, team culture)
-4. Specific technologies mentioned (programming languages, tools, platforms)
-5. Whether team size is mentioned
-
-Respond in this EXACT format:
-
-LEVEL: [one of: IC_SENIOR, MANAGER, SENIOR_MANAGER, DIRECTOR_VP]
-TYPE: [one of: STARTUP, ENTERPRISE, PRODUCT, INFRASTRUCTURE]
-REQUIREMENTS:
-1. [category]: [description] (priority: [1-3])
-2. [category]: [description] (priority: [1-3])
-...
-TECHNOLOGIES: [comma-separated list, or "none" if none mentioned]
-TEAM_SIZE_MENTIONED: [yes/no]
-
-Example:
-LEVEL: MANAGER
-TYPE: PRODUCT
-REQUIREMENTS:
-1. leadership: Lead team of 8-12 engineers (priority: 1)
-2. technical: Experience with React and Java microservices (priority: 1)
-3. leadership: Drive process improvements and best practices (priority: 2)
-4. cultural: Build psychologically safe team environments (priority: 2)
-5. domain: Experience in healthcare or regulated industries (priority: 3)
-TECHNOLOGIES: React, Java, Docker, Kubernetes, AWS
-TEAM_SIZE_MENTIONED: yes
-"""
-
-        try:
-            response = self.groq_client.chat.completions.create(
-                model=self.GROQ_MODEL,
-                messages=[
-                    {"role": "system", "content": "You are a precise job posting analyzer. Extract requirements exactly as requested."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.1,
-                max_tokens=1000,
-            )
-
-            result = response.choices[0].message.content.strip()
-
-            # Parse the response
-            level_match = re.search(r'LEVEL:\s*(\w+)', result, re.IGNORECASE)
-            type_match = re.search(r'TYPE:\s*(\w+)', result, re.IGNORECASE)
-            requirements_match = re.search(r'REQUIREMENTS:\s*\n(.*?)(?=TECHNOLOGIES:|$)', result, re.IGNORECASE | re.DOTALL)
-            tech_match = re.search(r'TECHNOLOGIES:\s*(.+?)(?:\n|$)', result, re.IGNORECASE)
-            team_size_match = re.search(r'TEAM_SIZE_MENTIONED:\s*(\w+)', result, re.IGNORECASE)
-
-            # Parse level
-            level_str = level_match.group(1).upper() if level_match else "MANAGER"
-            level = JobLevel[level_str] if level_str in JobLevel.__members__ else JobLevel.MANAGER
-
-            # Parse type
-            type_str = type_match.group(1).upper() if type_match else "ENTERPRISE"
-            job_type = JobType[type_str] if type_str in JobType.__members__ else JobType.ENTERPRISE
-
-            # Parse requirements
-            requirements = []
-            if requirements_match:
-                req_text = requirements_match.group(1)
-                req_lines = re.findall(r'\d+\.\s*(\w+):\s*(.+?)\s*\(priority:\s*(\d+)\)', req_text, re.IGNORECASE)
-                for category, description, priority in req_lines:
-                    requirements.append(JobRequirement(
-                        category=category.lower(),
-                        description=description.strip(),
-                        priority=int(priority)
-                    ))
-
-            # Parse technologies
-            key_technologies = []
-            if tech_match:
-                tech_str = tech_match.group(1).strip()
-                if tech_str.lower() != "none":
-                    key_technologies = [t.strip() for t in tech_str.split(',')]
-
-            # Parse team size mention
-            team_size_mentioned = False
-            if team_size_match:
-                team_size_mentioned = team_size_match.group(1).lower() == "yes"
-
-            analysis = JobAnalysis(
-                level=level,
-                job_type=job_type,
-                requirements=requirements,
-                key_technologies=key_technologies,
-                team_size_mentioned=team_size_mentioned
-            )
-
-            print(f"  Level: {level.value}")
-            print(f"  Type: {job_type.value}")
-            print(f"  Requirements: {len(requirements)} key requirements identified")
-            print(f"  Technologies: {', '.join(key_technologies) if key_technologies else 'None specific'}")
-
-            return analysis
-
-        except Exception as e:
-            print(f"Warning: Could not analyze job posting: {e}")
-            # Return default analysis
-            return JobAnalysis(
-                level=JobLevel.MANAGER,
-                job_type=JobType.ENTERPRISE,
-                requirements=[],
-                key_technologies=[],
-                team_size_mentioned=False
-            )
-
-    def score_document(self, doc: str, metadata: dict, job_analysis: JobAnalysis, distance: float) -> float:
-        """Score a document's relevance based on multiple factors.
-
-        Args:
-            doc: Document text
-            metadata: Document metadata
-            job_analysis: Analyzed job requirements
-            distance: Embedding distance from query
-
-        Returns:
-            Relevance score (higher is better)
-        """
-        score = 0.0
-        doc_lower = doc.lower()
-        source = metadata.get("source", "").lower()
-
-        # Base score from embedding similarity (invert distance, normalize)
-        # Distance typically ranges 0-2, so we invert it
-        similarity_score = max(0, 2.0 - distance) * 10  # Scale to 0-20 range
-        score += similarity_score
-
-        # Boost for achievements document (usually most relevant)
-        if "achievement" in source:
-            score += self.ACHIEVEMENT_SOURCE_BOOST
-
-        # Boost for resume (comprehensive info)
-        if "resume" in source or "cv" in source:
-            score += self.RESUME_SOURCE_BOOST
-
-        # Boost for recommendations (leadership philosophy, soft skills)
-        if "recommendation" in source:
-            score += self.RECOMMENDATION_BOOST
-
-        # Recency boost - J&J is most recent
-        if "johnson" in doc_lower or "j&j" in doc_lower:
-            score += self.RECENT_COMPANY_BOOST
-        elif "fitbit" in doc_lower or "google" in doc_lower:
-            score += self.PREVIOUS_COMPANY_BOOST
-
-        # Boost for metrics/numbers (concrete achievements)
-        if re.search(r'\d+%', doc):  # Percentages
-            score += self.PERCENTAGE_METRIC_BOOST
-        if re.search(r'\d+\s+(?:person|people|engineer|member)', doc_lower):  # Team sizes
-            score += self.TEAM_SIZE_METRIC_BOOST
-
-        # Leadership indicators boost (especially for manager+ roles)
-        if job_analysis.level in [JobLevel.MANAGER, JobLevel.SENIOR_MANAGER, JobLevel.DIRECTOR_VP]:
-            leadership_terms = [
-                'led team', 'managed', 'mentored', 'coordinated',
-                'cross-functional', 'leadership', 'guided', 'coached'
-            ]
-            for term in leadership_terms:
-                if term in doc_lower:
-                    score += self.LEADERSHIP_TERM_BOOST
-                    break  # Only boost once
-
-        # Technical depth boost for IC roles
-        if job_analysis.level == JobLevel.IC_SENIOR:
-            tech_terms = [
-                'architected', 'designed', 'implemented', 'built',
-                'migrated', 'optimized', 'developed'
-            ]
-            for term in tech_terms:
-                if term in doc_lower:
-                    score += self.TECHNICAL_TERM_BOOST
-                    break
-
-        # Technology match boost
-        for tech in job_analysis.key_technologies:
-            if tech.lower() in doc_lower:
-                score += self.TECHNOLOGY_MATCH_BOOST
-
-        # Process improvement boost (valuable across all roles)
-        process_terms = ['reduced', 'improved', 'increased', 'optimized', 'streamlined']
-        for term in process_terms:
-            if term in doc_lower:
-                score += self.PROCESS_IMPROVEMENT_BOOST
-                break
-
-        return score
+        return analyze_job_posting(
+            self.groq_client,
+            self.GROQ_MODEL,
+            job_description,
+            job_title
+        )
 
     def get_relevant_context(
         self, job_description: str, n_results: int = None, job_title: str = None
@@ -513,17 +268,17 @@ TEAM_SIZE_MENTIONED: yes
         scored_docs = []
         for doc, distance, metadata in all_retrieved_docs:
             if distance <= self.DISTANCE_THRESHOLD:
-                score = self.score_document(doc, metadata, job_analysis, distance)
+                score = score_document(doc, metadata, job_analysis, distance)
                 scored_docs.append((doc, distance, metadata, score))
 
         # Sort by score (highest first)
         scored_docs.sort(key=lambda x: x[3], reverse=True)
 
-        print(f"Selected top documents (score threshold applied)")
+        print("Selected top documents (score threshold applied)")
 
         # Debug: Show top 5 scoring documents
         if scored_docs:
-            print(f"\n  Top 5 highest-scoring documents:")
+            print("\n  Top 5 highest-scoring documents:")
             for i, (doc, distance, metadata, score) in enumerate(scored_docs[:5]):
                 source = metadata.get("source", "Unknown")
                 preview = doc[:80].replace('\n', ' ')
@@ -561,7 +316,6 @@ TEAM_SIZE_MENTIONED: yes
             return "No specific relevant information found. Use general knowledge about professional experience."
 
         return "\n\n---\n\n".join(contexts)
-
 
     def _track_api_cost(self, model: str, input_tokens: int, output_tokens: int):
         """Track API costs for transparency.
@@ -717,59 +471,18 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
         print("=" * 80)
 
         # Stage 2: Light polish and refinement
-        critique_prompt = f"""You are a cover letter expert doing a final polish on this draft for an engineering leadership role.
+        critique_prompt_path = self.project_root / "critique_prompt.txt"
+        if not critique_prompt_path.exists():
+            raise FileNotFoundError(f"Critique prompt file not found at {critique_prompt_path}")
+            
+        with open(critique_prompt_path, 'r') as f:
+            critique_template = f.read()
 
-TARGET COMPANY: {company_name}
-
-INITIAL DRAFT:
-{initial_draft}
-
-JOB DESCRIPTION:
-{job_description[:2000]}
-
-This draft is already strong. Your job is to do a light polish, NOT a major rewrite. Preserve the voice, energy, and natural flow. Ensure the tone is conversational and authentic, not aggressive or sales-y. Only make changes if there are clear issues:
-
-**Check for:**
-- **CRITICAL - Company name:** Does the letter use "{company_name}" consistently? If the job description mentions product names, subsidiaries, or legal entities (e.g., "Aisle Planner Pro", "Fullsteam Operations LLC"), ensure the letter uses ONLY "{company_name}". Replace any incorrect company/product names with "{company_name}".
-- **Achievement fit:** Do the achievements selected actually match what THIS job needs? Or did you default to verification time/process improvement when they need team scaling/technical architecture?
-- **Quantifiable metrics:** Does EVERY achievement include a specific number, percentage, or scale metric? No vague statements like "improved performance" - must be "reduced latency by 45%"
-- **Strong closing:** Is the closing assertive with a clear call-to-action? Or is it passive ("thank you for your consideration")?
-- **Values alignment:** If the job description mentions company values, mission, or culture, does the letter connect to these?
-- **Competitive positioning:** Does the letter show why this candidate is uniquely qualified compared to typical applicants?
-- **Problem-solution framing:** Does each achievement start with a PROBLEM, show LEADERSHIP in solving it, prove RESULTS, and make the CONNECTION to the company's challenges? Or is it just listing qualifications?
-- **Leadership demonstration:** Are leadership abilities demonstrated through stories, not claimed? ("When faced with X, I led Y, achieving Z" vs "I have experience in X")
-- **Connection to their challenges:** Does the letter explicitly show HOW the candidate's experience solves THEIR specific problems?
-- Any fabricated facts not from the context?
-- Any repeated achievements or information?
-- Any em dashes (—) or double hyphens (--)? Replace with commas or separate sentences
-- Any awkward phrasing that disrupts flow?
-- Any generic statements that could be more specific?
-- Does this letter feel unique to THIS job, or could it be sent to any company?
-- Does this candidate feel like a MUST-HAVE problem-solver, or just another applicant with credentials?
-- **Tone check:** Is the opening too aggressive/sales-y? Does it start with "Your team needs..." or "I understand exactly..."? If so, make it more conversational and genuine.
-- **Language check:** Are there overly bold claims like "exactly what's needed" or "I'm confident I can deliver"? Soften to "could be valuable" or "I'm excited to explore."
-- **Rhetorical questions:** Are there gimmicky rhetorical questions like "The result?" or "The impact?"? Replace with direct statements like "We reduced..." or natural transitions like "Through this work..."
-
-**DO NOT:**
-- Rewrite sentences that are already working well
-- Remove personality or natural voice
-- Over-edit for the sake of editing
-- Make it sound more formal or template-like
-- Force different achievements if the current ones are actually the best fit
-
-If the draft is strong and achievements match their needs well, make minimal changes. If there are no real issues, the refined version can be very similar to the original.
-
-Respond with:
-1. **NOTES**: Brief notes on what you changed (if anything)
-2. **REFINED VERSION**: The polished cover letter
-
-Format:
-NOTES:
-[what you changed and why, or "Minimal changes - draft was strong"]
-
-REFINED VERSION:
-[polished cover letter]
-"""
+        critique_prompt = critique_template.format(
+            company_name=company_name,
+            initial_draft=initial_draft,
+            job_description=job_description[:2000]  # Truncate JD to avoid context limits
+        )
 
         print("\nClaude is critiquing and refining the draft...")
 
@@ -817,7 +530,7 @@ REFINED VERSION:
         total_cost = draft_cost + refinement_cost
 
         print("\n" + "=" * 80)
-        print(f"✓ GENERATION COMPLETE")
+        print("✓ GENERATION COMPLETE")
         print(f"  Total Cost: ${total_cost:.4f}")
         print(f"  Session Total: ${self.total_cost:.4f}")
         print("=" * 80)

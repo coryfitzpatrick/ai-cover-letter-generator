@@ -5,17 +5,18 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
+
 from dotenv import load_dotenv
 
-from .generator import CoverLetterGenerator
-from .pdf_generator_template import generate_cover_letter_pdf
 from .docx_generator import generate_cover_letter_docx
-from .utils import create_folder_name_from_details
-from .signature_validator import validate_pdf_signature
-from .job_parser import parse_job_from_url, is_valid_url
 from .feedback_tracker import FeedbackTracker
-from .system_improver import SystemImprover
+from .generator import CoverLetterGenerator
+from .job_parser import is_valid_url, parse_job_from_url
 from .job_tracker import JobTracker
+from .pdf_generator_template import generate_cover_letter_pdf
+from .signature_validator import validate_pdf_signature
+from .system_improver import SystemImprover
+from .utils import create_folder_name_from_details
 
 # Load environment variables
 load_dotenv()
@@ -215,7 +216,7 @@ def save_cover_letter(
 
     # Print saved file locations
     print()
-    print(f"✓ Cover letter saved:")
+    print("✓ Cover letter saved:")
     print(f"  PDF:  {pdf_filepath}")
     print(f"  DOCX: {docx_filepath}")
 
@@ -308,7 +309,7 @@ def main():
         # Initialize job tracker (optional feature)
         try:
             job_tracker = JobTracker()
-        except Exception as e:
+        except Exception:
             # Silently disable if not configured
             job_tracker = None
 
@@ -522,6 +523,21 @@ def main():
                 print("Missing required information. Please try again.")
                 continue
 
+            # Ask for any final custom instructions
+            print("\n" + DASH_LINE)
+            print("Do you have any specific instructions for this cover letter?")
+            print("(e.g., 'Focus on my startup experience', 'Keep it under 300 words')")
+            print("Press Enter to skip.")
+            print(DASH_LINE)
+            
+            additional_instructions = input("Instructions: ").strip()
+            if additional_instructions:
+                if custom_context:
+                    custom_context += f"\n\nADDITIONAL INSTRUCTIONS:\n{additional_instructions}"
+                else:
+                    custom_context = f"ADDITIONAL INSTRUCTIONS:\n{additional_instructions}"
+                print("✓ Instructions added")
+
             # Generate cover letter using Claude Sonnet 4.5
             print("\nGenerating cover letter with Claude Sonnet 4.5...")
             print("(Two-stage generation and refinement process)")
@@ -600,49 +616,45 @@ def main():
                             # Ensure preview has signature
                             revised_letter = ensure_signature(revised_letter, USER_NAME)
 
-                            # Ask user to approve or reject the revision
+                            # Ask user what to do with the revision
                             print("\n" + SEPARATOR_LINE)
                             print("REVIEW REVISION")
                             print(SEPARATOR_LINE)
-                            print("\nDo you want to accept this revision?")
-                            print("  (1) Accept - use this as the new version")
-                            print("  (2) Reject - keep original and try different feedback")
+                            print("\nWhat would you like to do?")
+                            print("  (1) Accept - Use this version")
+                            print("  (2) Provide more feedback on this revised version")
+                            print("  (3) Reject - Go back to original")
                             print()
 
-                            # Wait for explicit user input (no default auto-accept)
+                            # Wait for explicit user input
                             approval_received = False
                             while not approval_received:
-                                print("Enter your choice (1 or 2): ", end='')
+                                print("Enter your choice (1, 2, or 3): ", end='')
                                 sys.stdout.flush()
 
                                 try:
                                     approve_choice = input().strip()
-                                    if approve_choice in ['1', '2']:
+                                    if approve_choice in ['1', '2', '3']:
                                         approval_received = True
                                     elif not approve_choice:
-                                        print("Please enter 1 or 2 (pressing Enter without input will default to 1 after confirmation)")
-                                        print("Use default (1 - Accept)? (y/n): ", end='')
-                                        confirm = input().strip().lower()
-                                        if confirm == 'y' or confirm == '':
-                                            approve_choice = '1'
-                                            approval_received = True
+                                        print("Please enter 1, 2, or 3")
                                     else:
-                                        print(f"Invalid choice '{approve_choice}'. Please enter 1 or 2.")
+                                        print(f"Invalid choice '{approve_choice}'. Please enter 1, 2, or 3.")
                                 except EOFError:
                                     print("\nEOF detected. Defaulting to reject (keeping original).")
-                                    approve_choice = '2'
+                                    approve_choice = '3'
                                     approval_received = True
                                 except KeyboardInterrupt:
                                     print("\n\nCancelled. Keeping original version.")
-                                    approve_choice = '2'
+                                    approve_choice = '3'
                                     approval_received = True
                                     break
 
                             try:
                                 if approve_choice == '1':
-                                    # Accept the revision
+                                    # Accept the revision - use this as new version
                                     cover_letter = revised_letter
-                                    print("\n✓ Revision accepted")
+                                    print("\n✓ Revision accepted - this is now your current version")
 
                                     # META-LEARNING: Track feedback and check for patterns (only if accepted)
                                     if feedback_tracker and system_improver:
@@ -721,10 +733,83 @@ def main():
                                                     except (EOFError, KeyboardInterrupt):
                                                         print("\n\nImprovement not applied.")
 
+                                                else:
+                                                    print("\nCould not generate an automatic improvement suggestion at this time.")
+                                                    print("Please try again later or add the rule manually.")
+
                                         except Exception as e:
                                             print(f"\nNote: Meta-learning feature encountered an issue: {e}")
 
-                                else:  # approve_choice == '2'
+                                elif approve_choice == '2':
+                                    # Iterate on this revised version - continue providing feedback
+                                    print("\n✓ Continuing to iterate on this revised version")
+                                    print("You can now provide more feedback to further refine it.\n")
+
+                                    # Temporarily use the revised version for the next iteration
+                                    # but don't mark it as "accepted" yet (no meta-learning tracking)
+                                    temp_working_version = revised_letter
+
+                                    # Inner feedback loop - iterate on the revised version
+                                    iterating_on_revision = True
+                                    while iterating_on_revision:
+                                        print("Provide feedback on this version (or type 'accept' to use it, 'cancel' to discard):")
+                                        print("(Press Ctrl+D when done with feedback)")
+
+                                        try:
+                                            refinement_feedback = read_multiline_input("")
+
+                                            if refinement_feedback and refinement_feedback.strip().lower() == 'accept':
+                                                # Accept this iteration
+                                                cover_letter = temp_working_version
+                                                print("\n✓ Accepted this version")
+                                                iterating_on_revision = False
+                                                break
+                                            elif refinement_feedback and refinement_feedback.strip().lower() == 'cancel':
+                                                # Cancel - go back to original
+                                                print("\n✓ Cancelled - keeping original version")
+                                                iterating_on_revision = False
+                                                break
+                                            elif not refinement_feedback or not refinement_feedback.strip():
+                                                print("No feedback provided. Type 'accept' to use current version or 'cancel' to go back.")
+                                                continue
+
+                                            print()  # Blank line after input
+
+                                            # Generate another revision based on this feedback
+                                            further_revised, cost_info = generator.revise_cover_letter_claude(
+                                                temp_working_version,
+                                                refinement_feedback,
+                                                job_description,
+                                                company_name,
+                                                job_title,
+                                                custom_context=custom_context
+                                            )
+
+                                            # Show the further revised version
+                                            print("\n" + SEPARATOR_LINE)
+                                            print("FURTHER REVISED VERSION (PREVIEW)")
+                                            print(SEPARATOR_LINE)
+                                            print(further_revised)
+                                            print(SEPARATOR_LINE)
+
+                                            print("\n" + DASH_LINE)
+                                            print(f"💰 Revision cost: ${cost_info['revision_cost']:.4f}")
+                                            print(f"   Session total: ${cost_info['session_total']:.4f}")
+                                            print(DASH_LINE)
+
+                                            # Ensure signature
+                                            further_revised = ensure_signature(further_revised, USER_NAME)
+
+                                            # Update the temp working version
+                                            temp_working_version = further_revised
+                                            print()
+
+                                        except (EOFError, KeyboardInterrupt):
+                                            print("\n\nCancelled iteration - keeping original version")
+                                            iterating_on_revision = False
+                                            break
+
+                                else:  # approve_choice == '3'
                                     # Reject the revision - keep the original
                                     print("\n✓ Revision rejected - keeping original version")
                                     print("You can provide different feedback on the original.")
@@ -774,7 +859,7 @@ def main():
                             print("\n" + SEPARATOR_LINE)
                             print("⚠ SIGNATURE ISSUE DETECTED")
                             print(SEPARATOR_LINE)
-                            print(f"\nThe signature appears to be cut off or not fully visible.")
+                            print("\nThe signature appears to be cut off or not fully visible.")
                             print(f"Details: {validation_result.message}")
                             if validation_result.details:
                                 print(f"Additional info: {validation_result.details}")

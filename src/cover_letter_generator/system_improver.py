@@ -1,12 +1,12 @@
 """System improvement suggestions based on feedback patterns."""
 
+import difflib
 import os
 from pathlib import Path
 from typing import Optional, Tuple
-import difflib
 
-from groq import Groq
 from dotenv import load_dotenv
+from groq import Groq
 
 # Load environment variables
 load_dotenv()
@@ -66,8 +66,12 @@ class SystemImprover:
             current_prompt = self._read_system_prompt()
 
             # Create prompt for LLM to suggest improvements
-            prompt = f"""You are helping improve a cover letter generation system based on recurring user feedback patterns.
+            prompt = (
+                "You are helping improve a cover letter generation system based on recurring "
+                "user feedback patterns."
+            )
 
+            prompt += f"""
 RECURRING ISSUE DETECTED:
 Category: {category}
 Occurrences: {count} times
@@ -77,7 +81,9 @@ Example user revision requests:
 CURRENT SYSTEM PROMPT (excerpt):
 {current_prompt[:2000]}...
 
-The user keeps having to manually request these changes. Your task: Suggest a modification to the system prompt that would make the generator automatically address this issue in future cover letters, so the user never has to ask for this again.
+The user keeps having to manually request these changes. Your task: Suggest a modification to the system prompt 
+that would make the generator automatically address this issue in future cover letters, so the user never 
+has to ask for this again.
 
 You should analyze:
 1. WHY does the user keep asking for this?
@@ -116,15 +122,35 @@ Requirements:
             explanation = None
             data_note = None
 
-            for line in result.split('\n'):
-                if line.startswith('SUGGESTION:'):
-                    suggestion = line.replace('SUGGESTION:', '').strip()
-                elif line.startswith('PLACEMENT:'):
-                    placement = line.replace('PLACEMENT:', '').strip()
-                elif line.startswith('EXPLANATION:'):
-                    explanation = line.replace('EXPLANATION:', '').strip()
-                elif line.startswith('DATA_NOTE:'):
-                    data_note = line.replace('DATA_NOTE:', '').strip()
+            # Parse the response using regex for robustness
+            import re
+            
+            # Extract fields using regex (case insensitive, multiline)
+            suggestion_match = re.search(
+                r'SUGGESTION:\s*(.*?)(?=\n(?:PLACEMENT|EXPLANATION|DATA_NOTE):|$)',
+                result,
+                re.IGNORECASE | re.DOTALL
+            )
+            placement_match = re.search(
+                r'PLACEMENT:\s*(.*?)(?=\n(?:SUGGESTION|EXPLANATION|DATA_NOTE):|$)',
+                result,
+                re.IGNORECASE
+            )
+            explanation_match = re.search(
+                r'EXPLANATION:\s*(.*?)(?=\n(?:SUGGESTION|PLACEMENT|DATA_NOTE):|$)',
+                result,
+                re.IGNORECASE | re.DOTALL
+            )
+            data_note_match = re.search(
+                r'DATA_NOTE:\s*(.*?)(?=\n(?:SUGGESTION|PLACEMENT|EXPLANATION):|$)',
+                result,
+                re.IGNORECASE | re.DOTALL
+            )
+
+            suggestion = suggestion_match.group(1).strip() if suggestion_match else None
+            placement = placement_match.group(1).strip() if placement_match else None
+            explanation = explanation_match.group(1).strip() if explanation_match else None
+            data_note = data_note_match.group(1).strip() if data_note_match else None
 
             if not suggestion:
                 return None
@@ -150,7 +176,9 @@ Requirements:
             Modified prompt
         """
         # Add the suggestion with clear markers
-        suggestion_block = f"\n\n# AUTO-GENERATED IMPROVEMENT (based on user feedback patterns)\n{suggestion}\n"
+        suggestion_block = (
+            f"\n\n# AUTO-GENERATED IMPROVEMENT (based on user feedback patterns)\n{suggestion}\n"
+        )
 
         # Simple placement strategy - add at end for now
         # (Could be made more sophisticated based on placement hint)
@@ -194,7 +222,7 @@ Requirements:
             f.write(current)
 
         self._write_system_prompt(improved_prompt)
-        print(f"✓ System prompt updated")
+        print("✓ System prompt updated")
         print(f"✓ Backup saved to: {backup_path}")
 
         # 2. Also update system_prompt_claude.txt.example
@@ -211,18 +239,24 @@ Requirements:
                 # Apply same improvement to example (improvements are name-agnostic)
                 # We need to apply the same structural changes that were made to the main file
                 # Get just the improvement section from improved_prompt
-                improvement_marker = "# AUTO-GENERATED IMPROVEMENT (based on user feedback patterns)"
+                improvement_marker = (
+                    "# AUTO-GENERATED IMPROVEMENT (based on user feedback patterns)"
+                )
                 if improvement_marker in improved_prompt:
                     improvement_section = improved_prompt.split(improvement_marker)[1]
-                    improved_example = current_example.rstrip() + f"\n\n{improvement_marker}{improvement_section}"
+                    improved_example = (
+                        current_example.rstrip() + f"\n\n{improvement_marker}{improvement_section}"
+                    )
 
                     with open(example_path, 'w') as f:
                         f.write(improved_example)
 
-                    print(f"✓ Example system prompt updated")
+                    print("✓ Example system prompt updated")
                     print(f"✓ Example backup saved to: {example_backup_path}")
                 else:
-                    print(f"⚠ Warning: Could not parse improvement section, example file not updated")
+                    print(
+                        "⚠ Warning: Could not parse improvement section, example file not updated"
+                    )
 
             except Exception as e:
                 print(f"⚠ Warning: Could not update example file: {e}")

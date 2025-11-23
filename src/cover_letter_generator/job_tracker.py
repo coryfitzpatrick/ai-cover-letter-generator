@@ -124,7 +124,7 @@ class JobTracker:
                 body=body
             ).execute()
 
-            print(f"\n✓ Added job application to tracking sheet")
+            print("\n✓ Added job application to tracking sheet")
             print(f"  Company: {company_name}")
             print(f"  Job: {job_title}")
             print(f"  Date: {date_created}")

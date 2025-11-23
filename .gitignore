@@ -43,7 +43,7 @@ data/
 Application_*/
 
 # Test files
-test_*.py
+
 test_*.pdf
 
 # OS

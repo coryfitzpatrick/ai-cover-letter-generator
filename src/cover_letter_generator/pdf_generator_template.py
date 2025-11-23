@@ -1,18 +1,17 @@
 """Template-based PDF generation for cover letters."""
 
+from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 from typing import Optional
-from io import BytesIO
-from datetime import datetime
-import re
 
 from pypdf import PdfReader, PdfWriter
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Frame
 from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
+from reportlab.platypus import Frame, Paragraph, Spacer
 
 
 def create_text_overlay(cover_letter_text: str, width: float, height: float) -> BytesIO:
@@ -214,6 +213,7 @@ def generate_cover_letter_pdf(
     if use_template:
         # Look for template in multiple locations
         import os
+
         from dotenv import load_dotenv
 
         # Load environment variables
@@ -247,7 +247,7 @@ def generate_cover_letter_pdf(
                 output_path
             )
         else:
-            print(f"Warning: Template not found in any location, using default generation")
+            print("Warning: Template not found in any location, using default generation")
             print(f"  Checked: {[str(l) for l in template_locations]}")
             use_template = False
 
