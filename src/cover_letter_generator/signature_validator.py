@@ -9,7 +9,7 @@ from typing import Optional, Tuple
 from dotenv import load_dotenv
 
 try:
-    import anthropic
+    from groq import Groq
     from pdf2image import convert_from_path
     from PIL import Image
     DEPENDENCIES_AVAILABLE = True
@@ -114,13 +114,13 @@ def validate_signature_with_vision(
         )
 
     # Check if API key is available
-    api_key = os.getenv("ANTHROPIC_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         return SignatureValidationResult(
             is_valid=True,
             confidence="low",
-            message="Signature validation skipped (ANTHROPIC_API_KEY not set)",
-            details="Set ANTHROPIC_API_KEY in .env to enable validation"
+            message="Signature validation skipped (GROQ_API_KEY not set)",
+            details="Set GROQ_API_KEY in .env to enable validation"
         )
 
     try:
@@ -137,13 +137,13 @@ def validate_signature_with_vision(
         # Convert image to base64
         image_b64 = image_to_base64(image)
 
-        # Create Anthropic client
-        client = anthropic.Anthropic(api_key=api_key)
+        # Create Groq client
+        client = Groq(api_key=api_key)
 
         # Build prompt - include full text if provided for precise comparison
         if cover_letter_text:
             word_count = len(cover_letter_text.split())
-            prompt = f"""Analyze this cover letter PDF image and determine if the signature at the bottom is fully visible and not cut off.
+            prompt_text = f"""Analyze this cover letter PDF image and determine if the signature at the bottom is fully visible and not cut off.
 
 FULL COVER LETTER TEXT (for comparison):
 {cover_letter_text}
@@ -163,7 +163,7 @@ MESSAGE: [Brief explanation]
 DETAILS: [If invalid, estimate: "Approximately X words are cut off" or "Only signature cut off, body text fits"]"""
         else:
             # Fallback if no text provided
-            prompt = f"""Analyze this cover letter PDF image and determine if the signature at the bottom is fully visible and not cut off.
+            prompt_text = f"""Analyze this cover letter PDF image and determine if the signature at the bottom is fully visible and not cut off.
 
 Look for:
 1. The closing "Sincerely," or similar
@@ -176,32 +176,32 @@ CONFIDENCE: [HIGH/MEDIUM/LOW]
 MESSAGE: [Brief explanation in one sentence]
 DETAILS: [Be specific about what is cut off]"""
 
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=500,
+        # Call Groq Llama 3.2 Vision
+        completion = client.chat.completions.create(
+            model="llama-3.2-11b-vision-preview",
             messages=[
                 {
                     "role": "user",
                     "content": [
                         {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": "image/png",
-                                "data": image_b64,
-                            },
+                            "type": "text",
+                            "text": prompt_text
                         },
                         {
-                            "type": "text",
-                            "text": prompt
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{image_b64}"
+                            }
                         }
-                    ],
+                    ]
                 }
             ],
+            temperature=0.1,
+            max_tokens=500,
         )
 
         # Parse the response
-        response_text = message.content[0].text
+        response_text = completion.choices[0].message.content
         lines = response_text.strip().split('\n')
 
         # Extract values
@@ -230,12 +230,12 @@ DETAILS: [Be specific about what is cut off]"""
     except Exception as e:
         # Check if it's a model access error (404)
         error_str = str(e)
-        if "404" in error_str or "not_found_error" in error_str or "model:" in error_str:
+        if "404" in error_str or "not_found_error" in error_str or "model" in error_str:
             return SignatureValidationResult(
                 is_valid=True,
                 confidence="low",
-                message="Signature validation skipped (model not available with API key)",
-                details="Set up Anthropic API access or continue without validation"
+                message="Signature validation skipped (model not available)",
+                details="Check Groq API key and model availability"
             )
 
         # On any other error, fail gracefully and allow the save

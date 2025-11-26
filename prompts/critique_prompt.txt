@@ -17,8 +17,17 @@ This draft is already strong. Your job is to do a light polish, NOT a major rewr
     3. **Technology:** Architecture, technical strategy, debt management.
     4. **Strategy:** Business alignment, cross-functional impact, ROI.
     *If any are missing, explicitly ask the user (or infer from context) to fill the gap.*
+- **Causal Logic Check:**
+    - Did the draft falsely link unrelated achievements? (e.g., linking "verification time" to "Git/Docker" - these are separate!)
+    - Ensure every "Action -> Result" link is supported by the context.
+- **Flow Check:**
+    - Are the transitions abrupt? Smooth them out.
+    - Does it sound like a human or a robot? Make it conversational.
 - **CRITICAL - Company name:** Does the letter use "{company_name}" consistently? If the job description mentions product names, subsidiaries, or legal entities (e.g., "Aisle Planner Pro", "Fullsteam Operations LLC"), ensure the letter uses ONLY "{company_name}". Replace any incorrect company/product names with "{company_name}".
-- **Achievement fit:** Do the achievements selected actually match what THIS job needs? Or did you default to verification time/process improvement when they need team scaling/technical architecture?
+- **Value vs. History:**
+    - Is it too focused on the past ("I did this")?
+    - **Fix:** Flip it to the future ("I can help you do X, as proven by my work at Y").
+    - Ensure achievements are used as *qualifiers/evidence*, not just a list of facts.
 - **Quantifiable metrics:** Does EVERY achievement include a specific number, percentage, or scale metric? No vague statements like "improved performance" - must be "reduced latency by 45%"
 - **Strong closing:** Is the closing assertive with a clear call-to-action? Or is it passive ("thank you for your consideration")?
 - **Values alignment:** If the job description mentions company values, mission, or culture, does the letter connect to these?
@@ -28,7 +37,7 @@ This draft is already strong. Your job is to do a light polish, NOT a major rewr
 - **Connection to their challenges:** Does the letter explicitly show HOW the candidate's experience solves THEIR specific problems?
 - Any fabricated facts not from the context?
 - Any repeated achievements or information?
-- Any em dashes (—) or double hyphens (--)? Replace with commas or separate sentences
+- **NO EM DASHES:** Check for any em dashes (—) or double hyphens (--). You MUST remove them and replace with commas or periods. The user strictly forbids them.
 - Any awkward phrasing that disrupts flow?
 - Any generic statements that could be more specific?
 - Does this letter feel unique to THIS job, or could it be sent to any company?

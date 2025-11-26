@@ -43,8 +43,7 @@ data/
 Application_*/
 
 # Testing
-tests/
-test_*.py
+
 .pytest_cache/
 
 # Local Prompts (Sensitive)
@@ -54,7 +53,7 @@ managerial_prompt.txt
 .DS_Store
 Thumbs.db
 
-system_prompt_claude.txt.backup
-system_prompt_claude.txt.example.backup
+system_prompt.txt.backup
+system_prompt.txt.example.backup
 .feedback_history.json
 *.iml

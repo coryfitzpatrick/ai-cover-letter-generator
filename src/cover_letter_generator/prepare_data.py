@@ -3,6 +3,7 @@
 import csv
 import json
 import os
+import re
 import shutil
 from pathlib import Path
 from typing import List, Tuple
@@ -447,7 +448,6 @@ def main():
                     break
             
             # Check for year (2010-2030)
-            import re
             year_match = re.search(r'20[12]\d', filename_lower)
             if year_match:
                 inferred_year = year_match.group(0)

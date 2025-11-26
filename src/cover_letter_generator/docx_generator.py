@@ -13,6 +13,7 @@ def generate_cover_letter_docx(
     cover_letter_text: str,
     output_dir: Path = None,
     filename: str = None,
+    contact_info: dict = None,
 ) -> Path:
     """Generate a cover letter DOCX file.
 
@@ -20,6 +21,7 @@ def generate_cover_letter_docx(
         cover_letter_text: The cover letter content
         output_dir: Directory to save the DOCX (default: current directory)
         filename: Custom filename (default: cover_letter_TIMESTAMP.docx)
+        contact_info: Optional dict with keys: name, email, phone, location, linkedin, portfolio
 
     Returns:
         Path to the generated DOCX
@@ -82,6 +84,56 @@ def generate_cover_letter_docx(
             section.bottom_margin = Inches(1)
             section.left_margin = Inches(0.75)
             section.right_margin = Inches(0.75)
+
+        # Add Header if contact info is provided
+        if contact_info:
+            name = contact_info.get('name', os.getenv('USER_NAME'))
+            email = contact_info.get('email', '')
+            phone = contact_info.get('phone', '')
+            location = contact_info.get('location', '')
+            linkedin = contact_info.get('linkedin', '')
+            portfolio = contact_info.get('portfolio', '')
+
+            # Name (Large, Bold) - Matches PDF NameStyle
+            name_para = doc.add_paragraph()
+            name_run = name_para.add_run(name)
+            name_run.bold = True
+            name_run.font.name = 'Arial' # Matches Helvetica-Bold in PDF
+            name_run.font.size = Pt(14) # Matches PDF size
+            name_para.paragraph_format.space_after = Pt(4) # Matches PDF spaceAfter=4
+
+            # Contact Info (Location | Phone | Email) - Matches PDF CustomHeader
+            contact_parts = []
+            if location:
+                contact_parts.append(location)
+            if phone:
+                contact_parts.append(phone)
+            if email:
+                contact_parts.append(email)
+            
+            if contact_parts:
+                contact_para = doc.add_paragraph(" | ".join(contact_parts))
+                contact_para.style = 'Normal'
+                for run in contact_para.runs:
+                    run.font.name = 'Arial' # Matches PDF font
+                    run.font.size = Pt(10) # Matches PDF fontSize=10
+                    run.font.color.rgb = None # Default black/dark grey
+                contact_para.paragraph_format.space_after = Pt(6) # Matches PDF spaceAfter=6
+
+            # Links (LinkedIn | Portfolio) - Matches PDF CustomHeader
+            link_parts = []
+            if linkedin:
+                link_parts.append("LinkedIn")
+            if portfolio:
+                link_parts.append("Portfolio")
+            
+            if link_parts:
+                links_para = doc.add_paragraph(" | ".join(link_parts))
+                links_para.style = 'Normal'
+                for run in links_para.runs:
+                    run.font.name = 'Arial'
+                    run.font.size = Pt(10) # Matches PDF fontSize=10
+                links_para.paragraph_format.space_after = Pt(12) # Matches spacer after header
 
     # Add current date with tight spacing
     date_para = doc.add_paragraph(datetime.now().strftime("%B %d, %Y"))

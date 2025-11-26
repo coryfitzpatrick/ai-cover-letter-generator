@@ -70,10 +70,10 @@ def extract_job_title(job_description: str) -> Optional[str]:
     """
     # Common patterns for job titles at the start of job descriptions
     patterns = [
-        r'^(.+?)\s+(?:position|role|opportunity)',
-        r'(?:position|role|job\s+title|title):\s*(.+?)(?:\n|$)',
-        r'(?:hiring|seeking|looking\s+for)\s+(?:a|an)\s+(.+?)(?:\s+to|\n|$)',
         r'(?:apply|application)\s+for\s+(?:the\s+)?(.+?)(?:\s+position|\s+role|\n|$)',
+        r'(?:hiring|seeking|looking\s+for)\s+(?:a|an)\s+(.+?)(?:\s+to|\n|$)',
+        r'(?:position|role|job\s+title|title):\s*(.+?)(?:\n|$)',
+        r'^(.+?)\s+(?:position|role|opportunity)',
     ]
 
     for pattern in patterns:
