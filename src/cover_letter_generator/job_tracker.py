@@ -154,3 +154,58 @@ class JobTracker:
         if match:
             return match.group(1)
         return None
+
+    def check_duplicate(self, job_url: str, spreadsheet_id: str = None) -> Optional[str]:
+        """Check if a job URL already exists in any sheet.
+
+        Args:
+            job_url: The job posting URL to check
+            spreadsheet_id: Google Sheets ID (optional, uses env if None)
+
+        Returns:
+            Name of the sheet where duplicate was found, or None if not found
+        """
+        try:
+            # Get spreadsheet ID from env if not provided
+            if spreadsheet_id is None:
+                spreadsheet_id = os.getenv("GOOGLE_SHEETS_JOB_TRACKER_ID")
+
+            if not spreadsheet_id:
+                return None
+
+            # Get metadata to find all sheet names
+            spreadsheet = self.service.spreadsheets().get(
+                spreadsheetId=spreadsheet_id
+            ).execute()
+            
+            sheets = spreadsheet.get('sheets', [])
+            
+            # Check each sheet
+            for sheet in sheets:
+                sheet_title = sheet['properties']['title']
+                
+                # Get data from Column B (Job Title/Link)
+                # We fetch the formula to see the URL in HYPERLINK("url", ...)
+                result = self.service.spreadsheets().values().get(
+                    spreadsheetId=spreadsheet_id,
+                    range=f"'{sheet_title}'!B:B",
+                    valueRenderOption='FORMULA' 
+                ).execute()
+                
+                rows = result.get('values', [])
+                
+                # Check each row for the URL
+                for row in rows:
+                    if not row:
+                        continue
+                        
+                    cell_value = row[0]
+                    # Check if URL is in the cell (either as raw text or in formula)
+                    if job_url in cell_value:
+                        return sheet_title
+                        
+            return None
+
+        except Exception as e:
+            print(f"Warning: Could not check for duplicates: {e}")
+            return None

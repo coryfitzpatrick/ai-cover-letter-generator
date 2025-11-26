@@ -23,7 +23,7 @@ class SystemImprover:
         """
         if system_prompt_path is None:
             project_root = Path(__file__).parent.parent.parent
-            system_prompt_path = project_root / "system_prompt_claude.txt"
+            system_prompt_path = project_root / "prompts" / "system_prompt.txt"
 
         self.system_prompt_path = system_prompt_path
 
@@ -199,8 +199,8 @@ Requirements:
         diff = difflib.unified_diff(
             original.splitlines(keepends=True),
             improved.splitlines(keepends=True),
-            fromfile='current_system_prompt_claude.txt',
-            tofile='improved_system_prompt_claude.txt',
+            fromfile='current_system_prompt.txt',
+            tofile='improved_system_prompt.txt',
             lineterm=''
         )
 
@@ -209,13 +209,13 @@ Requirements:
     def apply_improvement(self, improved_prompt: str):
         """Apply the improved prompt to both system prompt files.
 
-        Updates both system_prompt_claude.txt and system_prompt_claude.txt.example with the same
+        Updates both system_prompt.txt and system_prompt.txt.example with the same
         improvements, keeping the example version with placeholder names.
 
         Args:
             improved_prompt: The improved prompt text
         """
-        # 1. Update main system_prompt_claude.txt
+        # 1. Update main system_prompt.txt
         backup_path = self.system_prompt_path.with_suffix('.txt.backup')
         current = self._read_system_prompt()
         with open(backup_path, 'w') as f:
@@ -225,8 +225,8 @@ Requirements:
         print("✓ System prompt updated")
         print(f"✓ Backup saved to: {backup_path}")
 
-        # 2. Also update system_prompt_claude.txt.example
-        example_path = self.system_prompt_path.parent / "system_prompt_claude.txt.example"
+        # 2. Also update system_prompt.txt.example
+        example_path = self.system_prompt_path.parent / "system_prompt.txt.example"
         if example_path.exists():
             try:
                 # Backup example file

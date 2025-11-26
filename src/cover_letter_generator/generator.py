@@ -13,7 +13,9 @@ from anthropic import Anthropic
 from chromadb.config import Settings
 from dotenv import load_dotenv
 from groq import Groq
+import openai
 from sentence_transformers import SentenceTransformer
+from docx import Document
 
 from .analysis import JobAnalysis, JobLevel, analyze_job_posting
 from .scoring import score_document
@@ -39,12 +41,11 @@ class CoverLetterGenerator:
     # Groq model for job analysis (fast and free)
     GROQ_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
 
-    # Available Claude models
-    CLAUDE_MODELS = {
-        "sonnet": "claude-sonnet-4-5-20250929",
-        "sonnet-4.5": "claude-sonnet-4-5-20250929",
-        "opus": "claude-opus-4-20250514",
-        "opus-4": "claude-opus-4-20250514",
+    # Available models
+    AVAILABLE_MODELS = {
+        "gpt-4o": "gpt-4o",
+        "opus": "claude-3-opus-20240229",
+        "opus-4": "claude-3-opus-20240229",
     }
 
     # RAG configuration constants
@@ -60,26 +61,32 @@ class CoverLetterGenerator:
     TECHNOLOGY_RESULTS = 10  # Results per technology query
     MAX_CHUNKS_PER_SOURCE = 8  # Limit chunks from same source for diversity
 
-    def __init__(self, system_prompt_path: str = None, claude_model: str = None):
+    def __init__(self, system_prompt_path: str = None, model_name: str = None):
         """Initialize the cover letter generator.
 
         Args:
             system_prompt_path: Path to system prompt template file
-            claude_model: Claude model to use. Options: "sonnet" (default), "opus".
-                         Can also use environment variable CLAUDE_MODEL.
+            model_name: Model to use. Options: "gpt-4o" (default), "opus".
+                         Can also use environment variable LLM_MODEL.
         """
         print("Initializing cover letter generator...")
 
-        # Determine which Claude model to use
-        model_selection = claude_model or os.getenv("CLAUDE_MODEL", "sonnet")
-        self.claude_model = self.CLAUDE_MODELS.get(
+        # Determine which model to use
+        model_selection = model_name or os.getenv("LLM_MODEL", "gpt-4o")
+        self.model_name = self.AVAILABLE_MODELS.get(
             model_selection.lower(),
-            self.CLAUDE_MODELS["sonnet"]
+            self.AVAILABLE_MODELS["gpt-4o"]
         )
 
         # Display which model is being used
-        model_name = "Claude Opus 4" if "opus" in self.claude_model else "Claude Sonnet 4.5"
-        print(f"Using {model_name} for cover letter generation")
+        if "gpt-4o" in self.model_name:
+            display_name = "GPT-4o"
+        elif "opus" in self.model_name:
+            display_name = "Claude Opus 4"
+        else:
+            display_name = self.model_name
+            
+        print(f"Using {display_name} for cover letter generation")
 
         # Load embedding model
         print("Loading embedding model...")
@@ -123,12 +130,20 @@ class CoverLetterGenerator:
             raise ValueError("GROQ_API_KEY not found in environment variables")
         self.groq_client = Groq(api_key=groq_api_key)
 
-        # Initialize Claude client (for cover letter generation)
-        anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not anthropic_api_key:
-            raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+        # Initialize LLM clients
+        self.openai_client = None
+        self.claude_client = None
 
-        self.claude_client = Anthropic(api_key=anthropic_api_key)
+        if "gpt" in self.model_name:
+            openai_api_key = os.getenv("OPENAI_API_KEY")
+            if not openai_api_key:
+                raise ValueError("OPENAI_API_KEY not found in environment variables")
+            self.openai_client = openai.Client(api_key=openai_api_key)
+        else:
+            anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+            if not anthropic_api_key:
+                raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+            self.claude_client = Anthropic(api_key=anthropic_api_key)
 
         # Cost tracking
         self.total_cost = 0.0
@@ -136,7 +151,7 @@ class CoverLetterGenerator:
 
         # Load system prompt
         if system_prompt_path is None:
-            system_prompt_path = Path(__file__).parent.parent.parent / "system_prompt_claude.txt"
+            system_prompt_path = Path(__file__).parent.parent.parent / "prompts" / "system_prompt.txt"
         else:
             system_prompt_path = Path(system_prompt_path)
 
@@ -147,6 +162,39 @@ class CoverLetterGenerator:
             self.system_prompt_template = f.read()
 
         print("✓ Generator initialized successfully\n")
+        
+        # Initialize project root
+        self.project_root = Path(__file__).parent.parent.parent
+
+    def _load_leadership_philosophy(self) -> str:
+        """Load leadership philosophy from Google Drive or local file."""
+        leadership_philosophy = ""
+        
+        # Resolve DATA_DIR
+        data_dir_env = os.getenv("DATA_DIR")
+        if data_dir_env:
+            data_dir_clean = data_dir_env.strip('"').strip("'")
+            data_dir = Path(data_dir_clean).expanduser().resolve()
+            
+            # Check for DOCX first
+            philosophy_docx = data_dir / "Leadership Philosophy.docx"
+            if philosophy_docx.exists():
+                try:
+                    doc = Document(str(philosophy_docx))
+                    leadership_philosophy = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+                    print(f"✓ Loaded leadership philosophy from {philosophy_docx.name}")
+                except Exception as e:
+                    print(f"Warning: Failed to read philosophy DOCX: {e}")
+
+        # Fallback to local txt if not found in Drive (or if DATA_DIR not set)
+        if not leadership_philosophy:
+            philosophy_path = self.project_root / "leadership_philosophy.txt"
+            if philosophy_path.exists():
+                with open(philosophy_path, 'r') as f:
+                    leadership_philosophy = f.read()
+                print("✓ Loaded leadership philosophy from local file")
+                
+        return leadership_philosophy
 
     def analyze_job_posting(self, job_description: str, job_title: str = None) -> JobAnalysis:
         """Analyze job posting to extract requirements and classify job type.
@@ -166,7 +214,11 @@ class CoverLetterGenerator:
         )
 
     def get_relevant_context(
-        self, job_description: str, n_results: int = None, job_title: str = None
+        self, 
+        job_description: str, 
+        n_results: int = None, 
+        job_title: str = None,
+        job_analysis: JobAnalysis = None
     ) -> str:
         """Retrieve relevant context from the vector database using intelligent multi-stage retrieval.
 
@@ -174,12 +226,14 @@ class CoverLetterGenerator:
             job_description: The job description to match against
             n_results: Number of results to retrieve (default from class constant)
             job_title: Optional job title for better analysis
+            job_analysis: Optional pre-computed job analysis to avoid re-running it
 
         Returns:
             Combined context string optimized for the specific job
         """
-        # Step 1: Analyze the job posting
-        job_analysis = self.analyze_job_posting(job_description, job_title)
+        # Step 1: Analyze the job posting (if not already provided)
+        if job_analysis is None:
+            job_analysis = self.analyze_job_posting(job_description, job_title)
 
         # Step 2: Determine context allocation based on job type and level
         max_context_chars = self.MAX_CONTEXT_CHARS
@@ -328,13 +382,17 @@ class CoverLetterGenerator:
         # Claude pricing (as of 2025)
         # Reference: https://www.anthropic.com/pricing
 
-        if "opus-4" in model or "claude-opus-4" in model:
+        if "opus" in model or "claude-3-opus" in model:
             # Claude Opus 4 - Maximum power
             input_cost = (input_tokens / 1_000_000) * 15.00   # $15 per million input tokens
             output_cost = (output_tokens / 1_000_000) * 75.00  # $75 per million output tokens
-        elif "sonnet-4" in model or "claude-sonnet-4" in model or "claude-3-5-sonnet" in model:
-            # Claude Sonnet 4.5 and 3.5 - Fast and cost-effective
-            input_cost = (input_tokens / 1_000_000) * 5.00   # $5 per million input tokens (updated from $3)
+        elif "gpt-4o" in model:
+            # GPT-4o - High quality, lower cost
+            input_cost = (input_tokens / 1_000_000) * 2.50    # $2.50 per million input tokens
+            output_cost = (output_tokens / 1_000_000) * 10.00   # $10.00 per million output tokens
+        elif "sonnet" in model or "claude-3-5-sonnet" in model:
+            # Claude Sonnet 3.5 - Fast and cost-effective
+            input_cost = (input_tokens / 1_000_000) * 3.00   # $3 per million input tokens
             output_cost = (output_tokens / 1_000_000) * 15.00  # $15 per million output tokens
         else:
             # Unknown model
@@ -369,7 +427,7 @@ class CoverLetterGenerator:
             "calls": self.api_calls
         }
 
-    def generate_cover_letter_claude_two_stage(
+    def generate_cover_letter(
         self,
         job_description: str,
         company_name: str = None,
@@ -400,8 +458,13 @@ class CoverLetterGenerator:
         job_analysis = self.analyze_job_posting(job_description, job_title)
 
         # Get relevant context
+        # Get relevant context
         print("\nRetrieving relevant context from knowledge base...")
-        context = self.get_relevant_context(job_description, job_title=job_title)
+        context = self.get_relevant_context(
+            job_description, 
+            job_title=job_title,
+            job_analysis=job_analysis
+        )
 
         # Append custom context if provided
         if custom_context:
@@ -423,12 +486,15 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
                 analysis_summary += f"\n{i}. [{req.category.upper()}] {req.description}"
 
         # Load Claude system prompt
-        claude_prompt_path = Path(__file__).parent.parent.parent / "system_prompt_claude.txt"
+        claude_prompt_path = Path(__file__).parent.parent.parent / "prompts" / "system_prompt.txt"
         if not claude_prompt_path.exists():
             raise FileNotFoundError(f"Claude system prompt not found at {claude_prompt_path}")
 
         with open(claude_prompt_path, 'r') as f:
             claude_prompt_template = f.read()
+
+        # Load Leadership Philosophy
+        leadership_philosophy = self._load_leadership_philosophy()
 
         # Format the prompt
         system_prompt = claude_prompt_template.format(
@@ -436,35 +502,51 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
             job_description=job_description,
             company_name=company_name or "[Company Name]",
             job_title=job_title or "[Job Title]",
-            job_analysis=analysis_summary
+            job_analysis=analysis_summary,
+            leadership_philosophy=leadership_philosophy
         )
 
-        model_name = "Claude Opus 4" if "opus" in self.claude_model else "Claude Sonnet 4.5"
         # [NEW] Context Pre-processing Layer
         # Rewrite the context if a custom prompt is provided
         print("Preprocessing context...")
         managerial_context = self._preprocess_context(context)
         
         # Stage 1: Generate initial draft
-        print(f"Generating initial draft with {self.claude_model}...")
+        print(f"Generating initial draft with {self.model_name}...")
         
         try:
-            response = self.claude_client.messages.create(
-                model=self.claude_model,
-                max_tokens=2500,
-                temperature=0.7,
-                system=system_prompt,
-                messages=[
-                    {"role": "user", "content": f"CONTEXT:\n{managerial_context}\n\nJOB DESCRIPTION:\n{job_description}\n\nWrite an interview-worthy cover letter for this job."}
-                ]
-            )
-
-            initial_draft = response.content[0].text
-            draft_cost = self._track_api_cost(
-                self.claude_model,
-                response.usage.input_tokens,
-                response.usage.output_tokens
-            )
+            if "gpt" in self.model_name:
+                response = self.openai_client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"CONTEXT:\n{managerial_context}\n\nJOB DESCRIPTION:\n{job_description}\n\nWrite an interview-worthy cover letter for this job."}
+                    ],
+                    temperature=0.7,
+                    max_tokens=2500
+                )
+                initial_draft = response.choices[0].message.content
+                draft_cost = self._track_api_cost(
+                    self.model_name,
+                    response.usage.prompt_tokens,
+                    response.usage.completion_tokens
+                )
+            else:
+                response = self.claude_client.messages.create(
+                    model=self.model_name,
+                    max_tokens=2500,
+                    temperature=0.7,
+                    system=system_prompt,
+                    messages=[
+                        {"role": "user", "content": f"CONTEXT:\n{managerial_context}\n\nJOB DESCRIPTION:\n{job_description}\n\nWrite an interview-worthy cover letter for this job."}
+                    ]
+                )
+                initial_draft = response.content[0].text
+                draft_cost = self._track_api_cost(
+                    self.model_name,
+                    response.usage.input_tokens,
+                    response.usage.output_tokens
+                )
 
             print(f"✓ Initial draft generated (cost: ${draft_cost:.4f})")
 
@@ -476,7 +558,7 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
         print("=" * 80)
 
         # Stage 2: Light polish and refinement
-        critique_prompt_path = self.project_root / "critique_prompt.txt"
+        critique_prompt_path = self.project_root / "prompts" / "critique_prompt.txt"
         if not critique_prompt_path.exists():
             raise FileNotFoundError(f"Critique prompt file not found at {critique_prompt_path}")
             
@@ -489,24 +571,40 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
             job_description=job_description[:2000]  # Truncate JD to avoid context limits
         )
 
-        print("\nClaude is critiquing and refining the draft...")
+        print(f"\n{self.model_name} is critiquing and refining the draft...")
 
         try:
-            refinement_response = self.claude_client.messages.create(
-                model=self.claude_model,
-                max_tokens=2500,
-                temperature=0.7,
-                messages=[
-                    {"role": "user", "content": critique_prompt}
-                ]
-            )
-
-            full_response = refinement_response.content[0].text
-            refinement_cost = self._track_api_cost(
-                self.claude_model,
-                refinement_response.usage.input_tokens,
-                refinement_response.usage.output_tokens
-            )
+            if "gpt" in self.model_name:
+                refinement_response = self.openai_client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant."}, # Minimal system prompt for critique
+                        {"role": "user", "content": critique_prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=2500
+                )
+                full_response = refinement_response.choices[0].message.content
+                refinement_cost = self._track_api_cost(
+                    self.model_name,
+                    refinement_response.usage.prompt_tokens,
+                    refinement_response.usage.completion_tokens
+                )
+            else:
+                refinement_response = self.claude_client.messages.create(
+                    model=self.model_name,
+                    max_tokens=2500,
+                    temperature=0.7,
+                    messages=[
+                        {"role": "user", "content": critique_prompt}
+                    ]
+                )
+                full_response = refinement_response.content[0].text
+                refinement_cost = self._track_api_cost(
+                    self.model_name,
+                    refinement_response.usage.input_tokens,
+                    refinement_response.usage.output_tokens
+                )
 
             print(f"✓ Refinement complete (cost: ${refinement_cost:.4f})")
 
@@ -549,10 +647,10 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
 
         return refined_letter, cost_info
 
-    def revise_cover_letter_claude(
+    def revise_cover_letter(
         self,
-        current_letter: str,
-        user_feedback: str,
+        current_version: str,
+        feedback: str,
         job_description: str,
         company_name: str = None,
         job_title: str = None,
@@ -561,8 +659,8 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
         """Revise cover letter with Claude based on user feedback.
 
         Args:
-            current_letter: The current cover letter to revise
-            user_feedback: User's feedback for what to change
+            current_version: The current cover letter to revise
+            feedback: User's feedback for what to change
             job_description: The job description
             company_name: Company name
             job_title: Job title
@@ -572,7 +670,7 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
             Tuple of (revised_letter, cost_info)
         """
         print("\n" + "=" * 80)
-        print("REVISING WITH CLAUDE SONNET 4.5")
+        print(f"REVISING WITH {self.model_name.upper()}")
         print("=" * 80)
         print(f"\nUser feedback: {user_feedback}")
 
@@ -585,11 +683,14 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
 
         # Load Claude system prompt
         system_prompt_path = os.path.join(
-            os.path.dirname(__file__), '..', '..', 'system_prompt_claude.txt'
+            os.path.dirname(__file__), '..', '..', 'prompts', 'system_prompt.txt'
         )
 
         with open(system_prompt_path, 'r') as f:
             system_prompt_template = f.read()
+
+        # Load Leadership Philosophy
+        leadership_philosophy = self._load_leadership_philosophy()
 
         # Fill in the template
         system_prompt = system_prompt_template.format(
@@ -597,7 +698,8 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
             job_title=job_title or "[Job Title]",
             context=context,
             job_description=job_description,
-            job_analysis=""  # Not needed for revisions
+            job_analysis="",  # Not needed for revisions
+            leadership_philosophy=leadership_philosophy
         )
 
         # Create revision prompt
@@ -618,22 +720,39 @@ Write the complete revised cover letter."""
 
         try:
             print("\nGenerating revision...")
-            response = self.claude_client.messages.create(
-                model=self.claude_model,
-                max_tokens=2000,
-                temperature=0.7,
-                system=system_prompt,
-                messages=[
-                    {"role": "user", "content": revision_prompt}
-                ]
-            )
-
-            revised_letter = response.content[0].text
-            revision_cost = self._track_api_cost(
-                self.claude_model,
-                response.usage.input_tokens,
-                response.usage.output_tokens
-            )
+            
+            if "gpt" in self.model_name:
+                response = self.openai_client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": revision_prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=2000
+                )
+                revised_letter = response.choices[0].message.content
+                revision_cost = self._track_api_cost(
+                    self.model_name,
+                    response.usage.prompt_tokens,
+                    response.usage.completion_tokens
+                )
+            else:
+                response = self.claude_client.messages.create(
+                    model=self.model_name,
+                    max_tokens=2000,
+                    temperature=0.7,
+                    system=system_prompt,
+                    messages=[
+                        {"role": "user", "content": revision_prompt}
+                    ]
+                )
+                revised_letter = response.content[0].text
+                revision_cost = self._track_api_cost(
+                    self.model_name,
+                    response.usage.input_tokens,
+                    response.usage.output_tokens
+                )
 
             print(f"✓ Revision complete (cost: ${revision_cost:.4f})")
 
@@ -680,11 +799,14 @@ Write the complete revised cover letter."""
 
         # Load Claude system prompt
         system_prompt_path = os.path.join(
-            os.path.dirname(__file__), '..', '..', 'system_prompt_claude.txt'
+            os.path.dirname(__file__), '..', '..', 'prompts', 'system_prompt.txt'
         )
 
         with open(system_prompt_path, 'r') as f:
             system_prompt_template = f.read()
+
+        # Load Leadership Philosophy
+        leadership_philosophy = self._load_leadership_philosophy()
 
         # Fill in the template
         system_prompt = system_prompt_template.format(
@@ -692,11 +814,12 @@ Write the complete revised cover letter."""
             job_title=job_title or "[Job Title]",
             context=context,
             job_description=job_description,
-            job_analysis=""  # Not needed for revisions
+            job_analysis="",  # Not needed for revisions
+            leadership_philosophy=leadership_philosophy
         )
 
         # Create revision prompt
-        revision_prompt_path = self.project_root / "revision_prompt.txt"
+        revision_prompt_path = self.project_root / "prompts" / "revision_prompt.txt"
         if revision_prompt_path.exists():
             with open(revision_prompt_path, 'r') as f:
                 revision_template = f.read()
@@ -709,26 +832,60 @@ Write the complete revised cover letter."""
         )
 
         try:
-            # Stream response from Claude
-            with self.claude_client.messages.stream(
-                model=self.claude_model,
-                max_tokens=2000,
-                temperature=0.7,
-                system=system_prompt,
-                messages=[
-                    {"role": "user", "content": revision_prompt}
-                ]
-            ) as stream:
-                for text in stream.text_stream:
-                    yield text
-
-                # Track cost after streaming is complete
-                final_message = stream.get_final_message()
-                self._track_api_cost(
-                    self.claude_model,
-                    final_message.usage.input_tokens,
-                    final_message.usage.output_tokens
+            # Stream response
+            if "gpt" in self.model_name:
+                stream = self.openai_client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": revision_prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=2000,
+                    stream=True
                 )
+                
+                full_content = []
+                for chunk in stream:
+                    if chunk.choices[0].delta.content:
+                        content = chunk.choices[0].delta.content
+                        full_content.append(content)
+                        yield content
+                
+                # OpenAI doesn't return usage in stream chunks easily, so we estimate or skip
+                # For simplicity in this hybrid implementation, we'll skip exact cost tracking for stream
+                # or estimate based on length
+                full_text = "".join(full_content)
+                # Rough estimation: 1 token ~= 4 chars
+                output_tokens = len(full_text) // 4
+                input_tokens = len(system_prompt) // 4 + len(revision_prompt) // 4
+                
+                self._track_api_cost(
+                    self.model_name,
+                    input_tokens,
+                    output_tokens
+                )
+                
+            else:
+                with self.claude_client.messages.stream(
+                    model=self.model_name,
+                    max_tokens=2000,
+                    temperature=0.7,
+                    system=system_prompt,
+                    messages=[
+                        {"role": "user", "content": revision_prompt}
+                    ]
+                ) as stream:
+                    for text in stream.text_stream:
+                        yield text
+
+                    # Track cost after streaming is complete
+                    final_message = stream.get_final_message()
+                    self._track_api_cost(
+                        self.model_name,
+                        final_message.usage.input_tokens,
+                        final_message.usage.output_tokens
+                    )
 
         except Exception as e:
             raise RuntimeError(f"Error streaming revision: {e}") from e
@@ -753,16 +910,27 @@ Write the complete revised cover letter."""
             with open(managerial_prompt_path, 'r') as f:
                 translation_prompt = f.read()
             
-            # Use Groq for speed, or Claude for quality. Using Claude here for quality since it's critical.
-            response = self.claude_client.messages.create(
-                model=self.claude_model,
-                max_tokens=2000,
-                temperature=0.5,
-                messages=[
-                    {"role": "user", "content": translation_prompt.format(context=context_str[:6000])} # Truncate to be safe
-                ]
-            )
-            return response.content[0].text
+            # Use Groq for speed, or LLM for quality.
+            if "gpt" in self.model_name:
+                response = self.openai_client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "user", "content": translation_prompt.format(context=context_str[:6000])}
+                    ],
+                    temperature=0.5,
+                    max_tokens=2000
+                )
+                return response.choices[0].message.content
+            else:
+                response = self.claude_client.messages.create(
+                    model=self.model_name,
+                    max_tokens=2000,
+                    temperature=0.5,
+                    messages=[
+                        {"role": "user", "content": translation_prompt.format(context=context_str[:6000])} # Truncate to be safe
+                    ]
+                )
+                return response.content[0].text
         except Exception as e:
             print(f"Warning: Managerial translation failed ({e}). Using original context.")
             return context_str

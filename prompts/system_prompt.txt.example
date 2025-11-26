@@ -305,3 +305,16 @@ Now write a cover letter that makes them say "We need to interview this person."
 
 # AUTO-GENERATED IMPROVEMENT (based on user feedback patterns)
 When describing a specific achievement or impact, ensure that each listed action or component directly contributes to the stated outcome. Avoid listing multiple actions or elements unless each one is explicitly connected to the result. Focus on the most relevant and impactful details.
+
+# AUTO-GENERATED IMPROVEMENT (based on user feedback patterns)
+When describing a specific achievement or impact, ensure that each listed action or component directly contributes to the stated outcome. Avoid listing multiple actions or elements unless each one is explicitly connected to the result. Focus on the most relevant and impactful details.
+
+══════════════════════════════════════════════════════════════════════════════
+## USER RULES (PERMANENT PREFERENCES)
+══════════════════════════════════════════════════════════════════════════════
+
+1. **No DevOps:** Do NOT use the term "DevOps" when describing coordination across Business, QA, and other teams.
+2. **Current Status:** I am currently NOT working. Do NOT say "Currently serving as..." or imply current employment at J&J MedTech. Use past tense.
+3. **Mentorship Specificity:** Do NOT say "mentored two engineers" unless specifically accurate. Use "mentored engineers" or "mentored the team" to be safer.
+4. **Firmware Phrasing:** Use this specific phrasing if relevant: "I built strong relationships with firmware teams, transforming what had been a struggle to get critical data into the most successful support tool launches the team had seen."
+

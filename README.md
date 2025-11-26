@@ -4,7 +4,8 @@ An AI-powered cover letter generator that uses Retrieval-Augmented Generation (R
 
 ## Features
 
-- **Claude Sonnet 4.5 Generation**: Two-stage generation and refinement process for highest quality output
+- **GPT-4o Generation**: High-quality, cost-effective generation (default)
+- **Claude Opus Support**: Option to use Claude Opus for maximum reasoning power
 - **RAG-based Generation**: Uses vector embeddings to retrieve relevant information from your professional documents
 - **LinkedIn Integration**: Automatically processes LinkedIn CSV exports (profile, recommendations)
 - **JSON Data Support**: Processes JSON files containing professional information
@@ -22,7 +23,8 @@ An AI-powered cover letter generator that uses Retrieval-Augmented Generation (R
 
 ## Tech Stack
 
-- **Primary LLM**: Claude Sonnet 4.5 (two-stage generation with refinement for best quality)
+- **Primary LLM**: GPT-4o (default) or Claude Opus 4
+- **Signature Validation**: Llama 3.2 Vision (via Groq)
 - **Job Analysis**: Groq with Llama 4 Maverick (fast, free job requirement extraction)
 - **Vector Database**: ChromaDB for storing and retrieving document embeddings
 - **Embeddings**: Sentence Transformers (all-MiniLM-L6-v2)
@@ -83,36 +85,38 @@ cp .env.example .env
 7. Edit `.env` and add your configuration:
 ```bash
 # Required
+OPENAI_API_KEY=your_openai_api_key_here
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
 GROQ_API_KEY=your_groq_api_key_here
 USER_NAME=Your Full Name
 ```
 
 **Required API Keys:**
-- **ANTHROPIC_API_KEY**: Get from https://console.anthropic.com/ (for Claude Sonnet 4.5 generation and signature validation)
-- **GROQ_API_KEY**: Get from https://console.groq.com/keys (free tier available, used for job analysis)
+- **OPENAI_API_KEY**: Get from https://platform.openai.com/api-keys (for GPT-4o generation)
+- **GROQ_API_KEY**: Get from https://console.groq.com/keys (free tier available, used for job analysis and signature validation)
+- **ANTHROPIC_API_KEY**: Get from https://console.anthropic.com/ (Optional - only for Claude Opus generation)
 - **USER_NAME**: Your full name used for cover letter filenames (e.g., "John Smith Cover Letter.pdf")
 
 8. **Create your personalized system prompt** (Required):
 
 ```bash
-cp system_prompt_claude.txt.example system_prompt_claude.txt
+cp prompts/system_prompt.txt.example prompts/system_prompt.txt
 ```
 
-**Important:** You MUST edit `system_prompt_claude.txt` and replace all instances of `{YOUR NAME}` with your actual name:
+**Important:** You MUST edit `system_prompt.txt` and replace all instances of `{YOUR NAME}` with your actual name:
 
 - Find: `{YOUR NAME}`
 - Replace with: Your actual name (e.g., "John Smith")
 - Save the file
 
-The `system_prompt_claude.txt` file controls how your cover letters are generated. It's your personal configuration and is **not tracked in git** (only `system_prompt_claude.txt.example` is version controlled as a template).
+The `prompts/system_prompt.txt` file controls how your cover letters are generated. It's your personal configuration and is **not tracked in git** (only `prompts/system_prompt.txt.example` is version controlled as a template).
 
 **Example:**
 ```
-# Before (in system_prompt_claude.txt)
+# Before (in system_prompt.txt)
 CONTEXT ABOUT {YOUR NAME} (ONLY SOURCE OF TRUTH):
 
-# After (in your system_prompt_claude.txt)
+# After (in your system_prompt.txt)
 CONTEXT ABOUT John Smith (ONLY SOURCE OF TRUTH):
 ```
 
@@ -188,6 +192,20 @@ Instructions:
 
 Type 'quit' or 'exit' to exit the program.
 ================================================================================
+
+================================================================================
+Which AI model would you like to use?
+================================================================================
+
+Available models:
+  (1) GPT-4o [Default]
+      - Best quality, cost-effective
+      - Cost: ~$0.01-0.02 per cover letter
+  (2) Claude Opus 4
+      - Maximum reasoning power
+      - Cost: ~$0.10-0.15 per cover letter (expensive)
+
+Choice [1]: 1
 
 Initializing cover letter generator...
 Loading embedding model...
@@ -451,7 +469,7 @@ The tool learns from your feedback patterns and suggests permanent improvements 
 **How it works:**
 1. Every time you provide feedback, it's tracked and categorized (e.g., "leadership", "technical_depth", "tone")
 2. When you give similar feedback 3+ times, the system detects the pattern
-3. AI analyzes the pattern and suggests a permanent modification to `system_prompt_claude.txt`
+3. AI analyzes the pattern and suggests a permanent modification to `system_prompt.txt`
 4. You review the proposed change (with diff)
 5. If approved, the system prompt is updated automatically
 6. Future cover letters automatically incorporate this improvement
@@ -482,7 +500,7 @@ PROPOSED SYSTEM PROMPT UPDATE
 Explanation: Add explicit instruction to prominently feature leadership experience
 in the opening paragraphs with specific examples and metrics.
 
-This would modify your system_prompt_claude.txt file to automatically
+This would modify your system_prompt.txt file to automatically
 address this feedback pattern in future cover letters.
 
 Changes that would be made:
@@ -525,9 +543,9 @@ Choice [n]: y
 - **Specificity**: Examples, metrics, details
 
 **Files modified:**
-- `system_prompt_claude.txt` - Your personalized system prompt
+- `system_prompt.txt` - Your personalized system prompt
 - `.feedback_history.json` - Tracks feedback patterns (automatically managed)
-- `system_prompt_claude.txt.backup` - Backup created before each change
+- `system_prompt.txt.backup` - Backup created before each change
 
 ### PDF Output
 
@@ -615,11 +633,11 @@ The system prompt controls how cover letters are generated.
 **Initial Setup (Required):**
 1. Copy the example template:
    ```bash
-   cp system_prompt_claude.txt.example system_prompt_claude.txt
+   cp prompts/system_prompt.txt.example prompts/system_prompt.txt
    ```
 
 2. **Replace `{YOUR NAME}` with your actual name:**
-   - Open `system_prompt_claude.txt` in your editor
+   - Open `system_prompt.txt` in your editor
    - Use Find & Replace to change all instances of `{YOUR NAME}` to your actual name
    - Example: `{YOUR NAME}` → `John Smith`
    - This appears in multiple places throughout the file
@@ -627,14 +645,14 @@ The system prompt controls how cover letters are generated.
 3. Customize the prompt further if desired (optional)
 
 **Important:**
-- `system_prompt_claude.txt` is YOUR personal configuration file
+- `system_prompt.txt` is YOUR personal configuration file
 - It is **NOT tracked in git** (already in `.gitignore`)
-- Only `system_prompt_claude.txt.example` is version controlled as a template
-- Never commit your personal `system_prompt_claude.txt` to version control
+- Only `system_prompt.txt.example` is version controlled as a template
+- Never commit your personal `system_prompt.txt` to version control
 
 **Customization Options:**
 
-Edit `system_prompt_claude.txt` to customize:
+Edit `system_prompt.txt` to customize:
 
 - Tone and style
 - Structure and format
@@ -653,7 +671,7 @@ The prompt uses these variables:
 - `{job_title}`: The position you're applying for
 
 **Must be manually replaced during setup:**
-- `{YOUR NAME}`: Replace with your actual name (e.g., "John Smith") throughout the entire `system_prompt_claude.txt` file
+- `{YOUR NAME}`: Replace with your actual name (e.g., "John Smith") throughout the entire `system_prompt.txt` file
 
 ### Adding More Documents
 
@@ -682,18 +700,13 @@ In `src/cover_letter_generator/generator.py`, you can modify:
 
 ### Using a Different LLM
 
-Currently using **Groq with Llama 3.3 70B Versatile** (fast, high-quality, excellent for complex instructions).
+The tool supports **GPT-4o** (default) and **Claude Opus 4**.
 
-To use a different Groq model, change the `MODEL_NAME` constant in `generator.py`:
-- `llama-3.3-70b-versatile` (current - best quality and instruction following)
-- `llama-3.1-70b-versatile` (previous generation, still excellent)
-- `mixtral-8x7b-32768` (faster, larger context window)
+To switch models, simply select your preference when running the CLI:
+1. **GPT-4o**: Best balance of quality and cost (~$0.015/letter)
+2. **Claude Opus 4**: Maximum reasoning capability (~$0.10/letter)
 
-To switch to a different LLM provider, you'll need to:
-1. Update the imports in `generator.py`
-2. Modify the client initialization in `__init__`
-3. Update the API calls in `generate_cover_letter_stream` and `revise_cover_letter_stream`
-4. Update the `.env` file with the appropriate API key
+To add other models, you would need to modify `src/cover_letter_generator/generator.py` and `cli.py`.
 
 ## Project Structure
 
@@ -719,8 +732,9 @@ cover-letter-ai-gen/
 │       ├── feedback_tracker.py    # Feedback pattern tracking
 │       ├── system_improver.py     # System prompt improvement suggester
 │       └── utils.py               # Utility functions
-├── system_prompt_claude.txt.example      # System prompt template (example)
-├── system_prompt_claude.txt              # Your personalized system prompt (not in git)
+├── prompts/                       # Prompt templates and configuration
+│   ├── system_prompt.txt.example      # System prompt template (example)
+│   └── system_prompt.txt              # Your personalized system prompt (not in git)
 ├── setup_google_drive.sh          # Google Drive setup script
 ├── DATA_SETUP.md                  # Google Drive setup guide
 ├── FILE_ORGANIZATION.md           # File organization guide
@@ -752,9 +766,9 @@ cover-letter-ai-gen/
 ## Advanced Configuration
 
 ### Custom Prompts
-You can customize the behavior of the generator by creating local prompt files in the project root. These files are gitignored to protect your personal strategies.
+You can customize the behavior of the generator by creating local prompt files in the `prompts/` directory. These files are gitignored to protect your personal strategies.
 
-- **`critique_prompt.txt`**: Customize the refinement instructions used in the second stage of generation.
+- **`prompts/critique_prompt.txt`**: Customize the refinement instructions used in the second stage of generation.
 
 ## Troubleshooting
 
@@ -780,7 +794,7 @@ Make sure you've created a `.env` file and added your Groq API key from https://
 
 **Solutions:**
 - Install poppler: `brew install poppler` (macOS) or `sudo apt-get install poppler-utils` (Linux)
-- Set `ANTHROPIC_API_KEY` in your `.env` file (get from https://console.anthropic.com/)
+- Set `GROQ_API_KEY` in your `.env` file (get from https://console.groq.com/keys)
 - Verify poppler is installed: `which pdftoppm` should show a path
 - The tool will work fine without signature validation - it's an optional feature
 
