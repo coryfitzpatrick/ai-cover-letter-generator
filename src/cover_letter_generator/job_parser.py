@@ -276,7 +276,8 @@ Respond in this EXACT format (no extra words):
 COMPANY: [just the company name]
 TITLE: [just the job title]
 DESCRIPTION:
-[INCLUDE EVERYTHING FROM THE JOB POSTING - all requirements, responsibilities, qualifications, benefits, company info, etc. Do NOT summarize - copy all details.]
+[INCLUDE EVERYTHING FROM THE JOB POSTING - all requirements, responsibilities, 
+qualifications, benefits, company info, etc. Do NOT summarize - copy all details.]
 
 Example good response:
 COMPANY: Google
@@ -334,7 +335,11 @@ DESCRIPTION: This is a software engineering role... [truncated summary]
             if not title_match:
                 title_match = re.search(r'(?:job\s+)?title[:\s]+(.+?)(?:\n|$)', result, re.IGNORECASE)
             if not description_match:
-                description_match = re.search(r'(?:job\s+)?description[:\s]*\n(.+)', result, re.IGNORECASE | re.DOTALL)
+                description_match = re.search(
+                    r'(?:job\s+)?description[:\s]*\n(.+)', 
+                    result, 
+                    re.IGNORECASE | re.DOTALL
+                )
 
             if not company_match or not title_match or not description_match:
                 print("Could not parse even with flexible matching")
@@ -348,8 +353,18 @@ DESCRIPTION: This is a software engineering role... [truncated summary]
 
         # Clean up verbose LLM responses
         # Remove explanatory prefixes like "The company name is..." or "The job title is..."
-        company_name = re.sub(r'^(?:The\s+)?company(?:\s+name)?\s+(?:is|appears to be)\s+', '', company_name, flags=re.IGNORECASE).strip()
-        job_title = re.sub(r'^(?:The\s+)?job\s+title\s+(?:is|appears to be)\s+', '', job_title, flags=re.IGNORECASE).strip()
+        company_name = re.sub(
+            r'^(?:The\s+)?company(?:\s+name)?\s+(?:is|appears to be)\s+', 
+            '', 
+            company_name, 
+            flags=re.IGNORECASE
+        ).strip()
+        job_title = re.sub(
+            r'^(?:The\s+)?job\s+title\s+(?:is|appears to be)\s+', 
+            '', 
+            job_title, 
+            flags=re.IGNORECASE
+        ).strip()
 
         # Remove trailing explanations like ". Therefore, it is Unknown"
         company_name = re.sub(r'\.\s+Therefore.*$', '', company_name, flags=re.IGNORECASE).strip()

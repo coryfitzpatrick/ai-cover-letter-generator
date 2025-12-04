@@ -1,8 +1,6 @@
 """Unit tests for utility functions."""
 
 import unittest
-from datetime import datetime
-from unittest.mock import patch
 
 from src.cover_letter_generator.utils import (
     create_folder_name_from_details,

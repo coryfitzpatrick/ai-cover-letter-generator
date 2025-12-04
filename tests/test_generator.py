@@ -1,7 +1,6 @@
 """Unit tests for CoverLetterGenerator."""
 
 import unittest
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 # Mock external dependencies before importing generator
@@ -42,7 +41,11 @@ class TestCoverLetterGenerator(unittest.TestCase):
         self.mock_exists = self.fs_patcher.start()
         self.mock_exists.return_value = True
 
-        self.open_patcher = patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="System Prompt")
+        self.open_patcher = patch(
+            'builtins.open', 
+            new_callable=unittest.mock.mock_open, 
+            read_data="System Prompt"
+        )
         self.mock_open = self.open_patcher.start()
 
     def tearDown(self):
@@ -119,6 +122,39 @@ class TestCoverLetterGenerator(unittest.TestCase):
         
         # Verify calls
         generator.analyze_job_posting.assert_called_once()
+        generator.get_relevant_context.assert_called_once()
+        generator.openai_client.chat.completions.create.assert_called()
+
+    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
+    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch('src.cover_letter_generator.generator.Groq')
+    @patch('src.cover_letter_generator.generator.openai.Client')
+    def test_revise_cover_letter(self, mock_openai, mock_groq, mock_st, mock_chroma):
+        """Test the revision flow."""
+        mock_chroma.return_value = self.mock_chroma_client
+        
+        # Setup mocks
+        generator = CoverLetterGenerator(model_name="gpt-4o")
+        
+        # Mock get_relevant_context
+        generator.get_relevant_context = MagicMock(return_value="Context")
+        
+        # Mock LLM response
+        mock_response = MagicMock()
+        mock_response.choices[0].message.content = "Revised Cover Letter"
+        mock_response.usage.prompt_tokens = 100
+        mock_response.usage.completion_tokens = 50
+        generator.openai_client.chat.completions.create.return_value = mock_response
+        
+        # Call revise
+        revised_letter, cost_info = generator.revise_cover_letter(
+            "Original Letter", "Make it better", "Job Description", "Company", "Title"
+        )
+        
+        self.assertEqual(revised_letter, "Revised Cover Letter")
+        self.assertIn("revision_cost", cost_info)
+        
+        # Verify calls
         generator.get_relevant_context.assert_called_once()
         generator.openai_client.chat.completions.create.assert_called()
 

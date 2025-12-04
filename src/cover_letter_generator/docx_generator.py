@@ -3,17 +3,17 @@
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from docx import Document
 from docx.shared import Inches, Pt
-from dotenv import load_dotenv
 
 
 def generate_cover_letter_docx(
     cover_letter_text: str,
-    output_dir: Path = None,
-    filename: str = None,
-    contact_info: dict = None,
+    output_dir: Optional[Path] = None,
+    filename: Optional[str] = None,
+    contact_info: Optional[dict] = None,
 ) -> Path:
     """Generate a cover letter DOCX file.
 
@@ -35,105 +35,69 @@ def generate_cover_letter_docx(
 
     output_path = output_dir / filename
 
-    # Look for template DOCX in multiple locations
-    env_path = Path(__file__).parent.parent.parent / ".env"
-    load_dotenv(dotenv_path=env_path)
+    output_path = output_dir / filename
 
-    template_locations = []
+    # Create clean DOCX from scratch (Programmatic Generation)
+    # This ensures consistent formatting without relying on external template files
+    doc = Document()
 
-    # 1. Check DATA_DIR/template folder (Google Drive)
-    data_dir = os.getenv("DATA_DIR")
-    if data_dir:
-        data_dir_clean = data_dir.strip('"').strip("'")
-        google_drive_template = Path(data_dir_clean).expanduser() / "template" / "Cover Letter_ AI Template.docx"
-        template_locations.append(google_drive_template)
+    # Set default font and margins
+    sections = doc.sections
+    for section in sections:
+        section.top_margin = Inches(1)
+        section.bottom_margin = Inches(1)
+        section.left_margin = Inches(0.75)
+        section.right_margin = Inches(0.75)
 
-    # 2. Check project root (fallback)
-    project_template = Path(__file__).parent.parent.parent / "Cover Letter_ AI Template.docx"
-    template_locations.append(project_template)
+    # Add Header if contact info is provided
+    if contact_info:
+        name = contact_info.get('name', os.getenv('USER_NAME'))
+        email = contact_info.get('email', '')
+        phone = contact_info.get('phone', '')
+        location = contact_info.get('location', '')
+        linkedin = contact_info.get('linkedin', '')
+        portfolio = contact_info.get('portfolio', '')
 
-    # Find first existing template
-    template_path = None
-    for loc in template_locations:
-        if loc.exists():
-            template_path = loc
-            break
+        # Name (Large, Bold) - Matches PDF NameStyle
+        name_para = doc.add_paragraph()
+        name_run = name_para.add_run(name)
+        name_run.bold = True
+        name_run.font.name = 'Arial' # Matches Helvetica-Bold in PDF
+        name_run.font.size = Pt(14) # Matches PDF size
+        name_para.paragraph_format.space_after = Pt(4) # Matches PDF spaceAfter=4
 
-    # Create document from template or blank
-    if template_path:
-        doc = Document(str(template_path))
-        # Template loaded - keep everything (header content in body or header section)
-        # Find and remove only the {data} placeholder if it exists
-        paragraphs_to_remove = []
-        for paragraph in doc.paragraphs:
-            if '{data}' in paragraph.text:
-                paragraphs_to_remove.append(paragraph)
+        # Contact Info (Location | Phone | Email) - Matches PDF CustomHeader
+        contact_parts = []
+        if location:
+            contact_parts.append(location)
+        if phone:
+            contact_parts.append(phone)
+        if email:
+            contact_parts.append(email)
+        
+        if contact_parts:
+            contact_para = doc.add_paragraph(" | ".join(contact_parts))
+            contact_para.style = 'Normal'
+            for run in contact_para.runs:
+                run.font.name = 'Arial' # Matches PDF font
+                run.font.size = Pt(10) # Matches PDF fontSize=10
+                run.font.color.rgb = None # Default black/dark grey
+            contact_para.paragraph_format.space_after = Pt(6) # Matches PDF spaceAfter=6
 
-        for paragraph in paragraphs_to_remove:
-            p = paragraph._element
-            p.getparent().remove(p)
-    else:
-        print("Warning: DOCX template not found, creating from scratch")
-        print(f"  Checked: {[str(l) for l in template_locations]}")
-        doc = Document()
-
-        # Set default font and margins if creating from scratch
-        sections = doc.sections
-        for section in sections:
-            section.top_margin = Inches(1)
-            section.bottom_margin = Inches(1)
-            section.left_margin = Inches(0.75)
-            section.right_margin = Inches(0.75)
-
-        # Add Header if contact info is provided
-        if contact_info:
-            name = contact_info.get('name', os.getenv('USER_NAME'))
-            email = contact_info.get('email', '')
-            phone = contact_info.get('phone', '')
-            location = contact_info.get('location', '')
-            linkedin = contact_info.get('linkedin', '')
-            portfolio = contact_info.get('portfolio', '')
-
-            # Name (Large, Bold) - Matches PDF NameStyle
-            name_para = doc.add_paragraph()
-            name_run = name_para.add_run(name)
-            name_run.bold = True
-            name_run.font.name = 'Arial' # Matches Helvetica-Bold in PDF
-            name_run.font.size = Pt(14) # Matches PDF size
-            name_para.paragraph_format.space_after = Pt(4) # Matches PDF spaceAfter=4
-
-            # Contact Info (Location | Phone | Email) - Matches PDF CustomHeader
-            contact_parts = []
-            if location:
-                contact_parts.append(location)
-            if phone:
-                contact_parts.append(phone)
-            if email:
-                contact_parts.append(email)
-            
-            if contact_parts:
-                contact_para = doc.add_paragraph(" | ".join(contact_parts))
-                contact_para.style = 'Normal'
-                for run in contact_para.runs:
-                    run.font.name = 'Arial' # Matches PDF font
-                    run.font.size = Pt(10) # Matches PDF fontSize=10
-                    run.font.color.rgb = None # Default black/dark grey
-                contact_para.paragraph_format.space_after = Pt(6) # Matches PDF spaceAfter=6
-
-            # Links (LinkedIn | Portfolio) - Matches PDF CustomHeader
-            link_parts = []
-            if linkedin:
-                link_parts.append("LinkedIn")
-            if portfolio:
-                link_parts.append("Portfolio")
-            
-            if link_parts:
-                links_para = doc.add_paragraph(" | ".join(link_parts))
-                links_para.style = 'Normal'
-                for run in links_para.runs:
-                    run.font.name = 'Arial'
-                    run.font.size = Pt(10) # Matches PDF fontSize=10
-                links_para.paragraph_format.space_after = Pt(12) # Matches spacer after header
+        # Links (LinkedIn | Portfolio) - Matches PDF CustomHeader
+        link_parts = []
+        if linkedin:
+            link_parts.append("LinkedIn")
+        if portfolio:
+            link_parts.append("Portfolio")
+        
+        if link_parts:
+            links_para = doc.add_paragraph(" | ".join(link_parts))
+            links_para.style = 'Normal'
+            for run in links_para.runs:
+                run.font.name = 'Arial'
+                run.font.size = Pt(10) # Matches PDF fontSize=10
+            links_para.paragraph_format.space_after = Pt(12) # Matches spacer after header
 
     # Add current date with tight spacing
     date_para = doc.add_paragraph(datetime.now().strftime("%B %d, %Y"))

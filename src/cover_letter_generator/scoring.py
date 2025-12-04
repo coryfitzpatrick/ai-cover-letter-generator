@@ -71,7 +71,8 @@ def score_document(
     
     if "johnson" in doc_lower or "j&j" in doc_lower or "johnson" in company_meta:
         score += RECENT_COMPANY_BOOST
-    elif "fitbit" in doc_lower or "google" in doc_lower or "fitbit" in company_meta or "google" in company_meta:
+    elif ("fitbit" in doc_lower or "google" in doc_lower or 
+          "fitbit" in company_meta or "google" in company_meta):
         score += PREVIOUS_COMPANY_BOOST
 
     # Boost for metrics/numbers (concrete achievements)

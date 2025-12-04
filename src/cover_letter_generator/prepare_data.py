@@ -17,16 +17,16 @@ import chromadb
 from chromadb.config import Settings
 from docx import Document
 from dotenv import load_dotenv
-from PyPDF2 import PdfReader
+from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
+
+from .utils import suppress_telemetry_errors
 
 # Load environment variables from project root
 _env_path = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(dotenv_path=_env_path)
 
 # Suppress ChromaDB telemetry errors
-from .utils import suppress_telemetry_errors
-
 suppress_telemetry_errors()
 
 # Chunking configuration
@@ -441,7 +441,9 @@ def main():
             inferred_year = "unknown"
 
             # Check for known companies (expand this list based on user's history)
-            known_companies = ["johnson", "j&j", "fitbit", "google", "amazon", "microsoft", "startup"]
+            known_companies = [
+                "johnson", "j&j", "fitbit", "google", "amazon", "microsoft", "startup"
+            ]
             for company in known_companies:
                 if company in filename_lower:
                     inferred_company = company
@@ -454,7 +456,8 @@ def main():
 
             # Chunk the text
             chunks = chunk_text(text)
-            print(f"  Created {len(chunks)} chunks (Company: {inferred_company}, Year: {inferred_year})")
+            print(f"  Created {len(chunks)} chunks "
+                  f"(Company: {inferred_company}, Year: {inferred_year})")
 
             # Add each chunk as a document
             for i, chunk in enumerate(chunks):
@@ -495,7 +498,9 @@ def main():
             inferred_company = "unknown"
             inferred_year = "unknown"
 
-            known_companies = ["johnson", "j&j", "fitbit", "google", "amazon", "microsoft", "startup"]
+            known_companies = [
+                "johnson", "j&j", "fitbit", "google", "amazon", "microsoft", "startup"
+            ]
             for company in known_companies:
                 if company in filename_lower:
                     inferred_company = company
@@ -507,7 +512,8 @@ def main():
 
             # Chunk the text
             chunks = chunk_text(text)
-            print(f"  Created {len(chunks)} chunks (Company: {inferred_company}, Year: {inferred_year})")
+            print(f"  Created {len(chunks)} chunks "
+                  f"(Company: {inferred_company}, Year: {inferred_year})")
 
             # Add each chunk as a document
             for i, chunk in enumerate(chunks):
@@ -562,7 +568,10 @@ def main():
     # Count file types
     pdf_count = len(pdf_files) if pdf_files else 0
     docx_count = len(docx_files) if docx_files else 0
-    csv_count = len([m for m in metadatas if m.get('type') in ['profile_summary', 'headline', 'recommendation']])
+    csv_count = len([
+        m for m in metadatas 
+        if m.get('type') in ['profile_summary', 'headline', 'recommendation']
+    ])
 
     print(f"\n✓ Successfully processed {pdf_count} PDF files")
     if docx_count > 0:

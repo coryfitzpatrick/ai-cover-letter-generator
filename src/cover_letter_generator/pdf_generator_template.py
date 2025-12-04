@@ -123,7 +123,7 @@ def create_text_overlay(cover_letter_text: str, width: float, height: float) -> 
                         parts = clean_para.split(',', 1)
                         story.append(Paragraph(parts[0] + ',', closing_style))  # "Sincerely,"
                         if len(parts) > 1:
-                            story.append(Paragraph(parts[1].strip(), body_style))  # "Cory Fitzpatrick"
+                            story.append(Paragraph(parts[1].strip(), body_style))
                 else:
                     story.append(Paragraph(clean_para, body_style))
             else:
@@ -226,7 +226,9 @@ def generate_cover_letter_pdf(
         data_dir = os.getenv("DATA_DIR")
         if data_dir:
             data_dir_clean = data_dir.strip('"').strip("'")
-            google_drive_template = Path(data_dir_clean).expanduser() / "template" / "Cover Letter_ AI Template.pdf"
+            google_drive_template = (
+                Path(data_dir_clean).expanduser() / "template" / "Cover Letter_ AI Template.pdf"
+            )
             template_locations.append(google_drive_template)
 
         # 2. Check project root (fallback)
@@ -248,7 +250,7 @@ def generate_cover_letter_pdf(
             )
         else:
             print("Warning: Template not found in any location, using default generation")
-            print(f"  Checked: {[str(l) for l in template_locations]}")
+            print(f"  Checked: {[str(loc) for loc in template_locations]}")
             use_template = False
 
     # Fall back to original generation if template not available
