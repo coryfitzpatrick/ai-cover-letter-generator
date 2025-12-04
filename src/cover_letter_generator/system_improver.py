@@ -81,9 +81,9 @@ Example user revision requests:
 CURRENT SYSTEM PROMPT (excerpt):
 {current_prompt[:2000]}...
 
-The user keeps having to manually request these changes. Your task: Suggest a modification to the system prompt 
-that would make the generator automatically address this issue in future cover letters, so the user never 
-has to ask for this again.
+The user keeps having to manually request these changes. Your task: Suggest a modification 
+to the system prompt that would make the generator automatically address this issue 
+in future cover letters, so the user never has to ask for this again.
 
 You should analyze:
 1. WHY does the user keep asking for this?

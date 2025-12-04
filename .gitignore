@@ -54,7 +54,7 @@ managerial_prompt.txt
 Thumbs.db
 
 prompts/system_prompt.txt
-system_prompt.txt.backup
-system_prompt.txt.example.backup
+prompts/system_prompt.txt.backup
+prompts/system_prompt.txt.example.backup
 .feedback_history.json
 *.iml

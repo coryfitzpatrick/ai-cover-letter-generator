@@ -10,13 +10,15 @@ from typing import Optional, Tuple
 class TelemetryFilter:
     """Filter to suppress ChromaDB telemetry errors from stderr."""
 
-    def __init__(self, stream) -> None:
+    def __init__(self, stream: object) -> None:
         self.stream = stream
 
     def write(self, message: str) -> None:
         """Write message to stream, filtering out telemetry messages."""
         # Only suppress telemetry-related messages
-        if 'telemetry' not in message.lower() and 'CollectionQueryEvent' not in message and 'ClientStartEvent' not in message:
+        if ('telemetry' not in message.lower() and 
+            'CollectionQueryEvent' not in message and 
+            'ClientStartEvent' not in message):
             self.stream.write(message)
 
     def flush(self) -> None:

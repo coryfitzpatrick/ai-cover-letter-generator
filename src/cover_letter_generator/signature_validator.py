@@ -92,7 +92,7 @@ def image_to_base64(image: Image.Image, max_size: Tuple[int, int] = (1568, 1568)
 def validate_signature_with_vision(
     pdf_path: Path,
     user_name: str,
-    cover_letter_text: str = None
+    cover_letter_text: Optional[str] = None
 ) -> SignatureValidationResult:
     """Validate that the signature is visible and not cut off using Claude vision.
 
@@ -143,7 +143,8 @@ def validate_signature_with_vision(
         # Build prompt - include full text if provided for precise comparison
         if cover_letter_text:
             word_count = len(cover_letter_text.split())
-            prompt_text = f"""Analyze this cover letter PDF image and determine if the signature at the bottom is fully visible and not cut off.
+            prompt_text = f"""Analyze this cover letter PDF image and determine if the signature 
+at the bottom is fully visible and not cut off.
 
 FULL COVER LETTER TEXT (for comparison):
 {cover_letter_text}
@@ -160,10 +161,12 @@ Respond in this exact format:
 VALID: [YES/NO]
 CONFIDENCE: [HIGH/MEDIUM/LOW]
 MESSAGE: [Brief explanation]
-DETAILS: [If invalid, estimate: "Approximately X words are cut off" or "Only signature cut off, body text fits"]"""
+DETAILS: [If invalid, estimate: "Approximately X words are cut off" or 
+"Only signature cut off, body text fits"]"""
         else:
             # Fallback if no text provided
-            prompt_text = f"""Analyze this cover letter PDF image and determine if the signature at the bottom is fully visible and not cut off.
+            prompt_text = f"""Analyze this cover letter PDF image and determine if the signature 
+at the bottom is fully visible and not cut off.
 
 Look for:
 1. The closing "Sincerely," or similar
@@ -234,8 +237,8 @@ DETAILS: [Be specific about what is cut off]"""
             return SignatureValidationResult(
                 is_valid=True,
                 confidence="low",
-                message="Signature validation skipped (model not available)",
-                details="Check Groq API key and model availability"
+                message="Signature validation skipped (Vision model not available)",
+                details="The model 'llama-3.2-11b-vision-preview' is not available on your Groq account."
             )
 
         # On any other error, fail gracefully and allow the save
@@ -250,7 +253,7 @@ DETAILS: [Be specific about what is cut off]"""
 def validate_pdf_signature(
     pdf_path: Path,
     user_name: str,
-    cover_letter_text: str = None,
+    cover_letter_text: Optional[str] = None,
     verbose: bool = True
 ) -> SignatureValidationResult:
     """Main entry point for signature validation.

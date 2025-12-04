@@ -725,6 +725,7 @@ cover-letter-ai-gen/
 │       ├── prepare_data.py        # Data processing (PDFs, CSVs, JSONs)
 │       ├── generator.py           # Core RAG + LLM logic
 │       ├── cli.py                 # Command-line interface
+│       ├── ui_components.py       # Reusable UI components for CLI
 │       ├── pdf_generator.py       # Basic PDF generation
 │       ├── pdf_generator_template.py  # Template-based PDF generation
 │       ├── signature_validator.py # AI-powered signature validation

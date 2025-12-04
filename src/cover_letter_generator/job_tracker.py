@@ -29,7 +29,7 @@ def escape_formula_string(text: str) -> str:
 class JobTracker:
     """Track job applications in Google Sheets."""
 
-    def __init__(self, service_account_path: str = None):
+    def __init__(self, service_account_path: Optional[str] = None):
         """Initialize job tracker.
 
         Args:
@@ -67,8 +67,8 @@ class JobTracker:
         company_name: str,
         job_title: str,
         job_url: str,
-        spreadsheet_id: str = None,
-        sheet_name: str = None
+        spreadsheet_id: Optional[str] = None,
+        sheet_name: Optional[str] = None
     ) -> bool:
         """Add a job application entry to Google Sheets.
 
@@ -116,7 +116,7 @@ class JobTracker:
             }
 
             # Append the row to the sheet
-            result = self.service.spreadsheets().values().append(
+            self.service.spreadsheets().values().append(
                 spreadsheetId=spreadsheet_id,
                 range=f"{sheet_name}!A:C",
                 valueInputOption='USER_ENTERED',  # Important: processes formulas
@@ -155,7 +155,7 @@ class JobTracker:
             return match.group(1)
         return None
 
-    def check_duplicate(self, job_url: str, spreadsheet_id: str = None) -> Optional[str]:
+    def check_duplicate(self, job_url: str, spreadsheet_id: Optional[str] = None) -> Optional[str]:
         """Check if a job URL already exists in any sheet.
 
         Args:
