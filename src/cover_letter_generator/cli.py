@@ -1,7 +1,7 @@
 """Command-line interface for cover letter generation."""
 
 import os
-import subprocess
+import subprocess  # nosec B404 - subprocess needed for clipboard operations
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -326,7 +326,7 @@ def handle_feedback_loop(
                         try:
                             feedback_tracker.add_feedback(user_feedback, company_name, job_title)
                         except Exception:
-                            pass
+                            pass  # nosec B110 - silently ignore feedback tracking errors
                 else:
                     print("✓ Revision discarded")
 
@@ -353,24 +353,28 @@ def handle_feedback_loop(
                     system = platform.system()
 
                     if system == "Darwin":  # macOS
+                        # nosec B603,B607 - pbcopy is macOS system clipboard utility
                         process = subprocess.Popen(
                             "pbcopy", env={"LANG": "en_US.UTF-8"}, stdin=subprocess.PIPE
                         )
                         process.communicate(current_version.encode("utf-8"))
                         print("\n✓ Copied to clipboard!")
                     elif system == "Windows":
-                        process = subprocess.Popen(["clip"], stdin=subprocess.PIPE, shell=True)
+                        # nosec B607 - clip.exe is the standard Windows clipboard utility
+                        process = subprocess.Popen(["clip"], stdin=subprocess.PIPE, shell=False)
                         process.communicate(current_version.encode("utf-8"))
                         print("\n✓ Copied to clipboard!")
                     elif system == "Linux":
                         # Try xclip first, then xsel
                         try:
+                            # nosec B603,B607 - xclip is standard Linux clipboard utility
                             process = subprocess.Popen(
                                 ["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE
                             )
                             process.communicate(current_version.encode("utf-8"))
                             print("\n✓ Copied to clipboard!")
                         except FileNotFoundError:
+                            # nosec B603,B607 - xsel is alternative Linux clipboard utility
                             process = subprocess.Popen(
                                 ["xsel", "--clipboard", "--input"], stdin=subprocess.PIPE
                             )

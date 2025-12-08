@@ -1,21 +1,27 @@
 """Signature validation for cover letter PDFs using AI vision."""
 
+from __future__ import annotations
+
 import base64
 import os
 from io import BytesIO
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from dotenv import load_dotenv
+
+if TYPE_CHECKING:
+    from PIL import Image
 
 try:
     from groq import Groq
     from pdf2image import convert_from_path
-    from PIL import Image
+    from PIL import Image as PILImage
 
     DEPENDENCIES_AVAILABLE = True
     HAS_PDF2IMAGE = True  # Alias for backward compatibility
 except ImportError:
+    PILImage = None  # type: ignore
     DEPENDENCIES_AVAILABLE = False
     HAS_PDF2IMAGE = False
 
@@ -48,7 +54,7 @@ def convert_pdf_to_image(pdf_path: Path) -> Optional[Image.Image]:
     Returns:
         PIL Image or None if conversion fails
     """
-    if not DEPENDENCIES_AVAILABLE:
+    if not DEPENDENCIES_AVAILABLE or PILImage is None:
         return None
 
     try:

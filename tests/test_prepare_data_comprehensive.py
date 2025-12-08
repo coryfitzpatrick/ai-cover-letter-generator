@@ -20,7 +20,6 @@ from src.cover_letter_generator.prepare_data import (
     DEFAULT_OVERLAP,
     chunk_text,
     extract_text_from_docx,
-    extract_text_from_pdf,
     process_csv_files,
     process_json_files,
     process_linkedin_profile_csv,
@@ -28,101 +27,8 @@ from src.cover_letter_generator.prepare_data import (
 )
 
 
-class TestExtractTextFromPDF:
-    """Tests for PDF text extraction."""
-
-    def test_extract_text_from_valid_pdf(self, tmp_path):
-        """Test extracting text from a valid PDF file."""
-        from reportlab.lib.pagesizes import letter
-        from reportlab.pdfgen import canvas
-
-        # Create a simple PDF with text
-        pdf_path = tmp_path / "test.pdf"
-        c = canvas.Canvas(str(pdf_path), pagesize=letter)
-        c.drawString(100, 750, "Hello World")
-        c.drawString(100, 730, "This is a test PDF.")
-        c.save()
-
-        # Extract text
-        text = extract_text_from_pdf(str(pdf_path))
-
-        # Verify content is extracted
-        assert text is not None
-        assert len(text) > 0
-        assert "Hello World" in text
-        assert "test PDF" in text
-
-    def test_extract_text_from_multipage_pdf(self, tmp_path):
-        """Test extracting text from a multi-page PDF."""
-        from reportlab.lib.pagesizes import letter
-        from reportlab.pdfgen import canvas
-
-        pdf_path = tmp_path / "multipage.pdf"
-        c = canvas.Canvas(str(pdf_path), pagesize=letter)
-
-        # Page 1
-        c.drawString(100, 750, "Page 1 content")
-        c.showPage()
-
-        # Page 2
-        c.drawString(100, 750, "Page 2 content")
-        c.save()
-
-        text = extract_text_from_pdf(str(pdf_path))
-
-        # Both pages should be extracted
-        assert "Page 1 content" in text
-        assert "Page 2 content" in text
-
-    def test_extract_text_from_empty_pdf(self, tmp_path):
-        """Test extracting text from an empty PDF."""
-        from reportlab.lib.pagesizes import letter
-        from reportlab.pdfgen import canvas
-
-        pdf_path = tmp_path / "empty.pdf"
-        c = canvas.Canvas(str(pdf_path), pagesize=letter)
-        c.save()
-
-        text = extract_text_from_pdf(str(pdf_path))
-
-        # Should return empty string or minimal whitespace
-        assert text == "" or text.strip() == ""
-
-    def test_extract_text_from_nonexistent_pdf(self):
-        """Test handling of non-existent PDF file."""
-        text = extract_text_from_pdf("/nonexistent/file.pdf")
-
-        # Should return empty string on error
-        assert text == ""
-
-    def test_extract_text_from_corrupt_pdf(self, tmp_path):
-        """Test handling of corrupt PDF file."""
-        pdf_path = tmp_path / "corrupt.pdf"
-
-        # Create a file with invalid PDF content
-        with open(pdf_path, "w") as f:
-            f.write("This is not a valid PDF file")
-
-        text = extract_text_from_pdf(str(pdf_path))
-
-        # Should return empty string on error
-        assert text == ""
-
-    def test_extract_text_preserves_newlines(self, tmp_path):
-        """Test that text extraction preserves paragraph structure."""
-        from reportlab.lib.pagesizes import letter
-        from reportlab.pdfgen import canvas
-
-        pdf_path = tmp_path / "newlines.pdf"
-        c = canvas.Canvas(str(pdf_path), pagesize=letter)
-        c.drawString(100, 750, "First paragraph")
-        c.drawString(100, 720, "Second paragraph")
-        c.save()
-
-        text = extract_text_from_pdf(str(pdf_path))
-
-        # Text should contain line breaks
-        assert "\n" in text or len(text.splitlines()) > 1
+# NOTE: TestExtractTextFromPDF removed because extract_text_from_pdf function was removed
+# during code cleanup. PDF extraction is now handled differently in the codebase.
 
 
 class TestExtractTextFromDOCX:

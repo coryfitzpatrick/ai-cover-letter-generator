@@ -145,12 +145,12 @@ def fetch_webpage_with_playwright(url: str, timeout: int = 30000) -> Optional[Tu
                     try:
                         context.close()
                     except Exception:
-                        pass  # Ignore errors during cleanup
+                        pass  # nosec B110 - Ignore errors during cleanup
                 if browser:
                     try:
                         browser.close()
                     except Exception:
-                        pass  # Ignore errors during cleanup
+                        pass  # nosec B110 - Ignore errors during cleanup
 
     except ImportError:
         print("  Error: Playwright not installed. Install with: pip install playwright")
@@ -224,7 +224,7 @@ Job Description:
 """
                     return structured_text.strip()
         except Exception:
-            # If JSON-LD parsing fails, fall back to regular HTML extraction
+            # nosec B110 - If JSON-LD parsing fails, fall back to regular HTML extraction
             pass
 
     # Fallback: Remove script and style elements
