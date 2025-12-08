@@ -17,6 +17,7 @@ load_dotenv()
 @dataclass
 class JobPosting:
     """Structured job posting information."""
+
     company_name: str
     job_title: str
     job_description: str
@@ -38,7 +39,7 @@ def fetch_webpage(url: str, timeout: int = 10) -> Optional[str]:
     """
     try:
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
         response = requests.get(url, headers=headers, timeout=timeout)
         response.raise_for_status()
@@ -64,6 +65,7 @@ def fetch_webpage_with_playwright(url: str, timeout: int = 30000) -> Optional[Tu
         # Try to import stealth plugin for better bot detection bypass
         try:
             from playwright_stealth.stealth import Stealth
+
             stealth = Stealth()
             has_stealth = True
             print("  Using headless browser with stealth mode enabled...")
@@ -80,22 +82,22 @@ def fetch_webpage_with_playwright(url: str, timeout: int = 30000) -> Optional[Tu
                 browser = p.chromium.launch(
                     headless=True,
                     args=[
-                        '--disable-blink-features=AutomationControlled',
-                        '--disable-dev-shm-usage',
-                        '--no-sandbox',
-                        '--disable-web-security',
-                        '--disable-features=IsolateOrigins,site-per-process'
-                    ]
+                        "--disable-blink-features=AutomationControlled",
+                        "--disable-dev-shm-usage",
+                        "--no-sandbox",
+                        "--disable-web-security",
+                        "--disable-features=IsolateOrigins,site-per-process",
+                    ],
                 )
 
                 # Create context with realistic browser settings
                 context = browser.new_context(
-                    viewport={'width': 1920, 'height': 1080},
-                    user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    locale='en-US',
-                    timezone_id='America/New_York',
+                    viewport={"width": 1920, "height": 1080},
+                    user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    locale="en-US",
+                    timezone_id="America/New_York",
                     # Add permissions to avoid detection
-                    permissions=['geolocation']
+                    permissions=["geolocation"],
                 )
 
                 page = context.new_page()
@@ -105,23 +107,25 @@ def fetch_webpage_with_playwright(url: str, timeout: int = 30000) -> Optional[Tu
                     stealth.apply_stealth_sync(page)
 
                 # Set extra headers
-                page.set_extra_http_headers({
-                    'Accept-Language': 'en-US,en;q=0.9',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                    'Sec-Fetch-Dest': 'document',
-                    'Sec-Fetch-Mode': 'navigate',
-                    'Sec-Fetch-Site': 'none',
-                    'Upgrade-Insecure-Requests': '1'
-                })
+                page.set_extra_http_headers(
+                    {
+                        "Accept-Language": "en-US,en;q=0.9",
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                        "Sec-Fetch-Dest": "document",
+                        "Sec-Fetch-Mode": "navigate",
+                        "Sec-Fetch-Site": "none",
+                        "Upgrade-Insecure-Requests": "1",
+                    }
+                )
 
                 # Navigate to URL with timeout
                 try:
-                    page.goto(url, timeout=timeout, wait_until='networkidle')
+                    page.goto(url, timeout=timeout, wait_until="networkidle")
                 except Exception as nav_error:
                     print(f"  Navigation error: {nav_error}")
                     # Try with a different wait strategy
                     try:
-                        page.goto(url, timeout=timeout, wait_until='load')
+                        page.goto(url, timeout=timeout, wait_until="load")
                     except Exception as retry_error:
                         print(f"  Retry failed: {retry_error}")
                         return None, None
@@ -131,7 +135,7 @@ def fetch_webpage_with_playwright(url: str, timeout: int = 30000) -> Optional[Tu
 
                 # Get both HTML and clean text
                 html = page.content()
-                text = page.inner_text('body')  # Get clean rendered text without HTML tags
+                text = page.inner_text("body")  # Get clean rendered text without HTML tags
 
                 return html, text
 
@@ -141,12 +145,12 @@ def fetch_webpage_with_playwright(url: str, timeout: int = 30000) -> Optional[Tu
                     try:
                         context.close()
                     except Exception:
-                        pass  # Ignore errors during cleanup
+                        pass  # nosec B110 - Ignore errors during cleanup
                 if browser:
                     try:
                         browser.close()
                     except Exception:
-                        pass  # Ignore errors during cleanup
+                        pass  # nosec B110 - Ignore errors during cleanup
 
     except ImportError:
         print("  Error: Playwright not installed. Install with: pip install playwright")
@@ -158,20 +162,26 @@ def fetch_webpage_with_playwright(url: str, timeout: int = 30000) -> Optional[Tu
 
 
 def clean_job_title(title: str) -> str:
-    """Clean job title by removing parenthetical content.
+    """Clean job title by removing parenthetical content and remote work indicators.
 
     Args:
         title: Job title string
 
     Returns:
-        Cleaned job title without parentheses
+        Cleaned job title without parentheses or remote indicators
 
     Examples:
         "Mobile/Web Software Engineering Manager (Remote - USA)" -> "Mobile/Web Software Engineering Manager"
         "Senior Engineer (Full-time)" -> "Senior Engineer"
+        "Engineering Manager - Remote" -> "Engineering Manager"
+        "Senior Engineer | Remote" -> "Senior Engineer"
     """
     # Remove anything in parentheses and trim whitespace
-    cleaned = re.sub(r'\s*\([^)]*\)', '', title).strip()
+    cleaned = re.sub(r"\s*\([^)]*\)", "", title).strip()
+
+    # Remove remote work indicators with various separators (-, |, etc.)
+    cleaned = re.sub(r"\s*[-|]\s*Remote\s*$", "", cleaned, flags=re.IGNORECASE).strip()
+
     return cleaned
 
 
@@ -184,21 +194,22 @@ def extract_text_from_html(html: str) -> str:
     Returns:
         Cleaned text content
     """
-    soup = BeautifulSoup(html, 'html.parser')
+    soup = BeautifulSoup(html, "html.parser")
 
     # First, try to extract JSON-LD structured data (common on job boards like Ashby, Greenhouse, etc.)
-    json_ld_scripts = soup.find_all('script', type='application/ld+json')
+    json_ld_scripts = soup.find_all("script", type="application/ld+json")
     for script in json_ld_scripts:
         try:
             import json
+
             data = json.loads(script.string)
             # Check if it's a JobPosting
-            if isinstance(data, dict) and data.get('@type') == 'JobPosting':
+            if isinstance(data, dict) and data.get("@type") == "JobPosting":
                 # Extract the description and clean HTML tags from it
-                description = data.get('description', '')
+                description = data.get("description", "")
                 if description:
                     # Parse the description HTML to get clean text
-                    desc_soup = BeautifulSoup(description, 'html.parser')
+                    desc_soup = BeautifulSoup(description, "html.parser")
                     description_text = desc_soup.get_text()
 
                     # Build a structured text with key fields
@@ -213,7 +224,7 @@ Job Description:
 """
                     return structured_text.strip()
         except Exception:
-            # If JSON-LD parsing fails, fall back to regular HTML extraction
+            # nosec B110 - If JSON-LD parsing fails, fall back to regular HTML extraction
             pass
 
     # Fallback: Remove script and style elements
@@ -226,7 +237,7 @@ Job Description:
     # Clean up whitespace
     lines = (line.strip() for line in text.splitlines())
     chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-    text = '\n'.join(chunk for chunk in chunks if chunk)
+    text = "\n".join(chunk for chunk in chunks if chunk)
 
     return text
 
@@ -252,7 +263,7 @@ def parse_job_posting_with_llm(text: str, url: str) -> Optional[JobPosting]:
         # Show what text we're working with for debugging
         print("\n  First 500 characters of text being analyzed:")
         print("  " + "=" * 76)
-        print("  " + text[:500].replace('\n', '\n  '))
+        print("  " + text[:500].replace("\n", "\n  "))
         print("  " + "=" * 76)
         print()
 
@@ -304,8 +315,11 @@ DESCRIPTION: This is a software engineering role... [truncated summary]
         response = client.chat.completions.create(
             model="meta-llama/llama-4-maverick-17b-128e-instruct",
             messages=[
-                {"role": "system", "content": "You are a precise job posting parser. Extract ALL information exactly as requested. Do NOT summarize."},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": "You are a precise job posting parser. Extract ALL information exactly as requested. Do NOT summarize.",
+                },
+                {"role": "user", "content": prompt},
             ],
             temperature=0.1,  # Low temperature for consistency
             max_tokens=6000,  # Increased for full descriptions
@@ -314,9 +328,9 @@ DESCRIPTION: This is a software engineering role... [truncated summary]
         result = response.choices[0].message.content.strip()
 
         # Parse the response
-        company_match = re.search(r'COMPANY:\s*(.+?)(?:\n|$)', result, re.IGNORECASE)
-        title_match = re.search(r'TITLE:\s*(.+?)(?:\n|$)', result, re.IGNORECASE)
-        description_match = re.search(r'DESCRIPTION:\s*\n(.+)', result, re.IGNORECASE | re.DOTALL)
+        company_match = re.search(r"COMPANY:\s*(.+?)(?:\n|$)", result, re.IGNORECASE)
+        title_match = re.search(r"TITLE:\s*(.+?)(?:\n|$)", result, re.IGNORECASE)
+        description_match = re.search(r"DESCRIPTION:\s*\n(.+)", result, re.IGNORECASE | re.DOTALL)
 
         if not company_match or not title_match or not description_match:
             print("\n⚠ Warning: Could not parse all fields from LLM response")
@@ -331,14 +345,14 @@ DESCRIPTION: This is a software engineering role... [truncated summary]
 
             # Try more flexible parsing
             if not company_match:
-                company_match = re.search(r'company[:\s]+(.+?)(?:\n|$)', result, re.IGNORECASE)
+                company_match = re.search(r"company[:\s]+(.+?)(?:\n|$)", result, re.IGNORECASE)
             if not title_match:
-                title_match = re.search(r'(?:job\s+)?title[:\s]+(.+?)(?:\n|$)', result, re.IGNORECASE)
+                title_match = re.search(
+                    r"(?:job\s+)?title[:\s]+(.+?)(?:\n|$)", result, re.IGNORECASE
+                )
             if not description_match:
                 description_match = re.search(
-                    r'(?:job\s+)?description[:\s]*\n(.+)', 
-                    result, 
-                    re.IGNORECASE | re.DOTALL
+                    r"(?:job\s+)?description[:\s]*\n(.+)", result, re.IGNORECASE | re.DOTALL
                 )
 
             if not company_match or not title_match or not description_match:
@@ -354,21 +368,18 @@ DESCRIPTION: This is a software engineering role... [truncated summary]
         # Clean up verbose LLM responses
         # Remove explanatory prefixes like "The company name is..." or "The job title is..."
         company_name = re.sub(
-            r'^(?:The\s+)?company(?:\s+name)?\s+(?:is|appears to be)\s+', 
-            '', 
-            company_name, 
-            flags=re.IGNORECASE
+            r"^(?:The\s+)?company(?:\s+name)?\s+(?:is|appears to be)\s+",
+            "",
+            company_name,
+            flags=re.IGNORECASE,
         ).strip()
         job_title = re.sub(
-            r'^(?:The\s+)?job\s+title\s+(?:is|appears to be)\s+', 
-            '', 
-            job_title, 
-            flags=re.IGNORECASE
+            r"^(?:The\s+)?job\s+title\s+(?:is|appears to be)\s+", "", job_title, flags=re.IGNORECASE
         ).strip()
 
         # Remove trailing explanations like ". Therefore, it is Unknown"
-        company_name = re.sub(r'\.\s+Therefore.*$', '', company_name, flags=re.IGNORECASE).strip()
-        job_title = re.sub(r'\.\s+Therefore.*$', '', job_title, flags=re.IGNORECASE).strip()
+        company_name = re.sub(r"\.\s+Therefore.*$", "", company_name, flags=re.IGNORECASE).strip()
+        job_title = re.sub(r"\.\s+Therefore.*$", "", job_title, flags=re.IGNORECASE).strip()
 
         # Clean job title (remove parenthetical content)
         job_title = clean_job_title(job_title)
@@ -381,10 +392,7 @@ DESCRIPTION: This is a software engineering role... [truncated summary]
             print("  You'll be able to edit these in the next step.")
 
         return JobPosting(
-            company_name=company_name,
-            job_title=job_title,
-            job_description=job_description,
-            url=url
+            company_name=company_name, job_title=job_title, job_description=job_description, url=url
         )
 
     except Exception as e:
@@ -405,15 +413,15 @@ def parse_job_from_url(url: str) -> Optional[JobPosting]:
 
     # Check if this is a known JavaScript-heavy job board
     js_heavy_domains = [
-        'greenhouse.io',
-        'lever.co',
-        'ashbyhq.com',
-        'workday.com',
-        'taleo.net',
-        'smartrecruiters.com',
-        'icims.com',
-        'myworkdayjobs.com',
-        'playlist.com'  # Greenhouse-powered
+        "greenhouse.io",
+        "lever.co",
+        "ashbyhq.com",
+        "workday.com",
+        "taleo.net",
+        "smartrecruiters.com",
+        "icims.com",
+        "myworkdayjobs.com",
+        "playlist.com",  # Greenhouse-powered
     ]
 
     use_playwright_first = any(domain in url.lower() for domain in js_heavy_domains)
@@ -517,10 +525,12 @@ def is_valid_url(url: str) -> bool:
         True if valid URL, False otherwise
     """
     url_pattern = re.compile(
-        r'^https?://'  # http:// or https://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
-        r'localhost|'  # localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
-        r'(?::\d+)?'  # optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+        r"^https?://"  # http:// or https://
+        r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|"  # domain...
+        r"localhost|"  # localhost...
+        r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"  # ...or ip
+        r"(?::\d+)?"  # optional port
+        r"(?:/?|[/?]\S+)$",
+        re.IGNORECASE,
+    )
     return url_pattern.match(url) is not None

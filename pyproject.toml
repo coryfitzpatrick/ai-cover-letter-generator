@@ -13,33 +13,62 @@ authors = [
 ]
 
 dependencies = [
+    # LLM APIs
     "groq>=0.11.0",
     "openai>=1.0.0",
-    "anthropic>=0.3.0",
-    "chromadb==0.4.18",
+    "anthropic>=0.40.0",
+    # Vector database and embeddings
+    "chromadb>=0.4.18,<0.5.0",
     "sentence-transformers>=2.2.0",
     "torch>=2.0.0",
     "numpy<2.0.0",
+    # Core utilities
     "pydantic>=2.5.0",
     "python-dotenv>=1.0.0",
+    # Document generation
     "reportlab>=4.0.0",
-    "pypdf>=4.0.0",
+    "pypdf>=3.0.0",
     "python-docx>=1.0.0",
+    # Web scraping (basic)
     "beautifulsoup4>=4.12.0",
     "requests>=2.31.0",
-    "playwright>=1.40.0",
+    # Google Sheets integration (required by cli.py)
     "google-api-python-client>=2.0.0",
     "google-auth>=2.0.0",
     "google-auth-oauthlib>=1.0.0",
     "google-auth-httplib2>=0.1.0",
+    # UI
+    "prompt_toolkit>=3.0.0",
+    "pyperclip>=1.8.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.3",
     "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
     "black>=23.0.0",
     "ruff>=0.1.0",
+    "mypy>=1.7.0",
+    "pre-commit>=3.5.0",
+    "bandit[toml]>=1.7.0",
+]
+
+# Optional: Advanced web scraping for JavaScript-heavy sites
+scraping = [
+    "playwright>=1.40.0",
+    "playwright-stealth>=1.0.0",
+]
+
+# Optional: PDF signature validation
+validation = [
+    "pdf2image>=1.16.0",
+    "Pillow>=10.0.0",
+]
+
+# Install all optional features
+all = [
+    "cover-letter-generator[scraping,validation]",
 ]
 
 [project.scripts]
@@ -54,14 +83,48 @@ line-length = 100
 target-version = ['py311']
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B"]
-ignore = []
+ignore = [
+    "B904",  # Allow raising exceptions without 'from' in except blocks
+    "B017",  # Allow pytest.raises(Exception)
+    "E402",  # Allow module level import not at top (needed for test setup)
+    "E501",  # Allow lines longer than 120 (some test strings are long)
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-v"
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv"]
+skips = ["B101"]  # Skip assert_used warnings in tests
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Gradually adopt type hints
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_optional = true
+
+# Per-module options
+[[tool.mypy.overrides]]
+module = [
+    "chromadb.*",
+    "sentence_transformers.*",
+    "groq.*",
+    "anthropic.*",
+    "reportlab.*",
+    "docx.*",
+    "playwright.*",
+]
+ignore_missing_imports = true

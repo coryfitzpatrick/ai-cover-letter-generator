@@ -1,20 +1,29 @@
 """Signature validation for cover letter PDFs using AI vision."""
 
+from __future__ import annotations
+
 import base64
 import os
 from io import BytesIO
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from dotenv import load_dotenv
+
+if TYPE_CHECKING:
+    from PIL import Image
 
 try:
     from groq import Groq
     from pdf2image import convert_from_path
-    from PIL import Image
+    from PIL import Image as PILImage
+
     DEPENDENCIES_AVAILABLE = True
+    HAS_PDF2IMAGE = True  # Alias for backward compatibility
 except ImportError:
+    PILImage = None  # type: ignore
     DEPENDENCIES_AVAILABLE = False
+    HAS_PDF2IMAGE = False
 
 
 # Load environment variables
@@ -25,11 +34,7 @@ class SignatureValidationResult:
     """Result of signature validation."""
 
     def __init__(
-        self,
-        is_valid: bool,
-        confidence: str,
-        message: str,
-        details: Optional[str] = None
+        self, is_valid: bool, confidence: str, message: str, details: Optional[str] = None
     ):
         self.is_valid = is_valid
         self.confidence = confidence  # "high", "medium", "low"
@@ -49,7 +54,7 @@ def convert_pdf_to_image(pdf_path: Path) -> Optional[Image.Image]:
     Returns:
         PIL Image or None if conversion fails
     """
-    if not DEPENDENCIES_AVAILABLE:
+    if not DEPENDENCIES_AVAILABLE or PILImage is None:
         return None
 
     try:
@@ -58,7 +63,7 @@ def convert_pdf_to_image(pdf_path: Path) -> Optional[Image.Image]:
             pdf_path,
             dpi=150,  # Good balance between quality and file size
             first_page=1,
-            last_page=1
+            last_page=1,
         )
         return images[0] if images else None
     except Exception as e:
@@ -82,17 +87,15 @@ def image_to_base64(image: Image.Image, max_size: Tuple[int, int] = (1568, 1568)
 
     # Convert to PNG bytes
     buffer = BytesIO()
-    image.save(buffer, format='PNG')
+    image.save(buffer, format="PNG")
     buffer.seek(0)
 
     # Encode to base64
-    return base64.b64encode(buffer.getvalue()).decode('utf-8')
+    return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
 
 def validate_signature_with_vision(
-    pdf_path: Path,
-    user_name: str,
-    cover_letter_text: Optional[str] = None
+    pdf_path: Path, user_name: str, cover_letter_text: Optional[str] = None
 ) -> SignatureValidationResult:
     """Validate that the signature is visible and not cut off using Claude vision.
 
@@ -110,7 +113,7 @@ def validate_signature_with_vision(
             is_valid=True,
             confidence="low",
             message="Signature validation skipped (dependencies not available)",
-            details="Install pdf2image and anthropic to enable validation"
+            details="Install pdf2image and anthropic to enable validation",
         )
 
     # Check if API key is available
@@ -120,7 +123,7 @@ def validate_signature_with_vision(
             is_valid=True,
             confidence="low",
             message="Signature validation skipped (GROQ_API_KEY not set)",
-            details="Set GROQ_API_KEY in .env to enable validation"
+            details="Set GROQ_API_KEY in .env to enable validation",
         )
 
     try:
@@ -131,7 +134,7 @@ def validate_signature_with_vision(
                 is_valid=True,
                 confidence="low",
                 message="Could not convert PDF to image for validation",
-                details="Proceeding without validation"
+                details="Proceeding without validation",
             )
 
         # Convert image to base64
@@ -186,17 +189,12 @@ DETAILS: [Be specific about what is cut off]"""
                 {
                     "role": "user",
                     "content": [
-                        {
-                            "type": "text",
-                            "text": prompt_text
-                        },
+                        {"type": "text", "text": prompt_text},
                         {
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{image_b64}"
-                            }
-                        }
-                    ]
+                            "image_url": {"url": f"data:image/png;base64,{image_b64}"},
+                        },
+                    ],
                 }
             ],
             temperature=0.1,
@@ -205,7 +203,7 @@ DETAILS: [Be specific about what is cut off]"""
 
         # Parse the response
         response_text = completion.choices[0].message.content
-        lines = response_text.strip().split('\n')
+        lines = response_text.strip().split("\n")
 
         # Extract values
         is_valid = False
@@ -224,10 +222,7 @@ DETAILS: [Be specific about what is cut off]"""
                 details = line.split(":", 1)[1].strip()
 
         return SignatureValidationResult(
-            is_valid=is_valid,
-            confidence=confidence,
-            message=message_text,
-            details=details
+            is_valid=is_valid, confidence=confidence, message=message_text, details=details
         )
 
     except Exception as e:
@@ -238,7 +233,7 @@ DETAILS: [Be specific about what is cut off]"""
                 is_valid=True,
                 confidence="low",
                 message="Signature validation skipped (Vision model not available)",
-                details="The model 'llama-3.2-11b-vision-preview' is not available on your Groq account."
+                details="The model 'llama-3.2-11b-vision-preview' is not available on your Groq account.",
             )
 
         # On any other error, fail gracefully and allow the save
@@ -246,15 +241,12 @@ DETAILS: [Be specific about what is cut off]"""
             is_valid=True,
             confidence="low",
             message=f"Validation error: {str(e)[:100]}",
-            details="Proceeding without validation"
+            details="Proceeding without validation",
         )
 
 
 def validate_pdf_signature(
-    pdf_path: Path,
-    user_name: str,
-    cover_letter_text: Optional[str] = None,
-    verbose: bool = True
+    pdf_path: Path, user_name: str, cover_letter_text: Optional[str] = None, verbose: bool = True
 ) -> SignatureValidationResult:
     """Main entry point for signature validation.
 

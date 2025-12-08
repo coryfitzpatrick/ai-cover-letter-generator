@@ -49,18 +49,16 @@ class JobTracker:
         service_account_path = Path(service_account_path).expanduser()
 
         if not service_account_path.exists():
-            raise FileNotFoundError(
-                f"Service account key not found at {service_account_path}"
-            )
+            raise FileNotFoundError(f"Service account key not found at {service_account_path}")
 
         # Authenticate with service account
-        SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+        SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
         credentials = service_account.Credentials.from_service_account_file(
             str(service_account_path), scopes=SCOPES
         )
 
         # Build the Sheets API service
-        self.service = build('sheets', 'v4', credentials=credentials)
+        self.service = build("sheets", "v4", credentials=credentials)
 
     def add_job_application(
         self,
@@ -68,7 +66,7 @@ class JobTracker:
         job_title: str,
         job_url: str,
         spreadsheet_id: Optional[str] = None,
-        sheet_name: Optional[str] = None
+        sheet_name: Optional[str] = None,
     ) -> bool:
         """Add a job application entry to Google Sheets.
 
@@ -106,22 +104,18 @@ class JobTracker:
             job_title_with_link = f'=HYPERLINK("{job_url_escaped}", "{job_title_escaped}")'
 
             # Prepare the row data
-            values = [
-                [company_name, job_title_with_link, date_created]
-            ]
+            values = [[company_name, job_title_with_link, date_created]]
 
             # Prepare the request body
-            body = {
-                'values': values
-            }
+            body = {"values": values}
 
             # Append the row to the sheet
             self.service.spreadsheets().values().append(
                 spreadsheetId=spreadsheet_id,
                 range=f"{sheet_name}!A:C",
-                valueInputOption='USER_ENTERED',  # Important: processes formulas
-                insertDataOption='INSERT_ROWS',
-                body=body
+                valueInputOption="USER_ENTERED",  # Important: processes formulas
+                insertDataOption="INSERT_ROWS",
+                body=body,
             ).execute()
 
             print("\n✓ Added job application to tracking sheet")
@@ -138,22 +132,6 @@ class JobTracker:
             print("2. GOOGLE_SHEETS_JOB_TRACKER_ID is set correctly in .env")
             print("3. The sheet name matches (default: 'Sheet1')")
             return False
-
-    def get_spreadsheet_id_from_url(self, url: str) -> Optional[str]:
-        """Extract spreadsheet ID from Google Sheets URL.
-
-        Args:
-            url: Google Sheets URL
-
-        Returns:
-            Spreadsheet ID or None if not found
-        """
-        import re
-        # Match pattern: /spreadsheets/d/{SPREADSHEET_ID}/
-        match = re.search(r'/spreadsheets/d/([a-zA-Z0-9-_]+)', url)
-        if match:
-            return match.group(1)
-        return None
 
     def check_duplicate(self, job_url: str, spreadsheet_id: Optional[str] = None) -> Optional[str]:
         """Check if a job URL already exists in any sheet.
@@ -174,36 +152,39 @@ class JobTracker:
                 return None
 
             # Get metadata to find all sheet names
-            spreadsheet = self.service.spreadsheets().get(
-                spreadsheetId=spreadsheet_id
-            ).execute()
-            
-            sheets = spreadsheet.get('sheets', [])
-            
+            spreadsheet = self.service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+
+            sheets = spreadsheet.get("sheets", [])
+
             # Check each sheet
             for sheet in sheets:
-                sheet_title = sheet['properties']['title']
-                
+                sheet_title = sheet["properties"]["title"]
+
                 # Get data from Column B (Job Title/Link)
                 # We fetch the formula to see the URL in HYPERLINK("url", ...)
-                result = self.service.spreadsheets().values().get(
-                    spreadsheetId=spreadsheet_id,
-                    range=f"'{sheet_title}'!B:B",
-                    valueRenderOption='FORMULA' 
-                ).execute()
-                
-                rows = result.get('values', [])
-                
+                result = (
+                    self.service.spreadsheets()
+                    .values()
+                    .get(
+                        spreadsheetId=spreadsheet_id,
+                        range=f"'{sheet_title}'!B:B",
+                        valueRenderOption="FORMULA",
+                    )
+                    .execute()
+                )
+
+                rows = result.get("values", [])
+
                 # Check each row for the URL
                 for row in rows:
                     if not row:
                         continue
-                        
+
                     cell_value = row[0]
                     # Check if URL is in the cell (either as raw text or in formula)
                     if job_url in cell_value:
                         return sheet_title
-                        
+
             return None
 
         except Exception as e:
