@@ -92,7 +92,6 @@ ignore = [
     "B904",  # Allow raising exceptions without 'from' in except blocks
     "B017",  # Allow pytest.raises(Exception)
     "E402",  # Allow module level import not at top (needed for test setup)
-    "B007",  # Allow unused loop control variables
     "E501",  # Allow lines longer than 120 (some test strings are long)
 ]
 

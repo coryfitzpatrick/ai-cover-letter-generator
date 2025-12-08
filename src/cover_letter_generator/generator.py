@@ -338,7 +338,10 @@ class CoverLetterGenerator:
 
         if results["documents"] and results["distances"]:
             for doc, distance, metadata in zip(
-                results["documents"][0], results["distances"][0], results["metadatas"][0], strict=False
+                results["documents"][0],
+                results["distances"][0],
+                results["metadatas"][0],
+                strict=False,
             ):
                 doc_hash = hash(doc[:100])  # Use first 100 chars as fingerprint
                 if doc_hash not in seen_docs:
@@ -357,7 +360,8 @@ class CoverLetterGenerator:
                 for doc, distance, metadata in zip(
                     req_results["documents"][0],
                     req_results["distances"][0],
-                    req_results["metadatas"][0], strict=False,
+                    req_results["metadatas"][0],
+                    strict=False,
                 ):
                     doc_hash = hash(doc[:100])
                     if doc_hash not in seen_docs:
@@ -377,7 +381,8 @@ class CoverLetterGenerator:
                 for doc, distance, metadata in zip(
                     tech_results["documents"][0],
                     tech_results["distances"][0],
-                    tech_results["metadatas"][0], strict=False,
+                    tech_results["metadatas"][0],
+                    strict=False,
                 ):
                     doc_hash = hash(doc[:100])
                     if doc_hash not in seen_docs and tech.lower() in doc.lower():
@@ -402,7 +407,7 @@ class CoverLetterGenerator:
         # Debug: Show top 5 scoring documents
         if scored_docs:
             print("\n  Top 5 highest-scoring documents:")
-            for i, (doc, distance, metadata, score) in enumerate(scored_docs[:5]):
+            for i, (doc, _, metadata, score) in enumerate(scored_docs[:5]):
                 source = metadata.get("source", "Unknown")
                 preview = doc[:80].replace("\n", " ")
                 print(f"    {i+1}. Score: {score:.1f} | Source: {source}")
@@ -416,7 +421,7 @@ class CoverLetterGenerator:
         # Ensure diversity in sources
         source_counts = {}
 
-        for doc, distance, metadata, score in scored_docs:
+        for doc, _, metadata, _ in scored_docs:
             source = metadata.get("source", "Unknown")
 
             # Track source diversity
