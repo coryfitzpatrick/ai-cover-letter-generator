@@ -26,7 +26,6 @@ from src.cover_letter_generator.prepare_data import (
     process_linkedin_recommendations_csv,
 )
 
-
 # NOTE: TestExtractTextFromPDF removed because extract_text_from_pdf function was removed
 # during code cleanup. PDF extraction is now handled differently in the codebase.
 
@@ -466,15 +465,8 @@ class TestIntegrationScenarios:
     """Integration tests for complete data preparation scenarios."""
 
     def test_mixed_data_sources(self, tmp_path):
-        """Test processing mixed data sources (PDF, DOCX, CSV, JSON)."""
-        # Create PDF
-        from reportlab.lib.pagesizes import letter
-        from reportlab.pdfgen import canvas
-
-        pdf_path = tmp_path / "resume.pdf"
-        c = canvas.Canvas(str(pdf_path), pagesize=letter)
-        c.drawString(100, 750, "Work Experience")
-        c.save()
+        """Test processing mixed data sources (DOCX, CSV, JSON)."""
+        # NOTE: PDF extraction removed during cleanup
 
         # Create DOCX
         docx_path = tmp_path / "achievements.docx"
@@ -488,11 +480,9 @@ class TestIntegrationScenarios:
             json.dump({"skills": ["Python", "Leadership"]}, f)
 
         # Test extraction
-        pdf_text = extract_text_from_pdf(str(pdf_path))
         docx_text = extract_text_from_docx(str(docx_path))
         json_results = process_json_files(tmp_path)
 
-        assert "Work Experience" in pdf_text
         assert "Achievement 1" in docx_text
         assert len(json_results) > 0
 
