@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Optional
 
 from pypdf import PdfReader, PdfWriter
+
+from .utils import get_data_directory
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -223,16 +225,12 @@ def generate_cover_letter_pdf(
         template_locations = []
 
         # 1. Check DATA_DIR/template folder (Google Drive)
-        data_dir = os.getenv("DATA_DIR")
-        if data_dir:
-            data_dir_clean = data_dir.strip('"').strip("'")
-            google_drive_template = (
-                Path(data_dir_clean).expanduser() / "template" / "Cover Letter_ AI Template.pdf"
-            )
-            template_locations.append(google_drive_template)
+        data_dir = get_data_directory()
+        google_drive_template = data_dir / "template" / "cover_letter_ai_template.pdf"
+        template_locations.append(google_drive_template)
 
         # 2. Check project root (fallback)
-        project_template = Path(__file__).parent.parent.parent / "Cover Letter_ AI Template.pdf"
+        project_template = Path(__file__).parent.parent.parent / "cover_letter_ai_template.pdf"
         template_locations.append(project_template)
 
         # Find first existing template

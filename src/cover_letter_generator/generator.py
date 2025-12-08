@@ -18,8 +18,12 @@ from groq import Groq
 from sentence_transformers import SentenceTransformer
 
 from .analysis import JobAnalysis, JobLevel, analyze_job_posting
+from .logging_config import get_logger
 from .scoring import score_document
-from .utils import suppress_telemetry_errors
+from .utils import get_data_directory, suppress_telemetry_errors
+
+# Set up module logger
+logger = get_logger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -94,14 +98,7 @@ class CoverLetterGenerator:
 
         # Setup ChromaDB
         # Allow custom data directory via environment variable
-        data_dir_env = os.getenv("DATA_DIR")
-        if data_dir_env:
-            # Remove quotes if present and expand ~ to home directory
-            data_dir_env = data_dir_env.strip('"').strip("'")
-            data_dir = Path(data_dir_env).expanduser().resolve()
-        else:
-            data_dir = Path(__file__).parent.parent.parent / "data"
-
+        data_dir = get_data_directory()
         chroma_dir = data_dir / "chroma_db"
 
         if not chroma_dir.exists():
@@ -153,15 +150,12 @@ class CoverLetterGenerator:
         # Load system prompt
         if system_prompt_path is None:
             # Check DATA_DIR first
-            data_dir_env = os.getenv("DATA_DIR")
-            if data_dir_env:
-                data_dir_clean = data_dir_env.strip('"').strip("'")
-                data_dir = Path(data_dir_clean).expanduser().resolve()
-                drive_prompt_path = data_dir / "system_prompt" / "system_prompt.txt"
-                
-                if drive_prompt_path.exists():
-                    system_prompt_path = drive_prompt_path
-                    print(f"✓ Loaded system prompt from {drive_prompt_path}")
+            data_dir = get_data_directory()
+            drive_prompt_path = data_dir / "system_prompt" / "system_prompt.txt"
+
+            if drive_prompt_path.exists():
+                system_prompt_path = drive_prompt_path
+                print(f"✓ Loaded system prompt from {drive_prompt_path}")
             
             # Fallback to local default if not found in Drive
             if system_prompt_path is None:
@@ -250,20 +244,17 @@ class CoverLetterGenerator:
         leadership_philosophy = ""
         
         # Resolve DATA_DIR
-        data_dir_env = os.getenv("DATA_DIR")
-        if data_dir_env:
-            data_dir_clean = data_dir_env.strip('"').strip("'")
-            data_dir = Path(data_dir_clean).expanduser().resolve()
-            
-            # Check for DOCX first
-            philosophy_docx = data_dir / "Leadership Philosophy.docx"
-            if philosophy_docx.exists():
-                try:
-                    doc = Document(str(philosophy_docx))
-                    leadership_philosophy = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
-                    print(f"✓ Loaded leadership philosophy from {philosophy_docx.name}")
-                except Exception as e:
-                    print(f"Warning: Failed to read philosophy DOCX: {e}")
+        data_dir = get_data_directory()
+
+        # Check for DOCX first
+        philosophy_docx = data_dir / "Leadership Philosophy.docx"
+        if philosophy_docx.exists():
+            try:
+                doc = Document(str(philosophy_docx))
+                leadership_philosophy = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+                print(f"✓ Loaded leadership philosophy from {philosophy_docx.name}")
+            except Exception as e:
+                print(f"Warning: Failed to read philosophy DOCX: {e}")
 
         # Fallback to local txt if not found in Drive (or if DATA_DIR not set)
         if not leadership_philosophy:
@@ -291,6 +282,19 @@ class CoverLetterGenerator:
             job_description,
             job_title
         )
+
+    def _to_list(self, embedding):
+        """Convert embedding to list, handling both numpy arrays and lists.
+
+        Args:
+            embedding: Embedding that could be a numpy array or list
+
+        Returns:
+            List representation of the embedding
+        """
+        if hasattr(embedding, 'tolist'):
+            return embedding.tolist()
+        return embedding
 
     def get_relevant_context(
         self, 
@@ -338,7 +342,7 @@ class CoverLetterGenerator:
         normalized_query = job_description.replace("'", "").strip()
         query_embedding = self.model.encode([normalized_query])[0]
         results = self.collection.query(
-            query_embeddings=[query_embedding.tolist()],
+            query_embeddings=[self._to_list(query_embedding)],
             n_results=n_results
         )
 
@@ -358,7 +362,7 @@ class CoverLetterGenerator:
         for req in priority_requirements[:self.PRIORITY_REQUIREMENTS_TO_QUERY]:
             req_embedding = self.model.encode([req.description])[0]
             req_results = self.collection.query(
-                query_embeddings=[req_embedding.tolist()],
+                query_embeddings=[self._to_list(req_embedding)],
                 n_results=self.PRIORITY_REQ_RESULTS
             )
 
@@ -379,7 +383,7 @@ class CoverLetterGenerator:
             tech_query = f"experience with {tech}"
             tech_embedding = self.model.encode([tech_query])[0]
             tech_results = self.collection.query(
-                query_embeddings=[tech_embedding.tolist()],
+                query_embeddings=[self._to_list(tech_embedding)],
                 n_results=self.TECHNOLOGY_RESULTS
             )
 

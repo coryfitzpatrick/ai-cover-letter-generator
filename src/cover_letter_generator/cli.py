@@ -1,6 +1,8 @@
 """Command-line interface for cover letter generation."""
 
 import os
+
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -29,25 +31,32 @@ from .utils import create_folder_name_from_details
 # Load environment variables
 load_dotenv()
 
-# Get user name from environment
+# Get user configuration from environment
 USER_NAME = os.getenv("USER_NAME")
 
-# Default contact information for PDF headers
-# Edit these values to customize your cover letter headers
+# Contact information for PDF headers - read from environment variables
 DEFAULT_CONTACT_INFO = {
     "name": USER_NAME,
-    "email": "coryartfitz@gmail.com",
-    "phone": "",  # Optional: add phone number
-    "location": "Greater Boston",
-    "linkedin": "https://www.linkedin.com/in/coryfitzpatrick",
-    "portfolio": "http://www.coryfitzpatrick.com",
+    "email": os.getenv("USER_EMAIL", ""),
+    "phone": os.getenv("USER_PHONE", ""),
+    "location": os.getenv("USER_LOCATION", ""),
+    "linkedin": os.getenv("USER_LINKEDIN", ""),
+    "portfolio": os.getenv("USER_PORTFOLIO", ""),
 }
 
 # Default output directory for cover letters
-DEFAULT_OUTPUT_DIR = (
-    Path.home()
-    / "Library/Mobile Documents/com~apple~CloudDocs/Documents/Cover Letters"
-)
+# Can be customized via OUTPUT_DIR env variable
+_output_dir = os.getenv("OUTPUT_DIR")
+if _output_dir:
+    DEFAULT_OUTPUT_DIR = Path(_output_dir)
+else:
+    # Default to iCloud Documents/Cover Letters
+    icloud_path = Path.home() / "Library" / "Mobile Documents" / "com~apple~CloudDocs" / "Documents" / "Cover Letters"
+    if icloud_path.exists():
+        DEFAULT_OUTPUT_DIR = icloud_path
+    else:
+        # Fallback to ~/Documents/Cover Letters if iCloud not available
+        DEFAULT_OUTPUT_DIR = Path.home() / "Documents" / "Cover Letters"
 
 
 def print_welcome():
@@ -182,6 +191,18 @@ def initialize_components() -> Tuple[
         print("Please add USER_NAME=\"Your Full Name\" to your .env file")
         sys.exit(1)
 
+    # Validate required contact information
+    missing_fields = []
+    if not DEFAULT_CONTACT_INFO.get("email"):
+        missing_fields.append("USER_EMAIL")
+    if not DEFAULT_CONTACT_INFO.get("location"):
+        missing_fields.append("USER_LOCATION")
+
+    if missing_fields:
+        print(f"\nWarning: Missing contact information: {', '.join(missing_fields)}")
+        print("Cover letters may be generated without complete contact details.")
+        print("Add these to your .env file for complete headers.")
+
     # Print welcome message
     print_welcome()
 
@@ -253,9 +274,11 @@ def handle_feedback_loop(
         print("  (1) Save this version")
         print("  (2) Provide feedback for revision")
         print("  (3) Start over with new job description")
-        print("  (4) Exit")
 
-        choice = get_user_choice(['1', '2', '3', '4'], default='1')
+        print("  (4) Exit")
+        print("  (5) Copy to clipboard")
+
+        choice = get_user_choice(['1', '2', '3', '4', '5'], default='1')
 
         if choice == '1':
             return current_version
@@ -312,7 +335,44 @@ def handle_feedback_loop(
             
         elif choice == '4':
             print("\nExiting...")
+
             sys.exit(0)
+
+        elif choice == '5':
+            try:
+                # Try pyperclip first (cross-platform)
+                try:
+                    import pyperclip
+                    pyperclip.copy(current_version)
+                    print("\n✓ Copied to clipboard!")
+                except ImportError:
+                    # Fallback to platform-specific methods
+                    import platform
+                    system = platform.system()
+
+                    if system == "Darwin":  # macOS
+                        process = subprocess.Popen('pbcopy', env={'LANG': 'en_US.UTF-8'}, stdin=subprocess.PIPE)
+                        process.communicate(current_version.encode('utf-8'))
+                        print("\n✓ Copied to clipboard!")
+                    elif system == "Windows":
+                        process = subprocess.Popen(['clip'], stdin=subprocess.PIPE, shell=True)
+                        process.communicate(current_version.encode('utf-8'))
+                        print("\n✓ Copied to clipboard!")
+                    elif system == "Linux":
+                        # Try xclip first, then xsel
+                        try:
+                            process = subprocess.Popen(['xclip', '-selection', 'clipboard'], stdin=subprocess.PIPE)
+                            process.communicate(current_version.encode('utf-8'))
+                            print("\n✓ Copied to clipboard!")
+                        except FileNotFoundError:
+                            process = subprocess.Popen(['xsel', '--clipboard', '--input'], stdin=subprocess.PIPE)
+                            process.communicate(current_version.encode('utf-8'))
+                            print("\n✓ Copied to clipboard!")
+                    else:
+                        print(f"\n⚠ Clipboard not supported on {system}. Please install pyperclip: pip install pyperclip")
+            except Exception as e:
+                print(f"\nError copying to clipboard: {e}")
+                print("Tip: Install pyperclip for better clipboard support: pip install pyperclip")
             
     return current_version
 

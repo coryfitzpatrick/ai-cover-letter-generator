@@ -158,20 +158,26 @@ def fetch_webpage_with_playwright(url: str, timeout: int = 30000) -> Optional[Tu
 
 
 def clean_job_title(title: str) -> str:
-    """Clean job title by removing parenthetical content.
+    """Clean job title by removing parenthetical content and remote work indicators.
 
     Args:
         title: Job title string
 
     Returns:
-        Cleaned job title without parentheses
+        Cleaned job title without parentheses or remote indicators
 
     Examples:
         "Mobile/Web Software Engineering Manager (Remote - USA)" -> "Mobile/Web Software Engineering Manager"
         "Senior Engineer (Full-time)" -> "Senior Engineer"
+        "Engineering Manager - Remote" -> "Engineering Manager"
+        "Senior Engineer | Remote" -> "Senior Engineer"
     """
     # Remove anything in parentheses and trim whitespace
     cleaned = re.sub(r'\s*\([^)]*\)', '', title).strip()
+
+    # Remove remote work indicators with various separators (-, |, etc.)
+    cleaned = re.sub(r'\s*[-|]\s*Remote\s*$', '', cleaned, flags=re.IGNORECASE).strip()
+
     return cleaned
 
 

@@ -1,6 +1,7 @@
 """Scoring logic for ranking retrieved documents."""
 
 import re
+from datetime import datetime
 
 from .analysis import JobAnalysis, JobLevel
 
@@ -65,15 +66,22 @@ def score_document(
     if "recommendation" in source:
         score += RECOMMENDATION_BOOST
 
-    # Recency boost - J&J is most recent
-    # Check both text content and metadata
-    company_meta = metadata.get("company", "").lower()
-    
-    if "johnson" in doc_lower or "j&j" in doc_lower or "johnson" in company_meta:
-        score += RECENT_COMPANY_BOOST
-    elif ("fitbit" in doc_lower or "google" in doc_lower or 
-          "fitbit" in company_meta or "google" in company_meta):
-        score += PREVIOUS_COMPANY_BOOST
+    # Recency boost based on year (more recent experience is more relevant)
+    # Dynamically boost based on year metadata instead of hardcoded companies
+    year_meta = metadata.get("year", "")
+    if year_meta and year_meta != "unknown":
+        try:
+            year = int(year_meta)
+            current_year = datetime.now().year
+            years_ago = current_year - year
+
+            if years_ago <= 2:  # Last 2 years (most recent)
+                score += RECENT_COMPANY_BOOST
+            elif years_ago <= 5:  # 3-5 years ago
+                score += PREVIOUS_COMPANY_BOOST
+            # Older than 5 years gets no boost
+        except (ValueError, TypeError):
+            pass  # Invalid year format, skip boost
 
     # Boost for metrics/numbers (concrete achievements)
     if re.search(r'\d+%', doc):  # Percentages

@@ -1,5 +1,11 @@
 # Cover Letter Generator
 
+[![CI](https://github.com/YOUR_USERNAME/ai-cover-letter-generator/workflows/CI/badge.svg)](https://github.com/YOUR_USERNAME/ai-cover-letter-generator/actions)
+[![codecov](https://codecov.io/gh/YOUR_USERNAME/ai-cover-letter-generator/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/ai-cover-letter-generator)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 An AI-powered cover letter generator that uses Retrieval-Augmented Generation (RAG) to create personalized cover letters based on your professional background and job descriptions.
 
 ## Features
@@ -770,6 +776,51 @@ cover-letter-ai-gen/
 You can customize the behavior of the generator by creating local prompt files in the `prompts/` directory. These files are gitignored to protect your personal strategies.
 
 - **`prompts/critique_prompt.txt`**: Customize the refinement instructions used in the second stage of generation.
+
+### Context Preprocessing Hook (Advanced)
+For advanced users who want to transform retrieved context before it's used in the cover letter, you can create a `managerial_prompt.txt` file in the project root. This file should contain a prompt template with a `{context}` placeholder.
+
+**Use Case:** Transform technical achievements into management-focused language, or reframe context for specific types of roles.
+
+**Example `managerial_prompt.txt`:**
+```
+Transform the following technical achievements into management-focused language,
+emphasizing leadership impact, team growth, and strategic value:
+
+{context}
+
+Provide the transformed version maintaining all facts but reframing for a management audience.
+```
+
+**Note:** This is an optional, advanced feature. The context preprocessing adds a small additional cost (~$0.01 per letter) and processing time. If the file doesn't exist, the original context is used directly.
+
+### Logging Configuration
+The application includes a comprehensive logging system for debugging and monitoring. Configure logging via environment variables:
+
+```bash
+# In your .env file
+LOG_LEVEL=INFO          # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOG_FILE=/path/to/app.log   # Optional: write logs to file
+VERBOSE=true            # Set to true for detailed debug output
+```
+
+**Log Levels:**
+- `DEBUG`: Detailed information for debugging
+- `INFO`: General informational messages (default)
+- `WARNING`: Warning messages for potential issues
+- `ERROR`: Error messages for failures
+- `CRITICAL`: Critical errors that may stop execution
+
+**Example usage:**
+```bash
+# Enable debug logging to file
+export LOG_LEVEL=DEBUG
+export LOG_FILE=~/.cover-letter-generator/debug.log
+
+# Run with verbose output
+export VERBOSE=true
+cover-letter-cli
+```
 
 ## Troubleshooting
 

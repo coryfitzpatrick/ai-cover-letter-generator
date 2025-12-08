@@ -13,8 +13,10 @@ try:
     from pdf2image import convert_from_path
     from PIL import Image
     DEPENDENCIES_AVAILABLE = True
+    HAS_PDF2IMAGE = True  # Alias for backward compatibility
 except ImportError:
     DEPENDENCIES_AVAILABLE = False
+    HAS_PDF2IMAGE = False
 
 
 # Load environment variables

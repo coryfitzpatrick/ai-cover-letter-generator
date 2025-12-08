@@ -1,0 +1,39 @@
+# Codecov configuration
+# See: https://docs.codecov.com/docs/codecov-yaml
+
+coverage:
+  status:
+    project:
+      default:
+        target: 80%  # Project must maintain at least 80% coverage
+        threshold: 2%  # Allow 2% drop
+        informational: false
+    patch:
+      default:
+        target: 85%  # New code should have 85% coverage
+        threshold: 5%
+        informational: false
+
+  precision: 2
+  round: down
+  range: "70...95"
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+
+ignore:
+  - "tests/"
+  - "scripts/"
+  - "setup.py"
+  - "**/__init__.py"
+  - "**/logging_config.py"
+
+flags:
+  unittests:
+    paths:
+      - src/
+    carryforward: true

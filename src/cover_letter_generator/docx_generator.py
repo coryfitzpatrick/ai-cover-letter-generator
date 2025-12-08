@@ -35,8 +35,6 @@ def generate_cover_letter_docx(
 
     output_path = output_dir / filename
 
-    output_path = output_dir / filename
-
     # Create clean DOCX from scratch (Programmatic Generation)
     # This ensures consistent formatting without relying on external template files
     doc = Document()
@@ -44,8 +42,8 @@ def generate_cover_letter_docx(
     # Set default font and margins
     sections = doc.sections
     for section in sections:
-        section.top_margin = Inches(1)
-        section.bottom_margin = Inches(1)
+        section.top_margin = Inches(0.75)
+        section.bottom_margin = Inches(0.75)
         section.left_margin = Inches(0.75)
         section.right_margin = Inches(0.75)
 
@@ -99,16 +97,18 @@ def generate_cover_letter_docx(
                 run.font.size = Pt(10) # Matches PDF fontSize=10
             links_para.paragraph_format.space_after = Pt(12) # Matches spacer after header
 
-    # Add current date with tight spacing
+    # Add current date with tight spacing, aligned RIGHT to match PDF
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
     date_para = doc.add_paragraph(datetime.now().strftime("%B %d, %Y"))
     date_para.style = 'Normal'
+    date_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     date_run = date_para.runs[0] if date_para.runs else date_para.add_run()
     date_run.font.name = 'Arial'
-    date_run.font.size = Pt(11)
+    date_run.font.size = Pt(10) # Matches PDF date style size
 
-    # Set tight spacing after date (0 pt)
+    # Set tight spacing after date (matches PDF spacer)
     para_format = date_para.paragraph_format
-    para_format.space_after = Pt(0)
+    para_format.space_after = Pt(12)
     para_format.line_spacing = 1.0
 
     # Process the cover letter text

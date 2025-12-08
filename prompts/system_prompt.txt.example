@@ -69,10 +69,18 @@ Show initiative with action verbs: Led, Drove, Delivered, Established, Transform
 
 **Avoid:** "I was responsible for...", "I helped with...", "I participated in..."
 
-### Tell Stories with Problem-Solution Leadership (CAR Model Enhanced)
-
-⚠️ **CRITICAL WARNING:** This structure is a PREFERENCE, not a REQUIREMENT. If the context doesn't naturally fit this pattern, DO NOT force it. DO NOT invent dramatic problems, workflow bottlenecks, crises, or situations that aren't explicitly in the context.
-
+### Tell Stories with Problem-Solution Leadership (CAR Model)
+ 
+⚠️ **CRITICAL REQUIREMENT:** You MUST use the CAR (Context, Action, Result) model when referencing achievements. This is the preferred structure for all achievement storytelling.
+ 
+**The Pattern:**
+1. **Context (The Problem):** What was the bottleneck, inefficiency, or challenge?
+2. **Action (The Solution):** What specific action did you take?
+3. **Result (The Impact):** What was the quantifiable outcome?
+ 
+**Good Pattern (Use this structure):**
+✅ "When my team was bottlenecked by an inefficient git workflow, I redesigned it to simplify the process and reduce blockers. This resulted in a 50% reduction in ticket turnaround."
+ 
 **Only use this structure when:**
 - Context explicitly mentions a problem, challenge, or issue
 - Context clearly implies a problem that needed solving
@@ -105,7 +113,7 @@ Choose stories from context that mirror THEIR challenges, then make natural conn
 → This is just listing credentials. Anyone could claim this.
 
 **VERY BAD (fabricating problems and mixing achievements):**
-❌ "At [Company X], when our [stakeholders] faced workflow bottlenecks that delayed [outcome], I led my team to reduce [metric] by 45% while maintaining 100% accuracy."
+❌ "At [Company X], when our [stakeholders] faced workflow bottlenecks that delayed [outcome], I led my team to reduce [metric] by [percentage] while maintaining [percentage] accuracy."
 → This fabricates a dramatic problem ("delayed patient care") and potentially mixes metrics from different achievements. NEVER do this.
 
 **Good (if context ACTUALLY describes a problem):**
@@ -138,7 +146,7 @@ Write like you're having a genuine conversation with a hiring manager, not deliv
 - Phrases like "I understand exactly" or "you need"
 
 **Instead use:**
-- Direct statements: "We reduced verification time by 45%..."
+- Direct statements: "We reduced [metric] by [percentage]..."
 - Natural transitions: "Through this work, we achieved..." or simply state the result
 - Softer language: "I've found" or "this could be valuable"
 
@@ -146,7 +154,7 @@ Write like you're having a genuine conversation with a hiring manager, not deliv
 ## WHAT TO INCLUDE (Flexible Structure)
 ══════════════════════════════════════════════════════════════════════════════
 
-**Target:** 300-450 words, 3-5 paragraphs
+**Target:** 400-600 words, 4-6 paragraphs
 
 **Strong Opening:**
 Start with genuine interest in the role and company. Introduce yourself naturally and make a clear connection between your background and what they're looking for.
@@ -212,7 +220,9 @@ End with genuine enthusiasm and openness to conversation. Express interest in di
 - **CRITICAL:** All examples in this prompt (company names, metrics, achievements, etc.) are ILLUSTRATIVE PATTERNS ONLY. NEVER use these example facts. ONLY use facts explicitly stated in the context provided about {YOUR NAME}.
 - Every fact, metric, technology must be explicitly in the context
 - **NEVER fabricate problems that didn't exist.** If the context doesn't describe a problem/challenge, don't invent one. Frame it as an initiative or improvement opportunity instead.
-- If context says "reduced verification time by 45%", use EXACTLY that phrasing
+- **NEVER INVENT METRICS.** If the source text does not contain a specific number or percentage (like "30%" or "25%"), DO NOT INVENT ONE.
+- It is better to be qualitative and accurate than quantitative and false.
+- If context says "reduced [metric] by [percentage]", use EXACTLY that phrasing
 - Don't claim technologies not explicitly mentioned
 - Don't exaggerate team sizes or achievements
 - Don't invent metrics or percentages
@@ -222,15 +232,23 @@ End with genuine enthusiasm and openness to conversation. Express interest in di
   - ✅ DO say "experience leading engineers at [Company] and [Company]" (specific, verifiable)
 - **NEVER move metrics between different achievements/companies**
   - ❌ DON'T say "30+ organizations at [Company A]" if context says "30+ campaigns at [Company B]"
-  - ❌ DON'T apply a number from one achievement to a different one
+  - ❌ DON'T apply a number from one achievement
+  - **Metric Accuracy:**
+  - **HALLUCINATION CHECK:** Before writing any number (e.g., "30%", "2x"), verify it exists in the provided context. If not, DELETE IT.
   - Each metric must stay with its EXACT original achievement and company
   - If you can't find a specific number for an achievement, describe it without numbers
 - **NEVER mix up WHAT was improved with HOW MUCH it improved**
-  - ❌ DON'T say "reduced onboarding time by 45%" if context says "reduced verification time by 45%"
-  - ❌ DON'T say "improved test coverage by 45%" if 45% was about verification time
+  - ❌ DON'T say "reduced onboarding time by [X]%" if context says "reduced process time by [Y]%"
+  - ❌ DON'T say "improved test coverage by [X]%" if [X]% was about process efficiency
   - Each metric MUST stay with its exact achievement type
   - Different achievements have their own metrics - keep them separate
   - **READ CAREFULLY**: If context mentions multiple achievements with different metrics, never combine or swap them
+- **NEVER SYNTHESIZE OR MERGE SEPARATE ACHIEVEMENTS**
+  - ❌ DON'T write: "By guiding engineers in adopting AI tools and improving testing standards, we achieved a 45% reduction in verification time"
+  - This incorrectly implies AI tools caused the verification reduction when they were separate achievements
+  - ✅ DO write them as SEPARATE achievements: "I guided engineers in adopting AI tools..." AND separately "I reduced verification time by 45%..."
+  - Each achievement must stand alone with its own context, action, and result
+  - NEVER imply a causal relationship between unrelated achievements
 - **When in doubt, LEAVE IT OUT**
 
 ### ⛔ NO DUPLICATION
@@ -258,7 +276,7 @@ End with genuine enthusiasm and openness to conversation. Express interest in di
 - Use commas, periods, or separate sentences
 
 ### ⛔ LENGTH
-- Aim for 300-450 words, 3-5 paragraphs
+- Aim for 400-600 words, 4-6 paragraphs
 - Every sentence should serve a purpose
 
 ══════════════════════════════════════════════════════════════════════════════
@@ -290,6 +308,12 @@ Before finalizing, ask yourself:
 ✅ Did I avoid generic statements like "I have experience in X" in favor of "When faced with X problem, I led Y solution, achieving Z result"?
 ✅ Are the problems I solved clearly similar to challenges THEY likely face?
 ✅ Does the letter show HOW my qualifications solve THEIR problems, not just what I've done?
+
+**ACHIEVEMENT SEPARATION CHECKS:**
+✅ Did I keep each achievement completely separate (no synthesizing or merging)?
+✅ Did I avoid implying causal relationships between unrelated achievements?
+✅ Is each metric paired ONLY with the specific action that produced it?
+✅ If I mentioned multiple improvements, did I make it clear they were separate initiatives?
 
 **Most important:** Would I want to interview this person after reading this? Do they feel like a MUST-HAVE candidate who can solve MY problems?
 

@@ -139,22 +139,6 @@ class JobTracker:
             print("3. The sheet name matches (default: 'Sheet1')")
             return False
 
-    def get_spreadsheet_id_from_url(self, url: str) -> Optional[str]:
-        """Extract spreadsheet ID from Google Sheets URL.
-
-        Args:
-            url: Google Sheets URL
-
-        Returns:
-            Spreadsheet ID or None if not found
-        """
-        import re
-        # Match pattern: /spreadsheets/d/{SPREADSHEET_ID}/
-        match = re.search(r'/spreadsheets/d/([a-zA-Z0-9-_]+)', url)
-        if match:
-            return match.group(1)
-        return None
-
     def check_duplicate(self, job_url: str, spreadsheet_id: Optional[str] = None) -> Optional[str]:
         """Check if a job URL already exists in any sheet.
 

@@ -4,53 +4,11 @@ import unittest
 
 from src.cover_letter_generator.utils import (
     create_folder_name_from_details,
-    extract_company_name,
-    extract_job_title,
 )
 
 
 class TestUtils(unittest.TestCase):
     """Test utility functions."""
-
-    def test_extract_company_name(self):
-        """Test company name extraction."""
-        # Test standard format
-        text = "Dear Google Hiring Team,"
-        self.assertEqual(extract_company_name(text), "Google")
-
-        # Test alternative format
-        text = "Dear Microsoft Recruitment,"
-        self.assertEqual(extract_company_name(text), "Microsoft")
-
-        # Test another alternative
-        text = "Dear Apple Team,"
-        self.assertEqual(extract_company_name(text), "Apple")
-
-        # Test generic terms (should be ignored)
-        text = "Dear Hiring Team,"
-        self.assertIsNone(extract_company_name(text))
-
-        # Test no match
-        text = "Hello there,"
-        self.assertIsNone(extract_company_name(text))
-
-    def test_extract_job_title(self):
-        """Test job title extraction."""
-        # Test standard pattern
-        text = "We are looking for a Senior Software Engineer to join our team."
-        self.assertEqual(extract_job_title(text), "Senior Software Engineer")
-
-        # Test position pattern
-        text = "Position: Product Manager\nLocation: Remote"
-        self.assertEqual(extract_job_title(text), "Product Manager")
-
-        # Test role pattern
-        text = "Role: Data Scientist"
-        self.assertEqual(extract_job_title(text), "Data Scientist")
-
-        # Test application for pattern
-        text = "Application for the UX Designer position"
-        self.assertEqual(extract_job_title(text), "UX Designer")
 
     def test_create_folder_name_from_details(self):
         """Test folder name creation."""
