@@ -1,10 +1,11 @@
 """Comprehensive tests for company extraction from section headers."""
+
 import pytest
 from src.cover_letter_generator.prepare_data import (
     extract_company_from_section_headers,
     parse_sections_by_company,
     extract_text_from_docx,
-    chunk_text
+    chunk_text,
 )
 
 
@@ -88,8 +89,8 @@ Some Amazon achievement"""
         """Test company extraction handles various whitespace patterns."""
         test_cases = [
             "[H2]Achievements at  Google  :\n\nText",  # Extra spaces
-            "[H2]  Achievements at Google:\n\nText",    # Leading spaces after H2
-            "[H2]Achievements at Google:  \n\nText",    # Trailing spaces
+            "[H2]  Achievements at Google:\n\nText",  # Leading spaces after H2
+            "[H2]Achievements at Google:  \n\nText",  # Trailing spaces
         ]
         for text in test_cases:
             company = extract_company_from_section_headers(text)

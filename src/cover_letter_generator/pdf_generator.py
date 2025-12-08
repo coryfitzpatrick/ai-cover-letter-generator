@@ -22,9 +22,7 @@ load_dotenv()
 
 
 def create_cover_letter_pdf(
-    cover_letter_text: str,
-    output_path: Path,
-    contact_info: Optional[dict] = None
+    cover_letter_text: str, output_path: Path, contact_info: Optional[dict] = None
 ) -> Path:
     """Create a professional PDF cover letter.
 
@@ -54,53 +52,53 @@ def create_cover_letter_pdf(
 
     # Custom style for contact header
     header_style = ParagraphStyle(
-        'CustomHeader',
-        parent=styles['Normal'],
+        "CustomHeader",
+        parent=styles["Normal"],
         fontSize=10,
-        textColor='#333333',
+        textColor="#333333",
         spaceAfter=6,
         alignment=TA_LEFT,
     )
 
     # Custom style for date
     date_style = ParagraphStyle(
-        'DateStyle',
-        parent=styles['Normal'],
+        "DateStyle",
+        parent=styles["Normal"],
         fontSize=10,
-        textColor='#666666',
+        textColor="#666666",
         spaceAfter=12,
         alignment=TA_RIGHT,
     )
 
     # Custom style for body text
     body_style = ParagraphStyle(
-        'CustomBody',
-        parent=styles['Normal'],
+        "CustomBody",
+        parent=styles["Normal"],
         fontSize=11,
         leading=16,
-        textColor='#333333',
+        textColor="#333333",
         alignment=TA_LEFT,
         spaceAfter=12,
     )
 
     # Add contact information header if provided
     if contact_info:
-        name = contact_info.get('name', os.getenv('USER_NAME'))
-        email = contact_info.get('email', '')
-        phone = contact_info.get('phone', '')
-        location = contact_info.get('location', '')
-        linkedin = contact_info.get('linkedin', '')
-        portfolio = contact_info.get('portfolio', '')
+        name = contact_info.get("name", os.getenv("USER_NAME"))
+        email = contact_info.get("email", "")
+        phone = contact_info.get("phone", "")
+        location = contact_info.get("location", "")
+        linkedin = contact_info.get("linkedin", "")
+        portfolio = contact_info.get("portfolio", "")
 
         # Name (larger and bold)
         name_style = ParagraphStyle(
-            'NameStyle',
-            parent=styles['Normal'],
+            "NameStyle",
+            parent=styles["Normal"],
             fontSize=14,
-            textColor='#000000',
+            textColor="#000000",
             spaceAfter=4,
             alignment=TA_LEFT,
-            fontName='Helvetica-Bold',
+            fontName="Helvetica-Bold",
         )
         story.append(Paragraph(name, name_style))
 
@@ -114,7 +112,7 @@ def create_cover_letter_pdf(
             contact_parts.append(f'<a href="mailto:{email}" color="#0066cc">{email}</a>')
 
         if contact_parts:
-            story.append(Paragraph(' | '.join(contact_parts), header_style))
+            story.append(Paragraph(" | ".join(contact_parts), header_style))
 
         # Links
         link_parts = []
@@ -124,7 +122,7 @@ def create_cover_letter_pdf(
             link_parts.append(f'<a href="{portfolio}" color="#0066cc">Portfolio</a>')
 
         if link_parts:
-            story.append(Paragraph(' | '.join(link_parts), header_style))
+            story.append(Paragraph(" | ".join(link_parts), header_style))
 
         story.append(Spacer(1, 0.3 * inch))
 
@@ -134,19 +132,19 @@ def create_cover_letter_pdf(
     story.append(Spacer(1, 0.2 * inch))
 
     # Process the cover letter text
-    paragraphs = cover_letter_text.strip().split('\n\n')
+    paragraphs = cover_letter_text.strip().split("\n\n")
 
     for para in paragraphs:
         if para.strip():
             # Clean up the text
-            clean_para = para.strip().replace('\n', ' ')
+            clean_para = para.strip().replace("\n", " ")
 
             # Handle the salutation specially
-            if clean_para.startswith('Dear '):
+            if clean_para.startswith("Dear "):
                 story.append(Paragraph(clean_para, body_style))
                 story.append(Spacer(1, 0.15 * inch))
             # Handle the closing specially
-            elif clean_para.startswith('Sincerely'):
+            elif clean_para.startswith("Sincerely"):
                 story.append(Spacer(1, 0.15 * inch))
                 story.append(Paragraph(clean_para, body_style))
             else:
@@ -162,7 +160,7 @@ def generate_cover_letter_pdf(
     cover_letter_text: str,
     output_dir: Path = None,
     filename: str = None,
-    contact_info: Optional[dict] = None
+    contact_info: Optional[dict] = None,
 ) -> Path:
     """Generate a cover letter PDF with automatic filename.
 

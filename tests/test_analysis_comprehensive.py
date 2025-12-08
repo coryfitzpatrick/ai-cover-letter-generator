@@ -63,9 +63,7 @@ class TestJobRequirementDataclass:
     def test_create_job_requirement(self):
         """Test creating a JobRequirement instance."""
         req = JobRequirement(
-            category="leadership",
-            description="Lead team of 10 engineers",
-            priority=1
+            category="leadership", description="Lead team of 10 engineers", priority=1
         )
 
         assert req.category == "leadership"
@@ -77,11 +75,7 @@ class TestJobRequirementDataclass:
         categories = ["leadership", "technical", "domain", "cultural"]
 
         for category in categories:
-            req = JobRequirement(
-                category=category,
-                description="Test requirement",
-                priority=1
-            )
+            req = JobRequirement(category=category, description="Test requirement", priority=1)
             assert req.category == category
 
 
@@ -92,7 +86,7 @@ class TestJobAnalysisDataclass:
         """Test creating a JobAnalysis instance."""
         requirements = [
             JobRequirement("leadership", "Lead team", 1),
-            JobRequirement("technical", "Python expertise", 2)
+            JobRequirement("technical", "Python expertise", 2),
         ]
 
         analysis = JobAnalysis(
@@ -100,7 +94,7 @@ class TestJobAnalysisDataclass:
             job_type=JobType.PRODUCT,
             requirements=requirements,
             key_technologies=["Python", "React"],
-            team_size_mentioned=True
+            team_size_mentioned=True,
         )
 
         assert analysis.level == JobLevel.MANAGER
@@ -113,13 +107,15 @@ class TestJobAnalysisDataclass:
 class TestAnalyzeJobPosting:
     """Tests for job posting analysis function."""
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_manager_role(self, mock_groq_class):
         """Test analyzing a manager-level job posting."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: MANAGER
 TYPE: PRODUCT
 REQUIREMENTS:
@@ -138,7 +134,7 @@ TEAM_SIZE_MENTIONED: yes
             mock_client,
             "test-model",
             "Job description for engineering manager role",
-            "Engineering Manager"
+            "Engineering Manager",
         )
 
         assert result.level == JobLevel.MANAGER
@@ -151,13 +147,15 @@ TEAM_SIZE_MENTIONED: yes
         priority_1_reqs = [r for r in result.requirements if r.priority == 1]
         assert len(priority_1_reqs) == 2
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_senior_ic_role(self, mock_groq_class):
         """Test analyzing a senior IC job posting."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: IC_SENIOR
 TYPE: INFRASTRUCTURE
 REQUIREMENTS:
@@ -171,23 +169,21 @@ TEAM_SIZE_MENTIONED: no
         mock_client.chat.completions.create.return_value = mock_response
         mock_groq_class.return_value = mock_client
 
-        result = analyze_job_posting(
-            mock_client,
-            "test-model",
-            "Senior engineer job description"
-        )
+        result = analyze_job_posting(mock_client, "test-model", "Senior engineer job description")
 
         assert result.level == JobLevel.IC_SENIOR
         assert result.job_type == JobType.INFRASTRUCTURE
         assert result.team_size_mentioned is False
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_director_level(self, mock_groq_class):
         """Test analyzing a director-level job posting."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: DIRECTOR_VP
 TYPE: ENTERPRISE
 REQUIREMENTS:
@@ -205,20 +201,22 @@ TEAM_SIZE_MENTIONED: yes
             mock_client,
             "test-model",
             "Director of Engineering job description",
-            "Director of Engineering"
+            "Director of Engineering",
         )
 
         assert result.level == JobLevel.DIRECTOR_VP
         assert result.job_type == JobType.ENTERPRISE
         assert len(result.key_technologies) == 0  # "none" should result in empty list
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_startup_type(self, mock_groq_class):
         """Test analyzing a startup job posting."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: SENIOR_MANAGER
 TYPE: STARTUP
 REQUIREMENTS:
@@ -236,17 +234,13 @@ TEAM_SIZE_MENTIONED: no
         assert result.job_type == JobType.STARTUP
         assert result.level == JobLevel.SENIOR_MANAGER
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_handles_api_error(self, mock_groq_class):
         """Test handling of API errors during analysis."""
         mock_client = Mock()
         mock_client.chat.completions.create.side_effect = Exception("API Error")
 
-        result = analyze_job_posting(
-            mock_client,
-            "test-model",
-            "Job description"
-        )
+        result = analyze_job_posting(mock_client, "test-model", "Job description")
 
         # Should return default analysis on error
         assert result is not None
@@ -256,13 +250,15 @@ TEAM_SIZE_MENTIONED: no
         assert len(result.key_technologies) == 0
         assert result.team_size_mentioned is False
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_invalid_level(self, mock_groq_class):
         """Test handling of invalid job level in response."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: INVALID_LEVEL
 TYPE: PRODUCT
 REQUIREMENTS:
@@ -278,13 +274,15 @@ TEAM_SIZE_MENTIONED: no
         # Should default to MANAGER for invalid level
         assert result.level == JobLevel.MANAGER
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_invalid_type(self, mock_groq_class):
         """Test handling of invalid job type in response."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: MANAGER
 TYPE: INVALID_TYPE
 REQUIREMENTS:
@@ -300,13 +298,15 @@ TEAM_SIZE_MENTIONED: no
         # Should default to ENTERPRISE for invalid type
         assert result.job_type == JobType.ENTERPRISE
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_no_requirements(self, mock_groq_class):
         """Test handling when no requirements are extracted."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: MANAGER
 TYPE: PRODUCT
 REQUIREMENTS:
@@ -320,13 +320,15 @@ TEAM_SIZE_MENTIONED: no
 
         assert len(result.requirements) == 0
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_with_job_title(self, mock_groq_class):
         """Test that job title is used in analysis when provided."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: MANAGER
 TYPE: PRODUCT
 REQUIREMENTS:
@@ -338,25 +340,24 @@ TEAM_SIZE_MENTIONED: yes
         mock_groq_class.return_value = mock_client
 
         result = analyze_job_posting(
-            mock_client,
-            "test-model",
-            "Job description",
-            "Senior Engineering Manager"
+            mock_client, "test-model", "Job description", "Senior Engineering Manager"
         )
 
         # Verify the API was called with job title in prompt
         call_args = mock_client.chat.completions.create.call_args
-        messages = call_args[1]['messages']
-        user_message = messages[1]['content']
+        messages = call_args[1]["messages"]
+        user_message = messages[1]["content"]
         assert "Senior Engineering Manager" in user_message
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_mixed_priorities(self, mock_groq_class):
         """Test extracting requirements with mixed priority levels."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: MANAGER
 TYPE: PRODUCT
 REQUIREMENTS:
@@ -382,13 +383,15 @@ TEAM_SIZE_MENTIONED: yes
         assert len(priority_2) == 2
         assert len(priority_3) == 1
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_multiple_technologies(self, mock_groq_class):
         """Test parsing multiple technologies."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: IC_SENIOR
 TYPE: INFRASTRUCTURE
 REQUIREMENTS:
@@ -405,13 +408,15 @@ TEAM_SIZE_MENTIONED: no
         assert "Python" in result.key_technologies
         assert "Kubernetes" in result.key_technologies
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_requirement_categories(self, mock_groq_class):
         """Test that all requirement categories are properly parsed."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: MANAGER
 TYPE: PRODUCT
 REQUIREMENTS:
@@ -433,13 +438,15 @@ TEAM_SIZE_MENTIONED: yes
         assert "domain" in categories
         assert "cultural" in categories
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_truncates_long_description(self, mock_groq_class):
         """Test that very long job descriptions are truncated."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: MANAGER
 TYPE: PRODUCT
 REQUIREMENTS:
@@ -457,8 +464,8 @@ TEAM_SIZE_MENTIONED: no
 
         # Verify API was called
         call_args = mock_client.chat.completions.create.call_args
-        messages = call_args[1]['messages']
-        user_message = messages[1]['content']
+        messages = call_args[1]["messages"]
+        user_message = messages[1]["content"]
 
         # Description should be truncated to 4000 characters
         # (the prompt contains the description with [:4000] slice)
@@ -468,13 +475,15 @@ TEAM_SIZE_MENTIONED: no
 class TestEdgeCases:
     """Tests for edge cases and unusual scenarios."""
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_empty_job_description(self, mock_groq_class):
         """Test analyzing an empty job description."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: MANAGER
 TYPE: ENTERPRISE
 REQUIREMENTS:
@@ -488,13 +497,15 @@ TEAM_SIZE_MENTIONED: no
 
         assert result is not None
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_malformed_requirements(self, mock_groq_class):
         """Test handling of malformed requirements section."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 LEVEL: MANAGER
 TYPE: PRODUCT
 REQUIREMENTS:
@@ -513,13 +524,15 @@ TEAM_SIZE_MENTIONED: yes
         # Requirements might be empty or partially parsed
         assert len(result.requirements) >= 0
 
-    @patch('src.cover_letter_generator.analysis.Groq')
+    @patch("src.cover_letter_generator.analysis.Groq")
     def test_analyze_job_posting_case_insensitive_parsing(self, mock_groq_class):
         """Test that parsing is case-insensitive."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 level: manager
 type: product
 requirements:

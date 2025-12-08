@@ -17,9 +17,11 @@ class TelemetryFilter:
     def write(self, message: str) -> None:
         """Write message to stream, filtering out telemetry messages."""
         # Only suppress telemetry-related messages
-        if ('telemetry' not in message.lower() and 
-            'CollectionQueryEvent' not in message and 
-            'ClientStartEvent' not in message):
+        if (
+            "telemetry" not in message.lower()
+            and "CollectionQueryEvent" not in message
+            and "ClientStartEvent" not in message
+        ):
             self.stream.write(message)
 
     def flush(self) -> None:
@@ -59,9 +61,7 @@ def get_data_directory() -> Path:
 
 
 def create_folder_name_from_details(
-    company_name: Optional[str],
-    job_title: Optional[str],
-    timestamp: str
+    company_name: Optional[str], job_title: Optional[str], timestamp: str
 ) -> str:
     """Create a folder name from company name and job title with date applied.
 
@@ -78,8 +78,8 @@ def create_folder_name_from_details(
 
     if company_name and job_title:
         # Clean for folder name (keep spaces, remove problematic chars)
-        clean_company = re.sub(r'[<>:"/\\|?*]', '', company_name).strip()
-        clean_title = re.sub(r'[<>:"/\\|?*]', '', job_title).strip()
+        clean_company = re.sub(r'[<>:"/\\|?*]', "", company_name).strip()
+        clean_title = re.sub(r'[<>:"/\\|?*]', "", job_title).strip()
 
         folder_name = f"{clean_company} - {clean_title} - {date_applied}"
 
@@ -95,10 +95,8 @@ def create_folder_name_from_details(
         return folder_name
     elif company_name:
         # Just company name with date if no job title
-        clean_company = re.sub(r'[<>:"/\\|?*]', '', company_name).strip()
+        clean_company = re.sub(r'[<>:"/\\|?*]', "", company_name).strip()
         return f"{clean_company} - {date_applied}"
     else:
         # Fallback to timestamp-based name
         return f"Application_{timestamp}"
-
-

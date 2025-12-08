@@ -8,6 +8,7 @@ try:
     from prompt_toolkit.styles import Style
     from prompt_toolkit.history import InMemoryHistory
     from prompt_toolkit import print_formatted_text
+
     HAS_PROMPT_TOOLKIT = True
 except ImportError:
     HAS_PROMPT_TOOLKIT = False
@@ -44,13 +45,17 @@ def read_multiline_input(prompt_text: str) -> Optional[str]:
         print(prompt_text)
 
     if HAS_PROMPT_TOOLKIT:
-        print_formatted_text(HTML("<b><style color='ansigray'>Press [Esc] followed by [Enter] to submit. Press [Ctrl-c] to cancel.</style></b>"))
+        print_formatted_text(
+            HTML(
+                "<b><style color='ansigray'>Press [Esc] followed by [Enter] to submit. Press [Ctrl-c] to cancel.</style></b>"
+            )
+        )
         try:
             text = prompt(
                 "",
                 multiline=True,
-                mouse_support=False, # Disable mouse support to allow native terminal copy/paste
-                history=InMemoryHistory(), # Disable history to prevent Up arrow from showing previous entries
+                mouse_support=False,  # Disable mouse support to allow native terminal copy/paste
+                history=InMemoryHistory(),  # Disable history to prevent Up arrow from showing previous entries
             )
             return text.strip()
         except KeyboardInterrupt:
@@ -65,7 +70,7 @@ def read_multiline_input(prompt_text: str) -> Optional[str]:
             while True:
                 line = input()
                 # Check for quit commands
-                if line.strip().lower() in ['quit', 'exit', 'q']:
+                if line.strip().lower() in ["quit", "exit", "q"]:
                     return None
                 lines.append(line)
         except EOFError:
@@ -74,17 +79,17 @@ def read_multiline_input(prompt_text: str) -> Optional[str]:
             print("\n\nExiting...")
             return None
 
-        return '\n'.join(lines).strip()
+        return "\n".join(lines).strip()
 
 
-def get_user_choice(options: List[str], default: str = '1', prompt_text: str = "Choice") -> str:
+def get_user_choice(options: List[str], default: str = "1", prompt_text: str = "Choice") -> str:
     """Get a validated user choice from a list of options.
-    
+
     Args:
         options: List of valid option strings (e.g. ['1', '2', '3'])
         default: Default option if user presses Enter
         prompt_text: Prompt text
-        
+
     Returns:
         The selected option
     """
@@ -94,19 +99,19 @@ def get_user_choice(options: List[str], default: str = '1', prompt_text: str = "
                 # Disable mouse support here so user can select/copy text from the terminal
                 choice = prompt(f"\n{prompt_text} [{default}]: ", mouse_support=False).strip()
             else:
-                print(f"\n{prompt_text} [{default}]: ", end='')
+                print(f"\n{prompt_text} [{default}]: ", end="")
                 choice = input().strip()
-                
+
             choice = choice or default
-            
+
             if choice in options:
                 return choice
             # Check for exit
-            if choice.lower() in ['quit', 'exit', 'q']:
-                return 'q'
+            if choice.lower() in ["quit", "exit", "q"]:
+                return "q"
             print(f"Invalid choice. Please select from: {', '.join(options)}")
         except (KeyboardInterrupt, EOFError):
-            return 'q'
+            return "q"
 
 
 def edit_job_field(field_name: str, current_value: str, multiline: bool = False) -> str:
@@ -120,8 +125,10 @@ def edit_job_field(field_name: str, current_value: str, multiline: bool = False)
     Returns:
         Updated value or current value if unchanged
     """
-    print(f"\nCurrent {field_name}: "
-          f"{current_value if not multiline else f'({len(current_value)} characters)'}")
+    print(
+        f"\nCurrent {field_name}: "
+        f"{current_value if not multiline else f'({len(current_value)} characters)'}"
+    )
 
     if multiline:
         print(f"\nEnter new {field_name}:")
@@ -135,23 +142,23 @@ def edit_job_field(field_name: str, current_value: str, multiline: bool = False)
             if HAS_PROMPT_TOOLKIT:
                 print(f"Enter new {field_name} (or press Enter to keep current):")
                 new_value = prompt("> ", default=current_value, mouse_support=False).strip()
-                # If user just hit enter with default, it returns default. 
+                # If user just hit enter with default, it returns default.
                 # But we want to allow them to clear it? No, usually keep current.
                 # Actually prompt_toolkit default puts the text there to edit.
                 # If they clear it, it returns empty string.
             else:
-                print(f"Enter new {field_name} (or press Enter to keep current): ", end='')
+                print(f"Enter new {field_name} (or press Enter to keep current): ", end="")
                 new_value = input().strip()
-                
+
             if not new_value:
                 # If they cleared it or just hit enter (without default in input), keep current
                 # With prompt_toolkit default, new_value will be the current_value if they just hit enter
-                # If they explicitly cleared it, we might want to allow that? 
+                # If they explicitly cleared it, we might want to allow that?
                 # But the logic says "keep current".
                 # Let's stick to the original logic: empty input = keep current.
                 # For prompt_toolkit with default, if they accept default, new_value == current_value.
                 return new_value if new_value else current_value
-                
+
             return new_value
         except (KeyboardInterrupt, EOFError):
             return current_value
@@ -194,17 +201,17 @@ def get_job_details_interactive() -> Optional[Tuple[str, str, str, str, Optional
         print("How would you like to provide the job posting?")
         print("  (1) Paste a URL to the job posting")
         print("  (2) Enter details manually")
-        
-        input_choice = get_user_choice(['1', '2'], default='1')
-        if input_choice == 'q':
+
+        input_choice = get_user_choice(["1", "2"], default="1")
+        if input_choice == "q":
             return None
 
         # Handle URL input
-        if input_choice == '1':
-            print("\nJob Posting URL: ", end='')
+        if input_choice == "1":
+            print("\nJob Posting URL: ", end="")
             try:
                 url = input().strip()
-                if url.lower() in ['quit', 'exit', 'q']:
+                if url.lower() in ["quit", "exit", "q"]:
                     return None
                 if not url:
                     print("No URL provided. Please try again.")
@@ -212,7 +219,9 @@ def get_job_details_interactive() -> Optional[Tuple[str, str, str, str, Optional
 
                 # Validate URL format
                 if not is_valid_url(url):
-                    print("Invalid URL format. Please provide a valid URL starting with http:// or https://")
+                    print(
+                        "Invalid URL format. Please provide a valid URL starting with http:// or https://"
+                    )
                     continue
 
                 # Parse the job posting
@@ -220,19 +229,17 @@ def get_job_details_interactive() -> Optional[Tuple[str, str, str, str, Optional
 
                 if not job_posting:
                     print("\nCould not parse job posting from URL.")
-                    print("Would you like to enter the details manually? (y/n): ", end='')
+                    print("Would you like to enter the details manually? (y/n): ", end="")
                     retry = input().strip().lower()
-                    if retry == 'y':
-                        input_choice = '2'  # Fall through to manual entry
+                    if retry == "y":
+                        input_choice = "2"  # Fall through to manual entry
                     else:
                         continue
 
                 if job_posting:
                     # Show extracted details with full description
                     show_job_details(
-                        job_posting.company_name,
-                        job_posting.job_title,
-                        job_posting.job_description
+                        job_posting.company_name, job_posting.job_title, job_posting.job_description
                     )
 
                     # Set initial values
@@ -240,7 +247,7 @@ def get_job_details_interactive() -> Optional[Tuple[str, str, str, str, Optional
                     job_title = job_posting.job_title
                     job_description = job_posting.job_description
                     job_url = url
-                    
+
                     # Review and edit loop
                     while True:
                         print("\nWhat would you like to do?")
@@ -251,47 +258,44 @@ def get_job_details_interactive() -> Optional[Tuple[str, str, str, str, Optional
                         print("  (5) View full description")
                         print("  (6) Start over - enter all details manually")
                         print(
-                            "  (7) Add custom context for this job" + 
-                            (" ✓" if custom_context else "")
-                        )
-                        
-                        review_choice = get_user_choice(
-                            ['1', '2', '3', '4', '5', '6', '7'], 
-                            default='1'
+                            "  (7) Add custom context for this job"
+                            + (" ✓" if custom_context else "")
                         )
 
-                        if review_choice == 'q':
+                        review_choice = get_user_choice(
+                            ["1", "2", "3", "4", "5", "6", "7"], default="1"
+                        )
+
+                        if review_choice == "q":
                             print("\n\nCancelled. Using extracted details as-is.")
                             break
-                        elif review_choice == '1':
+                        elif review_choice == "1":
                             print("\n✓ Using extracted details")
                             break
-                        elif review_choice == '2':
+                        elif review_choice == "2":
                             company_name = edit_job_field(
                                 "Company Name", company_name, multiline=False
                             )
-                        elif review_choice == '3':
-                            job_title = edit_job_field(
-                                "Job Title", job_title, multiline=False
-                            )
-                        elif review_choice == '4':
+                        elif review_choice == "3":
+                            job_title = edit_job_field("Job Title", job_title, multiline=False)
+                        elif review_choice == "4":
                             job_description = edit_job_field(
                                 "Job Description", job_description, multiline=True
                             )
-                        elif review_choice == '5':
+                        elif review_choice == "5":
                             print("\n" + SEPARATOR_LINE)
                             print("FULL JOB DESCRIPTION")
                             print(SEPARATOR_LINE)
                             print(job_description)
                             print(SEPARATOR_LINE)
-                        elif review_choice == '6':
+                        elif review_choice == "6":
                             print("\nSwitching to manual entry mode.")
-                            input_choice = '2'
+                            input_choice = "2"
                             company_name = None
                             job_title = None
                             job_description = None
                             break
-                        elif review_choice == '7':
+                        elif review_choice == "7":
                             print("\n" + SEPARATOR_LINE)
                             print("ADD CUSTOM CONTEXT FOR THIS JOB")
                             print(SEPARATOR_LINE)
@@ -309,12 +313,12 @@ def get_job_details_interactive() -> Optional[Tuple[str, str, str, str, Optional
                 return None
 
         # Handle manual input
-        if input_choice == '2':
+        if input_choice == "2":
             custom_context = None
-            print("\nCompany Name: ", end='')
+            print("\nCompany Name: ", end="")
             try:
                 company_name = input().strip()
-                if company_name.lower() in ['quit', 'exit', 'q']:
+                if company_name.lower() in ["quit", "exit", "q"]:
                     return None
                 if not company_name:
                     print("No company name provided. Please try again.")
@@ -322,10 +326,10 @@ def get_job_details_interactive() -> Optional[Tuple[str, str, str, str, Optional
             except KeyboardInterrupt:
                 return None
 
-            print("Job Title: ", end='')
+            print("Job Title: ", end="")
             try:
                 job_title = input().strip()
-                if job_title.lower() in ['quit', 'exit', 'q']:
+                if job_title.lower() in ["quit", "exit", "q"]:
                     return None
                 if not job_title:
                     print("No job title provided. Please try again.")
@@ -348,5 +352,5 @@ def get_job_details_interactive() -> Optional[Tuple[str, str, str, str, Optional
         if not company_name or not job_title or not job_description:
             print("Missing required information. Please try again.")
             continue
-            
+
         return company_name, job_title, job_description, job_url, custom_context

@@ -15,10 +15,7 @@ class TestSignatureValidationResult:
     def test_valid_signature_result(self):
         """Test creating a valid signature result."""
         result = SignatureValidationResult(
-            is_valid=True,
-            confidence="high",
-            message="Signature looks complete",
-            details=None
+            is_valid=True, confidence="high", message="Signature looks complete", details=None
         )
 
         assert result.is_valid is True
@@ -32,7 +29,7 @@ class TestSignatureValidationResult:
             is_valid=False,
             confidence="high",
             message="Signature appears cut off",
-            details="Bottom 10% of signature is missing"
+            details="Bottom 10% of signature is missing",
         )
 
         assert result.is_valid is False
@@ -46,7 +43,7 @@ class TestSignatureValidationResult:
             is_valid=True,
             confidence="low",
             message="Unable to verify signature clearly",
-            details="PDF quality too low"
+            details="PDF quality too low",
         )
 
         assert result.confidence == "low"
@@ -55,8 +52,8 @@ class TestSignatureValidationResult:
 class TestValidatePDFSignature:
     """Tests for PDF signature validation."""
 
-    @patch('src.cover_letter_generator.signature_validator.Groq')
-    @patch('src.cover_letter_generator.signature_validator.convert_from_path')
+    @patch("src.cover_letter_generator.signature_validator.Groq")
+    @patch("src.cover_letter_generator.signature_validator.convert_from_path")
     def test_validation_with_mocked_dependencies(self, mock_convert, mock_groq_class):
         """Test validation with mocked external dependencies."""
         # Mock pdf2image conversion
@@ -79,39 +76,30 @@ class TestValidatePDFSignature:
     def test_validation_result_structure(self):
         """Test that validation results have correct structure."""
         result = SignatureValidationResult(
-            is_valid=True,
-            confidence="high",
-            message="Test message",
-            details=None
+            is_valid=True, confidence="high", message="Test message", details=None
         )
 
         # Verify all required fields exist
-        assert hasattr(result, 'is_valid')
-        assert hasattr(result, 'confidence')
-        assert hasattr(result, 'message')
-        assert hasattr(result, 'details')
+        assert hasattr(result, "is_valid")
+        assert hasattr(result, "confidence")
+        assert hasattr(result, "message")
+        assert hasattr(result, "details")
 
     def test_confidence_levels(self):
         """Test that confidence levels are used correctly."""
         high_conf = SignatureValidationResult(
-            is_valid=True,
-            confidence="high",
-            message="Clearly visible signature",
-            details=None
+            is_valid=True, confidence="high", message="Clearly visible signature", details=None
         )
 
         medium_conf = SignatureValidationResult(
-            is_valid=True,
-            confidence="medium",
-            message="Signature somewhat visible",
-            details=None
+            is_valid=True, confidence="medium", message="Signature somewhat visible", details=None
         )
 
         low_conf = SignatureValidationResult(
             is_valid=False,
             confidence="low",
             message="Cannot determine signature status",
-            details="PDF quality insufficient"
+            details="PDF quality insufficient",
         )
 
         assert high_conf.confidence == "high"
@@ -176,17 +164,18 @@ class TestSignatureLengthCalculation:
 class TestGracefulDegradation:
     """Tests for graceful degradation when dependencies are missing."""
 
-    @patch('src.cover_letter_generator.signature_validator.HAS_PDF2IMAGE', False)
+    @patch("src.cover_letter_generator.signature_validator.HAS_PDF2IMAGE", False)
     def test_missing_pdf2image_dependency(self):
         """Test behavior when pdf2image is not available."""
         # Validation should return a low confidence result indicating it's skipped
         # This would need to be tested by actually importing the module with the flag set
         pass
 
-    @patch.dict('os.environ', {}, clear=True)
+    @patch.dict("os.environ", {}, clear=True)
     def test_missing_groq_api_key(self):
         """Test behavior when GROQ_API_KEY is not set."""
         import os
+
         api_key = os.getenv("GROQ_API_KEY")
         # Should return None or handle gracefully
         # Actual validation function checks for this
@@ -210,7 +199,7 @@ class TestImageProcessing:
 
         # Simulate image encoding
         fake_image_bytes = b"fake image data"
-        encoded = base64.b64encode(fake_image_bytes).decode('utf-8')
+        encoded = base64.b64encode(fake_image_bytes).decode("utf-8")
 
         assert isinstance(encoded, str)
         assert len(encoded) > 0
@@ -224,7 +213,7 @@ class TestImageProcessing:
         # Parameters for pdf2image.convert_from_path
         dpi = 300  # Standard high quality
         first_page = 1  # Start from first page
-        last_page = 1   # Only first page needed for signature
+        last_page = 1  # Only first page needed for signature
 
         assert dpi >= 150  # Minimum for readable text
         assert first_page == 1
@@ -275,7 +264,7 @@ class TestIntegration:
             "encode_image",
             "send_to_api",
             "parse_response",
-            "return_result"
+            "return_result",
         ]
 
         assert len(workflow_steps) == 5
@@ -318,7 +307,7 @@ class TestErrorRecovery:
             is_valid=True,  # Assume valid on timeout
             confidence="low",
             message="Validation timed out",
-            details="Unable to contact vision API"
+            details="Unable to contact vision API",
         )
 
         assert result.confidence == "low"
@@ -330,7 +319,7 @@ class TestErrorRecovery:
             is_valid=True,
             confidence="low",
             message="Could not parse validation response",
-            details=None
+            details=None,
         )
 
         assert result.confidence == "low"

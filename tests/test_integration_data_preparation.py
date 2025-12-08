@@ -25,16 +25,27 @@ class TestDataPreparationIntegration:
 
         for filename, expected_company in test_cases:
             stem = Path(filename).stem
-            parts = re.split(r'[_\s-]+', stem)
+            parts = re.split(r"[_\s-]+", stem)
 
             inferred_company = "unknown"
             for part in parts:
-                if (part and
-                    len(part) > 2 and
-                    not part.isdigit() and
-                    not re.match(r'20[12]\d', part) and
-                    part.lower() not in ['resume', 'cv', 'cover', 'letter', 'achievements',
-                                          'recommendations', 'recommendation', 'performance']):
+                if (
+                    part
+                    and len(part) > 2
+                    and not part.isdigit()
+                    and not re.match(r"20[12]\d", part)
+                    and part.lower()
+                    not in [
+                        "resume",
+                        "cv",
+                        "cover",
+                        "letter",
+                        "achievements",
+                        "recommendations",
+                        "recommendation",
+                        "performance",
+                    ]
+                ):
                     inferred_company = part.lower()
                     break
 
@@ -62,7 +73,7 @@ Technologies: Python, Docker, Kubernetes, AWS."""
         # Each chunk should ideally contain complete sentences
         for chunk in chunks:
             # Should not end mid-word (basic sanity check)
-            assert not chunk.strip().endswith('-')
+            assert not chunk.strip().endswith("-")
 
     def test_chunking_with_metadata_header(self):
         """Test that metadata headers are properly prepended to chunks."""
@@ -111,7 +122,7 @@ Technologies: Python, Docker, Kubernetes, AWS."""
         ]
 
         for filename, expected_year in test_cases:
-            year_match = re.search(r'20[12]\d', filename.lower())
+            year_match = re.search(r"20[12]\d", filename.lower())
 
             if expected_year:
                 assert year_match is not None, f"Should find year in {filename}"
@@ -140,21 +151,34 @@ Technologies: Python, Docker, Kubernetes, AWS."""
         stem = Path(filename).stem
 
         # Extract company
-        parts = re.split(r'[_\s-]+', stem)
+        parts = re.split(r"[_\s-]+", stem)
         inferred_company = "unknown"
         for part in parts:
-            if (part and
-                len(part) > 2 and
-                not part.isdigit() and
-                not re.match(r'20[12]\d', part) and
-                part.lower() not in ['resume', 'cv', 'cover', 'letter', 'achievements',
-                                      'recommendations', 'recommendation', 'performance',
-                                      'senior', 'engineer', 'manager']):
+            if (
+                part
+                and len(part) > 2
+                and not part.isdigit()
+                and not re.match(r"20[12]\d", part)
+                and part.lower()
+                not in [
+                    "resume",
+                    "cv",
+                    "cover",
+                    "letter",
+                    "achievements",
+                    "recommendations",
+                    "recommendation",
+                    "performance",
+                    "senior",
+                    "engineer",
+                    "manager",
+                ]
+            ):
                 inferred_company = part.lower()
                 break
 
         # Extract year
-        year_match = re.search(r'20[12]\d', filename.lower())
+        year_match = re.search(r"20[12]\d", filename.lower())
         inferred_year = year_match.group(0) if year_match else "unknown"
 
         # Verify extraction

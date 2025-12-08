@@ -78,8 +78,7 @@ class CoverLetterGenerator:
         # Determine which model to use
         model_selection = model_name or os.getenv("LLM_MODEL", "gpt-4o")
         self.model_name = self.AVAILABLE_MODELS.get(
-            model_selection.lower(),
-            self.AVAILABLE_MODELS["gpt-4o"]
+            model_selection.lower(), self.AVAILABLE_MODELS["gpt-4o"]
         )
 
         # Display which model is being used
@@ -89,12 +88,12 @@ class CoverLetterGenerator:
             display_name = "Claude Opus 4"
         else:
             display_name = self.model_name
-            
+
         print(f"Using {display_name} for cover letter generation")
 
         # Load embedding model
         print("Loading embedding model...")
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        self.model = SentenceTransformer("all-MiniLM-L6-v2")
 
         # Setup ChromaDB
         # Allow custom data directory via environment variable
@@ -109,8 +108,7 @@ class CoverLetterGenerator:
 
         print("Connecting to ChromaDB...")
         self.client = chromadb.PersistentClient(
-            path=str(chroma_dir),
-            settings=Settings(anonymized_telemetry=False)
+            path=str(chroma_dir), settings=Settings(anonymized_telemetry=False)
         )
 
         try:
@@ -156,21 +154,23 @@ class CoverLetterGenerator:
             if drive_prompt_path.exists():
                 system_prompt_path = drive_prompt_path
                 print(f"✓ Loaded system prompt from {drive_prompt_path}")
-            
+
             # Fallback to local default if not found in Drive
             if system_prompt_path is None:
-                system_prompt_path = Path(__file__).parent.parent.parent / "prompts" / "system_prompt.txt"
+                system_prompt_path = (
+                    Path(__file__).parent.parent.parent / "prompts" / "system_prompt.txt"
+                )
         else:
             system_prompt_path = Path(system_prompt_path)
 
         if not system_prompt_path.exists():
             raise FileNotFoundError(f"System prompt not found at {system_prompt_path}")
 
-        with open(system_prompt_path, 'r') as f:
+        with open(system_prompt_path, "r") as f:
             self.system_prompt_template = f.read()
 
         print("✓ Generator initialized successfully\n")
-        
+
         # Initialize project root
         self.project_root = Path(__file__).parent.parent.parent
 
@@ -180,7 +180,7 @@ class CoverLetterGenerator:
         job_description: str,
         company_name: str,
         job_title: str,
-        job_analysis_summary: str = ""
+        job_analysis_summary: str = "",
     ) -> str:
         """Prepare the system prompt with all context filled in."""
         # Load Leadership Philosophy
@@ -193,7 +193,7 @@ class CoverLetterGenerator:
             company_name=company_name or "[Company Name]",
             job_title=job_title or "[Job Title]",
             job_analysis=job_analysis_summary,
-            leadership_philosophy=leadership_philosophy
+            leadership_philosophy=leadership_philosophy,
         )
 
     def _call_llm(
@@ -201,7 +201,7 @@ class CoverLetterGenerator:
         system_prompt: str,
         user_message: str,
         max_tokens: int = 2500,
-        temperature: float = 0.3
+        temperature: float = 0.3,
     ) -> tuple[str, float]:
         """Call the appropriate LLM based on configuration."""
         if "gpt" in self.model_name:
@@ -209,16 +209,14 @@ class CoverLetterGenerator:
                 model=self.model_name,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message}
+                    {"role": "user", "content": user_message},
                 ],
                 temperature=temperature,
-                max_tokens=max_tokens
+                max_tokens=max_tokens,
             )
             content = response.choices[0].message.content
             cost = self._track_api_cost(
-                self.model_name,
-                response.usage.prompt_tokens,
-                response.usage.completion_tokens
+                self.model_name, response.usage.prompt_tokens, response.usage.completion_tokens
             )
         else:
             response = self.claude_client.messages.create(
@@ -226,23 +224,19 @@ class CoverLetterGenerator:
                 max_tokens=max_tokens,
                 temperature=temperature,
                 system=system_prompt,
-                messages=[
-                    {"role": "user", "content": user_message}
-                ]
+                messages=[{"role": "user", "content": user_message}],
             )
             content = response.content[0].text
             cost = self._track_api_cost(
-                self.model_name,
-                response.usage.input_tokens,
-                response.usage.output_tokens
+                self.model_name, response.usage.input_tokens, response.usage.output_tokens
             )
-        
+
         return content, cost
 
     def _load_leadership_philosophy(self) -> str:
         """Load leadership philosophy from Google Drive or local file."""
         leadership_philosophy = ""
-        
+
         # Resolve DATA_DIR
         data_dir = get_data_directory()
 
@@ -251,7 +245,9 @@ class CoverLetterGenerator:
         if philosophy_docx.exists():
             try:
                 doc = Document(str(philosophy_docx))
-                leadership_philosophy = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+                leadership_philosophy = "\n".join(
+                    [p.text for p in doc.paragraphs if p.text.strip()]
+                )
                 print(f"✓ Loaded leadership philosophy from {philosophy_docx.name}")
             except Exception as e:
                 print(f"Warning: Failed to read philosophy DOCX: {e}")
@@ -260,10 +256,10 @@ class CoverLetterGenerator:
         if not leadership_philosophy:
             philosophy_path = self.project_root / "leadership_philosophy.txt"
             if philosophy_path.exists():
-                with open(philosophy_path, 'r') as f:
+                with open(philosophy_path, "r") as f:
                     leadership_philosophy = f.read()
                 print("✓ Loaded leadership philosophy from local file")
-                
+
         return leadership_philosophy
 
     def analyze_job_posting(self, job_description: str, job_title: str = None) -> JobAnalysis:
@@ -276,12 +272,7 @@ class CoverLetterGenerator:
         Returns:
             JobAnalysis object with requirements and classification
         """
-        return analyze_job_posting(
-            self.groq_client,
-            self.GROQ_MODEL,
-            job_description,
-            job_title
-        )
+        return analyze_job_posting(self.groq_client, self.GROQ_MODEL, job_description, job_title)
 
     def _to_list(self, embedding):
         """Convert embedding to list, handling both numpy arrays and lists.
@@ -292,16 +283,16 @@ class CoverLetterGenerator:
         Returns:
             List representation of the embedding
         """
-        if hasattr(embedding, 'tolist'):
+        if hasattr(embedding, "tolist"):
             return embedding.tolist()
         return embedding
 
     def get_relevant_context(
-        self, 
-        job_description: str, 
-        n_results: int = None, 
+        self,
+        job_description: str,
+        n_results: int = None,
         job_title: str = None,
-        job_analysis: JobAnalysis = None
+        job_analysis: JobAnalysis = None,
     ) -> str:
         """Retrieve relevant context from the vector database using intelligent multi-stage retrieval.
 
@@ -342,15 +333,12 @@ class CoverLetterGenerator:
         normalized_query = job_description.replace("'", "").strip()
         query_embedding = self.model.encode([normalized_query])[0]
         results = self.collection.query(
-            query_embeddings=[self._to_list(query_embedding)],
-            n_results=n_results
+            query_embeddings=[self._to_list(query_embedding)], n_results=n_results
         )
 
         if results["documents"] and results["distances"]:
             for doc, distance, metadata in zip(
-                results["documents"][0],
-                results["distances"][0],
-                results["metadatas"][0]
+                results["documents"][0], results["distances"][0], results["metadatas"][0]
             ):
                 doc_hash = hash(doc[:100])  # Use first 100 chars as fingerprint
                 if doc_hash not in seen_docs:
@@ -359,18 +347,17 @@ class CoverLetterGenerator:
 
         # Query 2: Targeted queries for high-priority requirements
         priority_requirements = [r for r in job_analysis.requirements if r.priority == 1]
-        for req in priority_requirements[:self.PRIORITY_REQUIREMENTS_TO_QUERY]:
+        for req in priority_requirements[: self.PRIORITY_REQUIREMENTS_TO_QUERY]:
             req_embedding = self.model.encode([req.description])[0]
             req_results = self.collection.query(
-                query_embeddings=[self._to_list(req_embedding)],
-                n_results=self.PRIORITY_REQ_RESULTS
+                query_embeddings=[self._to_list(req_embedding)], n_results=self.PRIORITY_REQ_RESULTS
             )
 
             if req_results["documents"] and req_results["distances"]:
                 for doc, distance, metadata in zip(
                     req_results["documents"][0],
                     req_results["distances"][0],
-                    req_results["metadatas"][0]
+                    req_results["metadatas"][0],
                 ):
                     doc_hash = hash(doc[:100])
                     if doc_hash not in seen_docs:
@@ -379,19 +366,18 @@ class CoverLetterGenerator:
                         all_retrieved_docs.append((doc, distance * 0.8, metadata))
 
         # Query 3: Technology-specific queries if technologies mentioned
-        for tech in job_analysis.key_technologies[:self.TECHNOLOGIES_TO_QUERY]:
+        for tech in job_analysis.key_technologies[: self.TECHNOLOGIES_TO_QUERY]:
             tech_query = f"experience with {tech}"
             tech_embedding = self.model.encode([tech_query])[0]
             tech_results = self.collection.query(
-                query_embeddings=[self._to_list(tech_embedding)],
-                n_results=self.TECHNOLOGY_RESULTS
+                query_embeddings=[self._to_list(tech_embedding)], n_results=self.TECHNOLOGY_RESULTS
             )
 
             if tech_results["documents"] and tech_results["distances"]:
                 for doc, distance, metadata in zip(
                     tech_results["documents"][0],
                     tech_results["distances"][0],
-                    tech_results["metadatas"][0]
+                    tech_results["metadatas"][0],
                 ):
                     doc_hash = hash(doc[:100])
                     if doc_hash not in seen_docs and tech.lower() in doc.lower():
@@ -418,7 +404,7 @@ class CoverLetterGenerator:
             print("\n  Top 5 highest-scoring documents:")
             for i, (doc, distance, metadata, score) in enumerate(scored_docs[:5]):
                 source = metadata.get("source", "Unknown")
-                preview = doc[:80].replace('\n', ' ')
+                preview = doc[:80].replace("\n", " ")
                 print(f"    {i+1}. Score: {score:.1f} | Source: {source}")
                 print(f"       Preview: {preview}...")
             print()
@@ -467,15 +453,15 @@ class CoverLetterGenerator:
 
         if "opus" in model or "claude-3-opus" in model:
             # Claude Opus 4 - Maximum power
-            input_cost = (input_tokens / 1_000_000) * 15.00   # $15 per million input tokens
+            input_cost = (input_tokens / 1_000_000) * 15.00  # $15 per million input tokens
             output_cost = (output_tokens / 1_000_000) * 75.00  # $75 per million output tokens
         elif "gpt-4o" in model:
             # GPT-4o - High quality, lower cost
-            input_cost = (input_tokens / 1_000_000) * 2.50    # $2.50 per million input tokens
-            output_cost = (output_tokens / 1_000_000) * 10.00   # $10.00 per million output tokens
+            input_cost = (input_tokens / 1_000_000) * 2.50  # $2.50 per million input tokens
+            output_cost = (output_tokens / 1_000_000) * 10.00  # $10.00 per million output tokens
         elif "sonnet" in model or "claude-3-5-sonnet" in model:
             # Claude Sonnet 3.5 - Fast and cost-effective
-            input_cost = (input_tokens / 1_000_000) * 3.00   # $3 per million input tokens
+            input_cost = (input_tokens / 1_000_000) * 3.00  # $3 per million input tokens
             output_cost = (output_tokens / 1_000_000) * 15.00  # $15 per million output tokens
         else:
             # Unknown model
@@ -492,7 +478,7 @@ class CoverLetterGenerator:
             "output_tokens": output_tokens,
             "input_cost": input_cost,
             "output_cost": output_cost,
-            "cost": total_cost
+            "cost": total_cost,
         }
         self.api_calls.append(call_info)
 
@@ -507,7 +493,7 @@ class CoverLetterGenerator:
         return {
             "total_cost": self.total_cost,
             "total_calls": len(self.api_calls),
-            "calls": self.api_calls
+            "calls": self.api_calls,
         }
 
     def generate_cover_letter(
@@ -544,9 +530,7 @@ class CoverLetterGenerator:
         # Get relevant context
         print("\nRetrieving relevant context from knowledge base...")
         context = self.get_relevant_context(
-            job_description, 
-            job_title=job_title,
-            job_analysis=job_analysis
+            job_description, job_title=job_title, job_analysis=job_analysis
         )
 
         # Append custom context if provided
@@ -574,30 +558,29 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
             job_description=job_description,
             company_name=company_name,
             job_title=job_title,
-            job_analysis_summary=analysis_summary
+            job_analysis_summary=analysis_summary,
         )
 
         # [NEW] Context Pre-processing Layer
         # Rewrite the context if a custom prompt is provided
         print("Preprocessing context...")
         managerial_context = self._preprocess_context(context)
-        
+
         # Stage 1: Generate initial draft
         print(f"Generating initial draft with {self.model_name}...")
-        
+
         try:
             initial_draft, draft_cost = self._call_llm(
                 system_prompt=system_prompt,
                 user_message=f"CONTEXT:\n{managerial_context}\n\nJOB DESCRIPTION:\n{job_description}\n\nWrite an interview-worthy cover letter for this job.",
                 max_tokens=2500,
-                temperature=0.3
+                temperature=0.3,
             )
 
             print(f"✓ Initial draft generated (cost: ${draft_cost:.4f})")
 
         except Exception as e:
             raise RuntimeError(f"Error generating initial draft: {e}") from e
-
 
         print("\n" + "=" * 80)
         print("STAGE 2: SELF-CRITIQUE & REFINEMENT")
@@ -607,14 +590,14 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
         critique_prompt_path = self.project_root / "prompts" / "critique_prompt.txt"
         if not critique_prompt_path.exists():
             raise FileNotFoundError(f"Critique prompt file not found at {critique_prompt_path}")
-            
-        with open(critique_prompt_path, 'r') as f:
+
+        with open(critique_prompt_path, "r") as f:
             critique_template = f.read()
 
         critique_prompt = critique_template.format(
             company_name=company_name,
             initial_draft=initial_draft,
-            job_description=job_description[:2000]  # Truncate JD to avoid context limits
+            job_description=job_description[:2000],  # Truncate JD to avoid context limits
         )
 
         print(f"\n{self.model_name} is critiquing and refining the draft...")
@@ -624,7 +607,7 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
                 system_prompt="You are a helpful assistant.",
                 user_message=critique_prompt,
                 max_tokens=2500,
-                temperature=0.3
+                temperature=0.3,
             )
 
             print(f"✓ Refinement complete (cost: ${refinement_cost:.4f})")
@@ -663,7 +646,7 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
             "draft_cost": draft_cost,
             "refinement_cost": refinement_cost,
             "total_cost": total_cost,
-            "session_total": self.total_cost
+            "session_total": self.total_cost,
         }
 
         return refined_letter, cost_info
@@ -708,7 +691,7 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
             job_description=job_description,
             company_name=company_name,
             job_title=job_title,
-            job_analysis_summary=""  # Not needed for revisions
+            job_analysis_summary="",  # Not needed for revisions
         )
 
         # Create revision prompt
@@ -729,12 +712,12 @@ Write the complete revised cover letter."""
 
         try:
             print("\nGenerating revision...")
-            
+
             revised_letter, revision_cost = self._call_llm(
                 system_prompt=system_prompt,
                 user_message=revision_prompt,
                 max_tokens=2000,
-                temperature=0.3
+                temperature=0.3,
             )
 
             print(f"✓ Revision complete (cost: ${revision_cost:.4f})")
@@ -744,10 +727,7 @@ Write the complete revised cover letter."""
 
         print("=" * 80)
 
-        cost_info = {
-            "revision_cost": revision_cost,
-            "session_total": self.total_cost
-        }
+        cost_info = {"revision_cost": revision_cost, "session_total": self.total_cost}
 
         return revised_letter, cost_info
 
@@ -782,10 +762,10 @@ Write the complete revised cover letter."""
 
         # Load Claude system prompt
         system_prompt_path = os.path.join(
-            os.path.dirname(__file__), '..', '..', 'prompts', 'system_prompt.txt'
+            os.path.dirname(__file__), "..", "..", "prompts", "system_prompt.txt"
         )
 
-        with open(system_prompt_path, 'r') as f:
+        with open(system_prompt_path, "r") as f:
             system_prompt_template = f.read()
 
         # Load Leadership Philosophy
@@ -798,20 +778,19 @@ Write the complete revised cover letter."""
             context=context,
             job_description=job_description,
             job_analysis="",  # Not needed for revisions
-            leadership_philosophy=leadership_philosophy
+            leadership_philosophy=leadership_philosophy,
         )
 
         # Create revision prompt
         revision_prompt_path = self.project_root / "prompts" / "revision_prompt.txt"
         if revision_prompt_path.exists():
-            with open(revision_prompt_path, 'r') as f:
+            with open(revision_prompt_path, "r") as f:
                 revision_template = f.read()
         else:
             raise FileNotFoundError(f"Revision prompt file not found at {revision_prompt_path}")
 
         revision_prompt = revision_template.format(
-            current_letter=current_letter,
-            user_feedback=user_feedback
+            current_letter=current_letter, user_feedback=user_feedback
         )
 
         try:
@@ -821,20 +800,20 @@ Write the complete revised cover letter."""
                     model=self.model_name,
                     messages=[
                         {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": revision_prompt}
+                        {"role": "user", "content": revision_prompt},
                     ],
                     temperature=0.3,
                     max_tokens=2000,
-                    stream=True
+                    stream=True,
                 )
-                
+
                 full_content = []
                 for chunk in stream:
                     if chunk.choices[0].delta.content:
                         content = chunk.choices[0].delta.content
                         full_content.append(content)
                         yield content
-                
+
                 # OpenAI doesn't return usage in stream chunks easily, so we estimate or skip
                 # For simplicity in this hybrid implementation, we'll skip exact cost tracking for stream
                 # or estimate based on length
@@ -842,22 +821,16 @@ Write the complete revised cover letter."""
                 # Rough estimation: 1 token ~= 4 chars
                 output_tokens = len(full_text) // 4
                 input_tokens = len(system_prompt) // 4 + len(revision_prompt) // 4
-                
-                self._track_api_cost(
-                    self.model_name,
-                    input_tokens,
-                    output_tokens
-                )
-                
+
+                self._track_api_cost(self.model_name, input_tokens, output_tokens)
+
             else:
                 with self.claude_client.messages.stream(
                     model=self.model_name,
                     max_tokens=2000,
                     temperature=0.3,
                     system=system_prompt,
-                    messages=[
-                        {"role": "user", "content": revision_prompt}
-                    ]
+                    messages=[{"role": "user", "content": revision_prompt}],
                 ) as stream:
                     for text in stream.text_stream:
                         yield text
@@ -867,7 +840,7 @@ Write the complete revised cover letter."""
                     self._track_api_cost(
                         self.model_name,
                         final_message.usage.input_tokens,
-                        final_message.usage.output_tokens
+                        final_message.usage.output_tokens,
                     )
 
         except Exception as e:
@@ -876,32 +849,35 @@ Write the complete revised cover letter."""
     def _preprocess_context(self, context_str: str) -> str:
         """
         Pre-process context string if a custom prompt exists.
-        
+
         Args:
             context_str: Original context string
-            
+
         Returns:
             Processed context string.
         """
         managerial_prompt_path = self.project_root / "managerial_prompt.txt"
-        
+
         if not managerial_prompt_path.exists():
             # If the secret prompt file doesn't exist (e.g. public repo), skip translation
             return context_str
 
         try:
-            with open(managerial_prompt_path, 'r') as f:
+            with open(managerial_prompt_path, "r") as f:
                 translation_prompt = f.read()
-            
+
             # Use Groq for speed, or LLM for quality.
             if "gpt" in self.model_name:
                 response = self.openai_client.chat.completions.create(
                     model=self.model_name,
                     messages=[
-                        {"role": "user", "content": translation_prompt.format(context=context_str[:6000])}
+                        {
+                            "role": "user",
+                            "content": translation_prompt.format(context=context_str[:6000]),
+                        }
                     ],
                     temperature=0.5,
-                    max_tokens=2000
+                    max_tokens=2000,
                 )
                 return response.choices[0].message.content
             else:
@@ -910,8 +886,11 @@ Write the complete revised cover letter."""
                     max_tokens=2000,
                     temperature=0.5,
                     messages=[
-                        {"role": "user", "content": translation_prompt.format(context=context_str[:6000])} # Truncate to be safe
-                    ]
+                        {
+                            "role": "user",
+                            "content": translation_prompt.format(context=context_str[:6000]),
+                        }  # Truncate to be safe
+                    ],
                 )
                 return response.content[0].text
         except Exception as e:

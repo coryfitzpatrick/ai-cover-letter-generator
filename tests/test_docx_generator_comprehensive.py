@@ -33,8 +33,7 @@ Sincerely,
 John Doe"""
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         assert output_path.exists()
@@ -51,9 +50,7 @@ John Doe"""
         cover_letter = "Dear Hiring Manager,\n\nContent here."
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path,
-            filename="my_cover_letter.docx"
+            cover_letter_text=cover_letter, output_dir=tmp_path, filename="my_cover_letter.docx"
         )
 
         assert output_path.name == "my_cover_letter.docx"
@@ -63,9 +60,7 @@ John Doe"""
         """Test generating DOCX with default output directory."""
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
-        output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter
-        )
+        output_path = generate_cover_letter_docx(cover_letter_text=cover_letter)
 
         # Should create in current directory
         assert output_path.exists()
@@ -84,13 +79,11 @@ John Doe"""
             "phone": "555-1234",
             "location": "San Francisco, CA",
             "linkedin": "linkedin.com/in/janesmith",
-            "portfolio": "janesmith.com"
+            "portfolio": "janesmith.com",
         }
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path,
-            contact_info=contact_info
+            cover_letter_text=cover_letter, output_dir=tmp_path, contact_info=contact_info
         )
 
         doc = Document(str(output_path))
@@ -108,14 +101,12 @@ John Doe"""
 
         contact_info = {
             "name": "Bob Jones",
-            "email": "bob@example.com"
+            "email": "bob@example.com",
             # No phone, location, etc.
         }
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path,
-            contact_info=contact_info
+            cover_letter_text=cover_letter, output_dir=tmp_path, contact_info=contact_info
         )
 
         doc = Document(str(output_path))
@@ -129,8 +120,7 @@ John Doe"""
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         doc = Document(str(output_path))
@@ -150,8 +140,7 @@ Sincerely,
 Alice Johnson"""
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         doc = Document(str(output_path))
@@ -174,8 +163,7 @@ Sincerely,
 Test User"""
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         doc = Document(str(output_path))
@@ -190,8 +178,7 @@ Test User"""
         cover_letter = ""
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         # Should still create file with date
@@ -206,8 +193,7 @@ Test User"""
         cover_letter = "\n\n\n   \n\n"
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         assert output_path.exists()
@@ -223,8 +209,7 @@ Sincerely,
 José García"""
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         doc = Document(str(output_path))
@@ -247,8 +232,7 @@ Sincerely,
 Test User"""
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         assert output_path.exists()
@@ -262,8 +246,7 @@ Test User"""
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         doc = Document(str(output_path))
@@ -274,6 +257,7 @@ Test User"""
 
         # Verify margins are set (they should be non-zero)
         from docx.shared import Inches
+
         assert section.top_margin == Inches(0.75)
         assert section.bottom_margin == Inches(0.75)
         assert section.left_margin == Inches(0.75)
@@ -283,15 +267,10 @@ Test User"""
         """Test that font formatting is applied."""
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
-        contact_info = {
-            "name": "Test User",
-            "email": "test@example.com"
-        }
+        contact_info = {"name": "Test User", "email": "test@example.com"}
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path,
-            contact_info=contact_info
+            cover_letter_text=cover_letter, output_dir=tmp_path, contact_info=contact_info
         )
 
         doc = Document(str(output_path))
@@ -307,18 +286,15 @@ Test User"""
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         doc = Document(str(output_path))
 
         # Find date paragraph (should be one of the first paragraphs)
         from docx.enum.text import WD_ALIGN_PARAGRAPH
-        date_paragraphs = [
-            p for p in doc.paragraphs[:5]
-            if p.alignment == WD_ALIGN_PARAGRAPH.RIGHT
-        ]
+
+        date_paragraphs = [p for p in doc.paragraphs[:5] if p.alignment == WD_ALIGN_PARAGRAPH.RIGHT]
 
         # At least one paragraph should be right-aligned (the date)
         assert len(date_paragraphs) > 0
@@ -332,8 +308,7 @@ First paragraph content.
 Second paragraph content."""
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         doc = Document(str(output_path))
@@ -355,8 +330,7 @@ Sincerely,
 Your Name"""
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         doc = Document(str(output_path))
@@ -377,9 +351,7 @@ Your Name"""
         }
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path,
-            contact_info=contact_info
+            cover_letter_text=cover_letter, output_dir=tmp_path, contact_info=contact_info
         )
 
         doc = Document(str(output_path))
@@ -399,8 +371,7 @@ class TestEdgeCases:
         # Try to use a file as output directory (should fail)
         with pytest.raises(Exception):
             generate_cover_letter_docx(
-                cover_letter_text=cover_letter,
-                output_dir=Path("/dev/null/invalid")
+                cover_letter_text=cover_letter, output_dir=Path("/dev/null/invalid")
             )
 
     def test_generate_docx_unicode_filename(self, tmp_path):
@@ -408,9 +379,7 @@ class TestEdgeCases:
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path,
-            filename="cover_letter_José.docx"
+            cover_letter_text=cover_letter, output_dir=tmp_path, filename="cover_letter_José.docx"
         )
 
         # Should handle Unicode in filename
@@ -425,9 +394,7 @@ class TestEdgeCases:
         # Some filesystems may limit filename length
         try:
             output_path = generate_cover_letter_docx(
-                cover_letter_text=cover_letter,
-                output_dir=tmp_path,
-                filename=long_filename
+                cover_letter_text=cover_letter, output_dir=tmp_path, filename=long_filename
             )
             # If it succeeds, verify it exists
             assert output_path.exists() or True
@@ -453,8 +420,7 @@ Sincerely,
 Test User"""
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         doc = Document(str(output_path))
@@ -469,8 +435,7 @@ Test User"""
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         # Filename should contain timestamp
@@ -487,8 +452,7 @@ Test User"""
         cover_letter = "Dear Hiring Manager,\r\n\r\nContent with Windows newlines.\n\nAnd Unix newlines.\r\n\r\nSincerely,\r\nTest"
 
         output_path = generate_cover_letter_docx(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path
+            cover_letter_text=cover_letter, output_dir=tmp_path
         )
 
         doc = Document(str(output_path))

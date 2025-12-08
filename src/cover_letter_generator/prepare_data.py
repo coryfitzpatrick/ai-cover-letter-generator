@@ -30,7 +30,7 @@ suppress_telemetry_errors()
 
 # Chunking configuration
 DEFAULT_CHUNK_SIZE = 600  # Reduced from 1000 to better isolate achievements
-DEFAULT_OVERLAP = 100     # Reduced overlap
+DEFAULT_OVERLAP = 100  # Reduced overlap
 
 
 # Embedding model
@@ -58,7 +58,7 @@ def extract_text_from_docx(docx_path: str) -> str:
             # Mark H2 headings for easier company extraction
             # Check for Heading 2 style (handles variations like "Heading 2", "heading 2", etc.)
             style_name = paragraph.style.name.lower() if paragraph.style.name else ""
-            if 'heading 2' in style_name or style_name == 'heading2':
+            if "heading 2" in style_name or style_name == "heading2":
                 text += f"[H2]{paragraph.text}\n"
             else:
                 text += paragraph.text + "\n"
@@ -100,17 +100,17 @@ def extract_company_from_section_headers(text: str) -> str:
 
     patterns = [
         # Pattern 1: "Company Name: XYZ" format (e.g., "[H2]Company Name: J&J" or "[H2]Company Name: J&J:")
-        r'^\[H2\]\s*Company\s+Name:\s+([A-Z][A-Za-z&\s+]+?):\s*$',  # With trailing colon
-        r'^\[H2\]\s*Company\s+Name:\s+([A-Z][A-Za-z&\s+]+?)\s*$',   # Without trailing colon
+        r"^\[H2\]\s*Company\s+Name:\s+([A-Z][A-Za-z&\s+]+?):\s*$",  # With trailing colon
+        r"^\[H2\]\s*Company\s+Name:\s+([A-Z][A-Za-z&\s+]+?)\s*$",  # Without trailing colon
         # Pattern 2: H2 heading with "at Company:" format
         # Matches: "Achievements at J&J:", "Achievements at Fitbit + Google:"
-        r'^\[H2\]\s*(?:Achievements|Work|Experience|Projects|Position|Impact)\s+at\s+([A-Z][A-Za-z&\s+]+?):\s*$',
+        r"^\[H2\]\s*(?:Achievements|Work|Experience|Projects|Position|Impact)\s+at\s+([A-Z][A-Za-z&\s+]+?):\s*$",
         # Pattern 3: Regular line with "at Company:" format
-        r'^\s*(?:Achievements|Work|Experience|Projects|Position|Impact)\s+at\s+([A-Z][A-Za-z&\s+]+?):\s*$',
+        r"^\s*(?:Achievements|Work|Experience|Projects|Position|Impact)\s+at\s+([A-Z][A-Za-z&\s+]+?):\s*$",
         # Pattern 4: H2 heading with "Company - Type" format
-        r'^\[H2\]\s*([A-Z][A-Za-z&+]+(?:\s+[A-Z][A-Za-z&+]+)*)\s*[-–—]\s*(?:Achievements|Work|Experience|Projects)',
+        r"^\[H2\]\s*([A-Z][A-Za-z&+]+(?:\s+[A-Z][A-Za-z&+]+)*)\s*[-–—]\s*(?:Achievements|Work|Experience|Projects)",
         # Pattern 5: "Company - Type" at start of line
-        r'^\s*([A-Z][A-Za-z&+]+(?:\s+[A-Z][A-Za-z&+]+)*)\s*[-–—]\s*(?:Achievements|Work|Experience|Projects)',
+        r"^\s*([A-Z][A-Za-z&+]+(?:\s+[A-Z][A-Za-z&+]+)*)\s*[-–—]\s*(?:Achievements|Work|Experience|Projects)",
     ]
 
     for pattern in patterns:
@@ -119,11 +119,11 @@ def extract_company_from_section_headers(text: str) -> str:
             for match in matches:
                 company = match.group(1).strip()
                 # Validate: should be short (2-30 chars), not a full sentence
-                if 2 < len(company) < 30 and not company.endswith(('.', '!', '?')):
+                if 2 < len(company) < 30 and not company.endswith((".", "!", "?")):
                     # Remove trailing punctuation
-                    company = company.rstrip(':').strip()
+                    company = company.rstrip(":").strip()
                     # Make sure it's not a common non-company word
-                    if company.lower() not in ['the company', 'my company', 'this company']:
+                    if company.lower() not in ["the company", "my company", "this company"]:
                         return company.lower()
 
     return "unknown"
@@ -142,27 +142,31 @@ def parse_sections_by_company(text: str) -> List[Tuple[str, str]]:
     current_company = "unknown"
     current_section = []
 
-    lines = text.split('\n')
+    lines = text.split("\n")
 
     for line in lines:
         # Check if this is an H2 header with company info
-        if line.startswith('[H2]'):
+        if line.startswith("[H2]"):
             # Try to extract company from this header
             # Patterns like "[H2]Company Name: J&J" or "[H2]Achievements at Fitbit + Google:"
             patterns = [
-                r'^\[H2\]\s*Company\s+Name:\s+([A-Z][A-Za-z&\s+]+?):\s*$',  # With trailing colon
-                r'^\[H2\]\s*Company\s+Name:\s+([A-Z][A-Za-z&\s+]+?)\s*$',   # Without trailing colon
-                r'^\[H2\]\s*(?:Achievements|Work|Experience|Projects|Position|Impact)\s+at\s+([A-Z][A-Za-z&\s+]+?):\s*$',
-                r'^\[H2\]\s*([A-Z][A-Za-z&+]+(?:\s+[A-Z][A-Za-z&+]+)*)\s*[-–—]\s*(?:Achievements|Work|Experience|Projects)',
+                r"^\[H2\]\s*Company\s+Name:\s+([A-Z][A-Za-z&\s+]+?):\s*$",  # With trailing colon
+                r"^\[H2\]\s*Company\s+Name:\s+([A-Z][A-Za-z&\s+]+?)\s*$",  # Without trailing colon
+                r"^\[H2\]\s*(?:Achievements|Work|Experience|Projects|Position|Impact)\s+at\s+([A-Z][A-Za-z&\s+]+?):\s*$",
+                r"^\[H2\]\s*([A-Z][A-Za-z&+]+(?:\s+[A-Z][A-Za-z&+]+)*)\s*[-–—]\s*(?:Achievements|Work|Experience|Projects)",
             ]
 
             found_company = None
             for pattern in patterns:
                 match = re.match(pattern, line)
                 if match:
-                    company = match.group(1).strip().rstrip(':').strip()
+                    company = match.group(1).strip().rstrip(":").strip()
                     # Validate company name
-                    if 2 < len(company) < 30 and company.lower() not in ['the company', 'my company', 'this company']:
+                    if 2 < len(company) < 30 and company.lower() not in [
+                        "the company",
+                        "my company",
+                        "this company",
+                    ]:
                         found_company = company.lower()
                         break
 
@@ -170,7 +174,7 @@ def parse_sections_by_company(text: str) -> List[Tuple[str, str]]:
             if found_company:
                 # Save previous section if it has content
                 if current_section:
-                    section_text = '\n'.join(current_section).strip()
+                    section_text = "\n".join(current_section).strip()
                     if section_text:
                         sections.append((section_text, current_company))
                     current_section = []
@@ -182,7 +186,7 @@ def parse_sections_by_company(text: str) -> List[Tuple[str, str]]:
 
     # Add the final section
     if current_section:
-        section_text = '\n'.join(current_section).strip()
+        section_text = "\n".join(current_section).strip()
         if section_text:
             sections.append((section_text, current_company))
 
@@ -212,16 +216,16 @@ def parse_resume_sections_by_company(text: str) -> List[Tuple[str, str]]:
     current_company = "unknown"
     current_section = []
 
-    lines = text.split('\n')
+    lines = text.split("\n")
 
     # Patterns to match company headers:
     # 1. "J&J MedTech: Location — Title"
     # 2. "Google - Fitbit: Location — Title"
     company_patterns = [
-        r'^([A-Z][A-Za-z&\s+-]+?):\s+[A-Z].*?—',  # Standard format with colon before location
-        r'^([A-Z][A-Za-z&\s+-]+?)\s*[-–—]\s*([A-Z][A-Za-z&\s+-]+?):\s+[A-Z].*?—',  # "Company - Division:" format
+        r"^([A-Z][A-Za-z&\s+-]+?):\s+[A-Z].*?—",  # Standard format with colon before location
+        r"^([A-Z][A-Za-z&\s+-]+?)\s*[-–—]\s*([A-Z][A-Za-z&\s+-]+?):\s+[A-Z].*?—",  # "Company - Division:" format
     ]
-    excluded_headers = ['experience', 'education', 'skills', 'summary', 'objective', 'references']
+    excluded_headers = ["experience", "education", "skills", "summary", "objective", "references"]
 
     for line in lines:
         # Check if this line starts a new company section
@@ -246,13 +250,13 @@ def parse_resume_sections_by_company(text: str) -> List[Tuple[str, str]]:
 
             # Save previous section if it exists
             if current_section:
-                section_text = '\n'.join(current_section).strip()
+                section_text = "\n".join(current_section).strip()
                 if section_text:
                     sections.append((section_text, current_company))
                 current_section = []
 
             # Clean up company name
-            if 2 < len(company) < 50 and company.lower() not in ['the company', 'my company']:
+            if 2 < len(company) < 50 and company.lower() not in ["the company", "my company"]:
                 current_company = company.lower()
             else:
                 current_company = "unknown"
@@ -262,7 +266,7 @@ def parse_resume_sections_by_company(text: str) -> List[Tuple[str, str]]:
 
     # Add final section
     if current_section:
-        section_text = '\n'.join(current_section).strip()
+        section_text = "\n".join(current_section).strip()
         if section_text:
             sections.append((section_text, current_company))
 
@@ -273,7 +277,7 @@ def chunk_text(
     text: str,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     overlap: int = DEFAULT_OVERLAP,
-    metadata_header: str = ""
+    metadata_header: str = "",
 ) -> List[str]:
     """Split text into chunks respecting paragraph boundaries.
 
@@ -291,23 +295,23 @@ def chunk_text(
 
     # Split into paragraphs (respecting double newlines as distinct separators)
     lines = text.splitlines(keepends=True)
-    
+
     chunks = []
     current_chunk = []
     current_length = 0
-    
+
     # Threshold to force a split on a paragraph break
     # If we have > 200 chars and hit a blank line, we split.
     # This ensures distinct achievements (usually ~200-400 chars) are kept separate.
     SOFT_SPLIT_THRESHOLD = 200
-    
+
     for line in lines:
         line_len = len(line)
         is_blank_line = line.strip() == ""
-        
+
         # Check if we should force a split due to paragraph break + sufficient length
         force_split = is_blank_line and current_length > SOFT_SPLIT_THRESHOLD
-        
+
         # If adding this line exceeds chunk size OR we are forcing a split
         if (current_length + line_len > chunk_size or force_split) and current_chunk:
             # Store current chunk
@@ -316,11 +320,11 @@ def chunk_text(
                 if metadata_header:
                     chunk_text = f"{metadata_header}\n{chunk_text}"
                 chunks.append(chunk_text)
-            
+
             # Start new chunk
             current_chunk = []
             current_length = 0
-            
+
             # If this was just a blank line that forced the split, we don't need to add it to the new chunk
             if is_blank_line:
                 continue
@@ -335,7 +339,7 @@ def chunk_text(
                 chunks.append(chunk_text)
                 current_chunk = []
                 current_length = 0
-            
+
             # Split the long line using the old character-based method
             start = 0
             while start < line_len:
@@ -373,29 +377,33 @@ def process_linkedin_profile_csv(csv_path: str) -> List[Tuple[str, dict]]:
     """
     results = []
     try:
-        with open(csv_path, 'r', encoding='utf-8') as f:
+        with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 # Extract the summary/headline
-                if row.get('Summary'):
-                    results.append((
-                        f"PROFESSIONAL SUMMARY:\n{row['Summary']}",
-                        {
-                            "source": "LinkedIn Profile",
-                            "type": "profile_summary",
-                            "name": f"{row.get('First Name', '')} {row.get('Last Name', '')}".strip()
-                        }
-                    ))
+                if row.get("Summary"):
+                    results.append(
+                        (
+                            f"PROFESSIONAL SUMMARY:\n{row['Summary']}",
+                            {
+                                "source": "LinkedIn Profile",
+                                "type": "profile_summary",
+                                "name": f"{row.get('First Name', '')} {row.get('Last Name', '')}".strip(),
+                            },
+                        )
+                    )
 
-                if row.get('Headline'):
-                    results.append((
-                        f"PROFESSIONAL HEADLINE: {row['Headline']}",
-                        {
-                            "source": "LinkedIn Profile",
-                            "type": "headline",
-                            "name": f"{row.get('First Name', '')} {row.get('Last Name', '')}".strip()
-                        }
-                    ))
+                if row.get("Headline"):
+                    results.append(
+                        (
+                            f"PROFESSIONAL HEADLINE: {row['Headline']}",
+                            {
+                                "source": "LinkedIn Profile",
+                                "type": "headline",
+                                "name": f"{row.get('First Name', '')} {row.get('Last Name', '')}".strip(),
+                            },
+                        )
+                    )
     except Exception as e:
         print(f"  Error reading Profile.csv: {e}")
 
@@ -413,13 +421,13 @@ def process_linkedin_recommendations_csv(csv_path: str) -> List[Tuple[str, dict]
     """
     results = []
     try:
-        with open(csv_path, 'r', encoding='utf-8') as f:
+        with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                if row.get('Text') and row.get('Status') == 'VISIBLE':
+                if row.get("Text") and row.get("Status") == "VISIBLE":
                     recommender = f"{row.get('First Name', '')} {row.get('Last Name', '')}".strip()
-                    company = row.get('Company', 'Unknown')
-                    job_title = row.get('Job Title', 'Unknown')
+                    company = row.get("Company", "Unknown")
+                    job_title = row.get("Job Title", "Unknown")
 
                     # Format the recommendation with context
                     text = (
@@ -428,16 +436,18 @@ def process_linkedin_recommendations_csv(csv_path: str) -> List[Tuple[str, dict]
                         f"{row['Text']}"
                     )
 
-                    results.append((
-                        text,
-                        {
-                            "source": "LinkedIn Recommendation",
-                            "type": "recommendation",
-                            "recommender": recommender,
-                            "company": company,
-                            "title": job_title
-                        }
-                    ))
+                    results.append(
+                        (
+                            text,
+                            {
+                                "source": "LinkedIn Recommendation",
+                                "type": "recommendation",
+                                "recommender": recommender,
+                                "company": company,
+                                "title": job_title,
+                            },
+                        )
+                    )
     except Exception as e:
         print(f"  Error reading recommendations CSV: {e}")
 
@@ -456,10 +466,7 @@ def process_csv_files(data_dir: Path) -> List[Tuple[str, dict]]:
     results = []
 
     # Look for CSV files in the data directory and subdirectories (exclude template folder)
-    csv_files = [
-        f for f in data_dir.glob("**/*.csv")
-        if "template" not in str(f).lower()
-    ]
+    csv_files = [f for f in data_dir.glob("**/*.csv") if "template" not in str(f).lower()]
 
     if not csv_files:
         return results
@@ -469,13 +476,13 @@ def process_csv_files(data_dir: Path) -> List[Tuple[str, dict]]:
     for csv_file in csv_files:
         file_name = csv_file.name.lower()
 
-        if 'profile' in file_name:
+        if "profile" in file_name:
             print(f"\nProcessing {csv_file.name}...")
             profile_data = process_linkedin_profile_csv(str(csv_file))
             results.extend(profile_data)
             print(f"  Extracted {len(profile_data)} profile entries")
 
-        elif 'recommendation' in file_name and 'received' in file_name:
+        elif "recommendation" in file_name and "received" in file_name:
             print(f"\nProcessing {csv_file.name}...")
             recommendations = process_linkedin_recommendations_csv(str(csv_file))
             results.extend(recommendations)
@@ -496,10 +503,7 @@ def process_json_files(data_dir: Path) -> List[Tuple[str, dict]]:
     results = []
 
     # Look for JSON files in the data directory and subdirectories (exclude template folder)
-    json_files = [
-        f for f in data_dir.glob("**/*.json")
-        if "template" not in str(f).lower()
-    ]
+    json_files = [f for f in data_dir.glob("**/*.json") if "template" not in str(f).lower()]
 
     if not json_files:
         return results
@@ -522,87 +526,76 @@ def process_json_files(data_dir: Path) -> List[Tuple[str, dict]]:
                 for key, value in data.items():
                     if isinstance(value, (str, int, float, bool)):
                         text = f"{key}: {value}"
-                        results.append((
-                            text,
-                            {
-                                "source": json_file.name,
-                                "type": "json",
-                                "key": key
-                            }
-                        ))
+                        results.append(
+                            (text, {"source": json_file.name, "type": "json", "key": key})
+                        )
                     elif isinstance(value, dict):
                         # Nested dict - convert to formatted text
                         text = f"{key}:\n" + "\n".join(
-                            f"  {k}: {v}" for k, v in value.items()
+                            f"  {k}: {v}"
+                            for k, v in value.items()
                             if isinstance(v, (str, int, float, bool))
                         )
                         if text.strip():
-                            results.append((
-                                text,
-                                {
-                                    "source": json_file.name,
-                                    "type": "json",
-                                    "key": key
-                                }
-                            ))
+                            results.append(
+                                (text, {"source": json_file.name, "type": "json", "key": key})
+                            )
                     elif isinstance(value, list):
                         # List of items
                         for i, item in enumerate(value):
                             if isinstance(item, str):
-                                results.append((
-                                    f"{key} [{i+1}]: {item}",
-                                    {
-                                        "source": json_file.name,
-                                        "type": "json",
-                                        "key": key,
-                                        "index": i
-                                    }
-                                ))
-                            elif isinstance(item, dict):
-                                # List of objects
-                                text = f"{key} [{i+1}]:\n" + "\n".join(
-                                    f"  {k}: {v}" for k, v in item.items()
-                                    if isinstance(v, (str, int, float, bool))
-                                )
-                                if text.strip():
-                                    results.append((
-                                        text,
+                                results.append(
+                                    (
+                                        f"{key} [{i+1}]: {item}",
                                         {
                                             "source": json_file.name,
                                             "type": "json",
                                             "key": key,
-                                            "index": i
-                                        }
-                                    ))
+                                            "index": i,
+                                        },
+                                    )
+                                )
+                            elif isinstance(item, dict):
+                                # List of objects
+                                text = f"{key} [{i+1}]:\n" + "\n".join(
+                                    f"  {k}: {v}"
+                                    for k, v in item.items()
+                                    if isinstance(v, (str, int, float, bool))
+                                )
+                                if text.strip():
+                                    results.append(
+                                        (
+                                            text,
+                                            {
+                                                "source": json_file.name,
+                                                "type": "json",
+                                                "key": key,
+                                                "index": i,
+                                            },
+                                        )
+                                    )
 
             elif isinstance(data, list):
                 # Top-level list
                 for i, item in enumerate(data):
                     if isinstance(item, str):
-                        results.append((
-                            item,
-                            {
-                                "source": json_file.name,
-                                "type": "json",
-                                "index": i
-                            }
-                        ))
+                        results.append(
+                            (item, {"source": json_file.name, "type": "json", "index": i})
+                        )
                     elif isinstance(item, dict):
                         text = "\n".join(
-                            f"{k}: {v}" for k, v in item.items()
+                            f"{k}: {v}"
+                            for k, v in item.items()
                             if isinstance(v, (str, int, float, bool))
                         )
                         if text.strip():
-                            results.append((
-                                text,
-                                {
-                                    "source": json_file.name,
-                                    "type": "json",
-                                    "index": i
-                                }
-                            ))
+                            results.append(
+                                (text, {"source": json_file.name, "type": "json", "index": i})
+                            )
 
-            print(f"  Extracted {len([r for r in results if r[1]['source'] == json_file.name])} entries")
+            print(
+                f"  Extracted {len([r for r in results if r[1]['source'] == json_file.name])} entries"
+            )
 
         except json.JSONDecodeError as e:
             print(f"  Error parsing JSON: {e}")
@@ -633,14 +626,12 @@ def main():
 
     print(f"Initializing ChromaDB at {chroma_dir}...")
     client = chromadb.PersistentClient(
-        path=str(chroma_dir),
-        settings=Settings(anonymized_telemetry=False)
+        path=str(chroma_dir), settings=Settings(anonymized_telemetry=False)
     )
 
     # Create new collection
     collection = client.create_collection(
-        name="cover_letter_context",
-        metadata={"description": "Context for cover letter generation"}
+        name="cover_letter_context", metadata={"description": "Context for cover letter generation"}
     )
 
     # Initialize document storage
@@ -652,7 +643,8 @@ def main():
     # Process DOCX files (Word documents and exported Google Docs)
     print(f"\nScanning {data_dir} and subdirectories for DOCX files...")
     docx_files = [
-        f for f in data_dir.glob("**/*.docx")
+        f
+        for f in data_dir.glob("**/*.docx")
         if "template" not in str(f).lower() and not f.name.startswith("~$")  # Exclude temp files
     ]
 
@@ -669,12 +661,12 @@ def main():
 
             # Extract year from filename (applies to all chunks from this file)
             inferred_year = "unknown"
-            year_match = re.search(r'20[12]\d', docx_file.name)
+            year_match = re.search(r"20[12]\d", docx_file.name)
             if year_match:
                 inferred_year = year_match.group(0)
 
             # Detect if this is a resume (has company sections with "Company: Location — Title" format)
-            is_resume = bool(re.search(r'^[A-Z][A-Za-z&\s+]+?:\s+[A-Z].*?—', text, re.MULTILINE))
+            is_resume = bool(re.search(r"^[A-Z][A-Za-z&\s+]+?:\s+[A-Z].*?—", text, re.MULTILINE))
 
             if is_resume:
                 # Parse as resume with inline company headers
@@ -729,13 +721,17 @@ def main():
                 print(f"\n    {company.upper()} ({len(chunks)} chunks):")
                 for i, chunk in enumerate(chunks, 1):
                     # Show first 150 chars of each chunk (after metadata header)
-                    lines = chunk.split('\n')
+                    lines = chunk.split("\n")
                     # Skip metadata lines (SOURCE DOCUMENT, COMPANY, YEAR)
-                    content_lines = [l for l in lines if not l.startswith('SOURCE DOCUMENT:')
-                                                      and not l.startswith('COMPANY:')
-                                                      and not l.startswith('YEAR:')]
-                    content = '\n'.join(content_lines).strip()
-                    preview = content[:150].replace('\n', ' ')
+                    content_lines = [
+                        l
+                        for l in lines
+                        if not l.startswith("SOURCE DOCUMENT:")
+                        and not l.startswith("COMPANY:")
+                        and not l.startswith("YEAR:")
+                    ]
+                    content = "\n".join(content_lines).strip()
+                    preview = content[:150].replace("\n", " ")
                     print(f"      [{i}] {preview}...")
             print()  # Empty line after all companies
 
@@ -744,14 +740,16 @@ def main():
                 documents.append(chunk)
                 # Use relative path from data_dir for source
                 relative_path = docx_file.relative_to(data_dir)
-                metadatas.append({
-                    "source": str(relative_path),
-                    "type": "docx",
-                    "chunk_index": i,
-                    "total_chunks": len(file_chunks),
-                    "company": chunk_company,
-                    "year": inferred_year
-                })
+                metadatas.append(
+                    {
+                        "source": str(relative_path),
+                        "type": "docx",
+                        "chunk_index": i,
+                        "total_chunks": len(file_chunks),
+                        "company": chunk_company,
+                        "year": inferred_year,
+                    }
+                )
                 ids.append(f"doc_{doc_id}")
                 doc_id += 1
 
@@ -783,18 +781,14 @@ def main():
 
     print("Adding documents to ChromaDB...")
     collection.add(
-        embeddings=embeddings.tolist(),
-        documents=documents,
-        metadatas=metadatas,
-        ids=ids
+        embeddings=embeddings.tolist(), documents=documents, metadatas=metadatas, ids=ids
     )
 
     # Count file types
     docx_count = len(docx_files) if docx_files else 0
-    csv_count = len([
-        m for m in metadatas
-        if m.get('type') in ['profile_summary', 'headline', 'recommendation']
-    ])
+    csv_count = len(
+        [m for m in metadatas if m.get("type") in ["profile_summary", "headline", "recommendation"]]
+    )
 
     print(f"\n✓ Successfully processed {docx_count} DOCX files (Word/Google Docs)")
     if csv_count > 0:

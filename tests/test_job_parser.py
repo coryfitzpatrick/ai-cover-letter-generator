@@ -62,7 +62,9 @@ class TestJobTitleCleaning:
         """Test removal of location in parentheses."""
         assert clean_job_title("Software Engineer (San Francisco)") == "Software Engineer"
         assert clean_job_title("Senior Manager (Remote)") == "Senior Manager"
-        assert clean_job_title("Director of Engineering (New York, NY)") == "Director of Engineering"
+        assert (
+            clean_job_title("Director of Engineering (New York, NY)") == "Director of Engineering"
+        )
 
     def test_remove_remote_indicators(self):
         """Test removal of remote work indicators."""
@@ -78,7 +80,9 @@ class TestJobTitleCleaning:
     def test_strip_whitespace(self):
         """Test trimming of extra whitespace."""
         assert clean_job_title("  Software Engineer  ") == "Software Engineer"
-        assert clean_job_title("Software    Engineer") == "Software    Engineer"  # Internal spaces preserved
+        assert (
+            clean_job_title("Software    Engineer") == "Software    Engineer"
+        )  # Internal spaces preserved
 
     def test_no_cleaning_needed(self):
         """Test titles that don't need cleaning."""
@@ -106,7 +110,7 @@ class TestJobPosting:
             company_name="Example Corp",
             job_title="Software Engineer",
             job_description="We are looking for a talented engineer...",
-            url="https://example.com/jobs/123"
+            url="https://example.com/jobs/123",
         )
 
         assert posting.company_name == "Example Corp"
@@ -119,7 +123,7 @@ class TestJobPosting:
             company_name="Example Corp",
             job_title="Software Engineer (Remote)",
             job_description="Job description",
-            url="https://example.com/jobs/456"
+            url="https://example.com/jobs/456",
         )
 
         # Title should be cleaned when needed
@@ -130,7 +134,7 @@ class TestJobPosting:
 class TestJobParserIntegration:
     """Integration tests for job parsing (with mocked external calls)."""
 
-    @patch('src.cover_letter_generator.job_parser.Groq')
+    @patch("src.cover_letter_generator.job_parser.Groq")
     def test_parse_with_groq_success(self, mock_groq_class):
         """Test successful parsing with Groq API."""
         # This would require importing parse_job_posting and mocking the Groq client
@@ -140,6 +144,7 @@ class TestJobParserIntegration:
 
         # Verify Groq client can be instantiated
         from groq import Groq
+
         # This is just verifying the import works, actual parsing tests would need full mocking
 
     def test_html_cleaning_preserves_content(self):
@@ -149,8 +154,9 @@ class TestJobParserIntegration:
 
         # BeautifulSoup cleaning (as used in job_parser)
         from bs4 import BeautifulSoup
-        soup = BeautifulSoup(html_text, 'html.parser')
-        cleaned = soup.get_text(separator=' ', strip=True)
+
+        soup = BeautifulSoup(html_text, "html.parser")
+        cleaned = soup.get_text(separator=" ", strip=True)
 
         assert "job description" in cleaned
         assert "HTML tags" in cleaned
@@ -159,7 +165,7 @@ class TestJobParserIntegration:
 
     def test_structured_data_extraction(self):
         """Test extraction of structured data (JSON-LD) from HTML."""
-        html_with_json_ld = '''
+        html_with_json_ld = """
         <html>
         <head>
             <script type="application/ld+json">
@@ -177,22 +183,22 @@ class TestJobParserIntegration:
         </head>
         <body></body>
         </html>
-        '''
+        """
 
         from bs4 import BeautifulSoup
         import json
 
-        soup = BeautifulSoup(html_with_json_ld, 'html.parser')
-        json_ld_scripts = soup.find_all('script', type='application/ld+json')
+        soup = BeautifulSoup(html_with_json_ld, "html.parser")
+        json_ld_scripts = soup.find_all("script", type="application/ld+json")
 
         assert len(json_ld_scripts) > 0
 
         for script in json_ld_scripts:
             try:
                 data = json.loads(script.string)
-                if data.get('@type') == 'JobPosting':
-                    assert data['title'] == 'Software Engineer'
-                    assert data['hiringOrganization']['name'] == 'Example Corp'
+                if data.get("@type") == "JobPosting":
+                    assert data["title"] == "Software Engineer"
+                    assert data["hiringOrganization"]["name"] == "Example Corp"
                     break
             except (json.JSONDecodeError, KeyError):
                 pass
@@ -221,7 +227,7 @@ class TestErrorHandling:
             company_name="Example Corp",
             job_title="Software Engineer",
             job_description="",
-            url="https://example.com/jobs/789"
+            url="https://example.com/jobs/789",
         )
 
         assert posting.job_description == ""

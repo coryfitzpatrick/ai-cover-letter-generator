@@ -13,7 +13,7 @@ class TestUtils(unittest.TestCase):
     def test_create_folder_name_from_details(self):
         """Test folder name creation."""
         timestamp = "20231025_120000"
-        
+
         # Test with all details
         name = create_folder_name_from_details("Google", "Software Engineer", timestamp)
         self.assertEqual(name, "Google - Software Engineer - 2023-10-25")

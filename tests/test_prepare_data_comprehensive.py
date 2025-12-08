@@ -106,7 +106,7 @@ class TestExtractTextFromPDF:
         pdf_path = tmp_path / "corrupt.pdf"
 
         # Create a file with invalid PDF content
-        with open(pdf_path, 'w') as f:
+        with open(pdf_path, "w") as f:
             f.write("This is not a valid PDF file")
 
         text = extract_text_from_pdf(str(pdf_path))
@@ -195,7 +195,7 @@ class TestExtractTextFromDOCX:
         docx_path = tmp_path / "corrupt.docx"
 
         # Create a file with invalid DOCX content
-        with open(docx_path, 'w') as f:
+        with open(docx_path, "w") as f:
             f.write("This is not a valid DOCX file")
 
         text = extract_text_from_docx(str(docx_path))
@@ -320,7 +320,7 @@ class TestProcessLinkedInProfileCSV:
         """Test processing a profile CSV with summary."""
         csv_path = tmp_path / "Profile.csv"
 
-        with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:
             f.write("First Name,Last Name,Headline,Summary\n")
             f.write("John,Doe,Software Engineer,Experienced engineer with 10 years\n")
 
@@ -329,15 +329,15 @@ class TestProcessLinkedInProfileCSV:
         assert len(results) == 2  # Summary and headline
 
         # Check summary
-        summary_result = [r for r in results if r[1]['type'] == 'profile_summary'][0]
+        summary_result = [r for r in results if r[1]["type"] == "profile_summary"][0]
         assert "Experienced engineer" in summary_result[0]
-        assert summary_result[1]['name'] == "John Doe"
+        assert summary_result[1]["name"] == "John Doe"
 
     def test_process_profile_csv_with_headline(self, tmp_path):
         """Test processing a profile CSV with headline."""
         csv_path = tmp_path / "Profile.csv"
 
-        with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:
             f.write("First Name,Last Name,Headline,Summary\n")
             f.write("Jane,Smith,Senior Manager,\n")
 
@@ -346,14 +346,14 @@ class TestProcessLinkedInProfileCSV:
         assert len(results) >= 1
 
         # Check headline
-        headline_result = [r for r in results if r[1]['type'] == 'headline'][0]
+        headline_result = [r for r in results if r[1]["type"] == "headline"][0]
         assert "Senior Manager" in headline_result[0]
 
     def test_process_profile_csv_empty_file(self, tmp_path):
         """Test processing an empty profile CSV."""
         csv_path = tmp_path / "Profile.csv"
 
-        with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:
             f.write("First Name,Last Name,Headline,Summary\n")
 
         results = process_linkedin_profile_csv(str(csv_path))
@@ -374,7 +374,7 @@ class TestProcessLinkedInRecommendationsCSV:
         """Test processing recommendations CSV."""
         csv_path = tmp_path / "Recommendations_Received.csv"
 
-        with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:
             f.write("First Name,Last Name,Company,Job Title,Text,Status\n")
             f.write("Alice,Johnson,TechCorp,CTO,Great leader and mentor,VISIBLE\n")
 
@@ -383,14 +383,14 @@ class TestProcessLinkedInRecommendationsCSV:
         assert len(results) == 1
         assert "Alice Johnson" in results[0][0]
         assert "Great leader" in results[0][0]
-        assert results[0][1]['recommender'] == "Alice Johnson"
-        assert results[0][1]['company'] == "TechCorp"
+        assert results[0][1]["recommender"] == "Alice Johnson"
+        assert results[0][1]["company"] == "TechCorp"
 
     def test_process_recommendations_csv_hidden_status(self, tmp_path):
         """Test that hidden recommendations are filtered out."""
         csv_path = tmp_path / "Recommendations_Received.csv"
 
-        with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:
             f.write("First Name,Last Name,Company,Job Title,Text,Status\n")
             f.write("Bob,Smith,Company1,Manager,Hidden recommendation,HIDDEN\n")
             f.write("Carol,Lee,Company2,Director,Visible recommendation,VISIBLE\n")
@@ -405,7 +405,7 @@ class TestProcessLinkedInRecommendationsCSV:
         """Test processing empty recommendations CSV."""
         csv_path = tmp_path / "Recommendations_Received.csv"
 
-        with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:
             f.write("First Name,Last Name,Company,Job Title,Text,Status\n")
 
         results = process_linkedin_recommendations_csv(str(csv_path))
@@ -420,13 +420,13 @@ class TestProcessCSVFiles:
         """Test processing both profile and recommendations CSVs."""
         # Create profile CSV
         profile_path = tmp_path / "Profile.csv"
-        with open(profile_path, 'w', newline='', encoding='utf-8') as f:
+        with open(profile_path, "w", newline="", encoding="utf-8") as f:
             f.write("First Name,Last Name,Headline,Summary\n")
             f.write("John,Doe,Engineer,Summary text\n")
 
         # Create recommendations CSV
         rec_path = tmp_path / "Recommendations_Received.csv"
-        with open(rec_path, 'w', newline='', encoding='utf-8') as f:
+        with open(rec_path, "w", newline="", encoding="utf-8") as f:
             f.write("First Name,Last Name,Company,Job Title,Text,Status\n")
             f.write("Alice,Smith,Corp,CTO,Great work,VISIBLE\n")
 
@@ -448,7 +448,7 @@ class TestProcessCSVFiles:
         template_dir.mkdir()
 
         csv_path = template_dir / "Profile.csv"
-        with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:
             f.write("First Name,Last Name,Headline,Summary\n")
             f.write("Test,User,Title,Summary\n")
 
@@ -464,13 +464,9 @@ class TestProcessJSONFiles:
     def test_process_json_dict(self, tmp_path):
         """Test processing JSON file with dictionary structure."""
         json_path = tmp_path / "data.json"
-        data = {
-            "name": "John Doe",
-            "role": "Engineer",
-            "experience": 5
-        }
+        data = {"name": "John Doe", "role": "Engineer", "experience": 5}
 
-        with open(json_path, 'w', encoding='utf-8') as f:
+        with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         results = process_json_files(tmp_path)
@@ -484,7 +480,7 @@ class TestProcessJSONFiles:
         json_path = tmp_path / "items.json"
         data = ["Item 1", "Item 2", "Item 3"]
 
-        with open(json_path, 'w', encoding='utf-8') as f:
+        with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         results = process_json_files(tmp_path)
@@ -494,14 +490,9 @@ class TestProcessJSONFiles:
     def test_process_json_nested_dict(self, tmp_path):
         """Test processing JSON with nested dictionaries."""
         json_path = tmp_path / "nested.json"
-        data = {
-            "person": {
-                "name": "Jane",
-                "age": 30
-            }
-        }
+        data = {"person": {"name": "Jane", "age": 30}}
 
-        with open(json_path, 'w', encoding='utf-8') as f:
+        with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         results = process_json_files(tmp_path)
@@ -514,13 +505,10 @@ class TestProcessJSONFiles:
         """Test processing JSON with list of dictionaries."""
         json_path = tmp_path / "list_dicts.json"
         data = {
-            "employees": [
-                {"name": "John", "role": "Engineer"},
-                {"name": "Jane", "role": "Manager"}
-            ]
+            "employees": [{"name": "John", "role": "Engineer"}, {"name": "Jane", "role": "Manager"}]
         }
 
-        with open(json_path, 'w', encoding='utf-8') as f:
+        with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         results = process_json_files(tmp_path)
@@ -532,7 +520,7 @@ class TestProcessJSONFiles:
         json_path = tmp_path / "contact_info.json"
         data = {"email": "test@example.com"}
 
-        with open(json_path, 'w', encoding='utf-8') as f:
+        with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         results = process_json_files(tmp_path)
@@ -548,7 +536,7 @@ class TestProcessJSONFiles:
         json_path = template_dir / "data.json"
         data = {"key": "value"}
 
-        with open(json_path, 'w', encoding='utf-8') as f:
+        with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         results = process_json_files(tmp_path)
@@ -559,7 +547,7 @@ class TestProcessJSONFiles:
         """Test handling of invalid JSON file."""
         json_path = tmp_path / "invalid.json"
 
-        with open(json_path, 'w', encoding='utf-8') as f:
+        with open(json_path, "w", encoding="utf-8") as f:
             f.write("This is not valid JSON")
 
         results = process_json_files(tmp_path)
@@ -596,7 +584,7 @@ class TestIntegrationScenarios:
 
         # Create JSON
         json_path = tmp_path / "skills.json"
-        with open(json_path, 'w', encoding='utf-8') as f:
+        with open(json_path, "w", encoding="utf-8") as f:
             json.dump({"skills": ["Python", "Leadership"]}, f)
 
         # Test extraction
@@ -611,7 +599,8 @@ class TestIntegrationScenarios:
     def test_large_text_chunking(self):
         """Test chunking of realistically large text."""
         # Create text simulating a resume (3000+ characters)
-        text = """
+        text = (
+            """
 PROFESSIONAL EXPERIENCE
 
 Senior Engineering Manager | TechCorp | 2020-2023
@@ -632,7 +621,9 @@ Senior Software Engineer | BigCorp | 2014-2017
 - Optimized database queries improving performance by 40%
 - Led technical design reviews
 - Contributed to open source projects
-        """ * 5  # Repeat to make it longer
+        """
+            * 5
+        )  # Repeat to make it longer
 
         chunks = chunk_text(text)
 
@@ -644,8 +635,8 @@ Senior Software Engineer | BigCorp | 2014-2017
             assert len(chunk) > 0
             assert len(chunk) <= DEFAULT_CHUNK_SIZE + DEFAULT_OVERLAP + 200
 
-    @patch('src.cover_letter_generator.prepare_data.SentenceTransformer')
-    @patch('src.cover_letter_generator.prepare_data.chromadb.PersistentClient')
+    @patch("src.cover_letter_generator.prepare_data.SentenceTransformer")
+    @patch("src.cover_letter_generator.prepare_data.chromadb.PersistentClient")
     def test_main_function_integration(self, mock_chroma, mock_st, tmp_path):
         """Test main function integration (mocked dependencies)."""
         # This tests that the main function can be called without errors

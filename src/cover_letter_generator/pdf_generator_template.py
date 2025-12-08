@@ -48,7 +48,7 @@ def create_text_overlay(cover_letter_text: str, width: float, height: float) -> 
         bottomPadding=0,
         rightPadding=0,
         topPadding=0,
-        showBoundary=0  # Set to 1 for debugging
+        showBoundary=0,  # Set to 1 for debugging
     )
 
     # Define styles
@@ -56,35 +56,35 @@ def create_text_overlay(cover_letter_text: str, width: float, height: float) -> 
 
     # Date style
     date_style = ParagraphStyle(
-        'DateStyle',
-        parent=styles['Normal'],
-        fontName='Helvetica',  # Arial equivalent in ReportLab
+        "DateStyle",
+        parent=styles["Normal"],
+        fontName="Helvetica",  # Arial equivalent in ReportLab
         fontSize=11,
         leading=14,
-        textColor='#333333',
+        textColor="#333333",
         alignment=TA_LEFT,
         spaceAfter=0,  # No extra space after date (tight spacing to Dear line)
     )
 
     body_style = ParagraphStyle(
-        'CustomBody',
-        parent=styles['Normal'],
-        fontName='Helvetica',  # Arial equivalent in ReportLab
+        "CustomBody",
+        parent=styles["Normal"],
+        fontName="Helvetica",  # Arial equivalent in ReportLab
         fontSize=11,
         leading=14,  # Tighter line spacing for more content
-        textColor='#333333',
+        textColor="#333333",
         alignment=TA_LEFT,
         spaceAfter=10,  # Less space between paragraphs
     )
 
     # Closing style for "Sincerely," line
     closing_style = ParagraphStyle(
-        'ClosingStyle',
-        parent=styles['Normal'],
-        fontName='Helvetica',
+        "ClosingStyle",
+        parent=styles["Normal"],
+        fontName="Helvetica",
         fontSize=11,
         leading=14,
-        textColor='#333333',
+        textColor="#333333",
         alignment=TA_LEFT,
         spaceAfter=0,  # Tight spacing after "Sincerely," (no extra space before name)
     )
@@ -96,34 +96,34 @@ def create_text_overlay(cover_letter_text: str, width: float, height: float) -> 
     current_date = datetime.now().strftime("%B %d, %Y")
     story.append(Paragraph(current_date, date_style))
 
-    paragraphs = cover_letter_text.strip().split('\n\n')
+    paragraphs = cover_letter_text.strip().split("\n\n")
 
     for para in paragraphs:
         if para.strip():
-            clean_para = para.strip().replace('\n', ' ')
+            clean_para = para.strip().replace("\n", " ")
 
             # Escape special XML/HTML characters for ReportLab
-            clean_para = clean_para.replace('&', '&amp;')
-            clean_para = clean_para.replace('<', '&lt;')
-            clean_para = clean_para.replace('>', '&gt;')
+            clean_para = clean_para.replace("&", "&amp;")
+            clean_para = clean_para.replace("<", "&lt;")
+            clean_para = clean_para.replace(">", "&gt;")
 
             # Add spacing for salutation and closing
-            if clean_para.startswith('Dear '):
+            if clean_para.startswith("Dear "):
                 story.append(Paragraph(clean_para, body_style))
                 story.append(Spacer(1, 0.1 * inch))  # Reduced from 0.15
-            elif clean_para.startswith('Sincerely'):
+            elif clean_para.startswith("Sincerely"):
                 story.append(Spacer(1, 0.1 * inch))  # Space before closing
                 # Split "Sincerely," and name for soft return
-                if ',' in clean_para:
-                    lines = clean_para.split('\n')
+                if "," in clean_para:
+                    lines = clean_para.split("\n")
                     if len(lines) > 1:
                         # Already split by newline
                         story.append(Paragraph(lines[0], closing_style))  # "Sincerely,"
                         story.append(Paragraph(lines[1], body_style))  # "Cory Fitzpatrick"
                     else:
                         # Handle "Sincerely, Cory Fitzpatrick" on one line
-                        parts = clean_para.split(',', 1)
-                        story.append(Paragraph(parts[0] + ',', closing_style))  # "Sincerely,"
+                        parts = clean_para.split(",", 1)
+                        story.append(Paragraph(parts[0] + ",", closing_style))  # "Sincerely,"
                         if len(parts) > 1:
                             story.append(Paragraph(parts[1].strip(), body_style))
                 else:
@@ -142,9 +142,7 @@ def create_text_overlay(cover_letter_text: str, width: float, height: float) -> 
 
 
 def generate_cover_letter_from_template(
-    cover_letter_text: str,
-    template_path: Path,
-    output_path: Path
+    cover_letter_text: str, template_path: Path, output_path: Path
 ) -> Path:
     """Generate a cover letter PDF using a template.
 
@@ -176,7 +174,7 @@ def generate_cover_letter_from_template(
     writer = PdfWriter()
     writer.add_page(template_page)
 
-    with open(output_path, 'wb') as output_file:
+    with open(output_path, "wb") as output_file:
         writer.write(output_file)
 
     return output_path
@@ -187,7 +185,7 @@ def generate_cover_letter_pdf(
     output_dir: Path = None,
     filename: str = None,
     contact_info: Optional[dict] = None,
-    use_template: bool = True
+    use_template: bool = True,
 ) -> Path:
     """Generate a cover letter PDF.
 
@@ -242,9 +240,7 @@ def generate_cover_letter_pdf(
 
         if template_path:
             return generate_cover_letter_from_template(
-                cover_letter_text,
-                template_path,
-                output_path
+                cover_letter_text, template_path, output_path
             )
         else:
             print("Warning: Template not found in any location, using default generation")
@@ -254,6 +250,7 @@ def generate_cover_letter_pdf(
     # Fall back to original generation if template not available
     if not use_template:
         from .pdf_generator import create_cover_letter_pdf
+
         return create_cover_letter_pdf(cover_letter_text, output_path, contact_info)
 
     return output_path

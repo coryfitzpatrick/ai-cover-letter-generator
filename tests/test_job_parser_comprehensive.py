@@ -30,7 +30,7 @@ from src.cover_letter_generator.job_parser import (
 class TestFetchWebpage:
     """Tests for webpage fetching functionality."""
 
-    @patch('src.cover_letter_generator.job_parser.requests.get')
+    @patch("src.cover_letter_generator.job_parser.requests.get")
     def test_fetch_webpage_success(self, mock_get):
         """Test successful webpage fetch."""
         mock_response = Mock()
@@ -44,7 +44,7 @@ class TestFetchWebpage:
         assert "Job posting content" in result
         mock_get.assert_called_once()
 
-    @patch('src.cover_letter_generator.job_parser.requests.get')
+    @patch("src.cover_letter_generator.job_parser.requests.get")
     def test_fetch_webpage_with_timeout(self, mock_get):
         """Test webpage fetch with custom timeout."""
         mock_response = Mock()
@@ -56,9 +56,9 @@ class TestFetchWebpage:
 
         # Verify timeout was passed
         call_args = mock_get.call_args
-        assert call_args[1]['timeout'] == 5
+        assert call_args[1]["timeout"] == 5
 
-    @patch('src.cover_letter_generator.job_parser.requests.get')
+    @patch("src.cover_letter_generator.job_parser.requests.get")
     def test_fetch_webpage_network_error(self, mock_get):
         """Test handling of network errors."""
         mock_get.side_effect = requests.RequestException("Network error")
@@ -67,7 +67,7 @@ class TestFetchWebpage:
 
         assert result is None
 
-    @patch('src.cover_letter_generator.job_parser.requests.get')
+    @patch("src.cover_letter_generator.job_parser.requests.get")
     def test_fetch_webpage_http_error(self, mock_get):
         """Test handling of HTTP errors (404, 500, etc.)."""
         mock_response = Mock()
@@ -78,7 +78,7 @@ class TestFetchWebpage:
 
         assert result is None
 
-    @patch('src.cover_letter_generator.job_parser.requests.get')
+    @patch("src.cover_letter_generator.job_parser.requests.get")
     def test_fetch_webpage_timeout_error(self, mock_get):
         """Test handling of timeout errors."""
         mock_get.side_effect = requests.Timeout("Request timed out")
@@ -87,7 +87,7 @@ class TestFetchWebpage:
 
         assert result is None
 
-    @patch('src.cover_letter_generator.job_parser.requests.get')
+    @patch("src.cover_letter_generator.job_parser.requests.get")
     def test_fetch_webpage_includes_user_agent(self, mock_get):
         """Test that User-Agent header is included in request."""
         mock_response = Mock()
@@ -99,15 +99,15 @@ class TestFetchWebpage:
 
         # Verify User-Agent was included in headers
         call_args = mock_get.call_args
-        headers = call_args[1]['headers']
-        assert 'User-Agent' in headers
-        assert 'Mozilla' in headers['User-Agent']
+        headers = call_args[1]["headers"]
+        assert "User-Agent" in headers
+        assert "Mozilla" in headers["User-Agent"]
 
 
 class TestFetchWebpageWithPlaywright:
     """Tests for Playwright-based webpage fetching."""
 
-    @patch('src.cover_letter_generator.job_parser.sync_playwright')
+    @patch("src.cover_letter_generator.job_parser.sync_playwright")
     def test_fetch_with_playwright_success(self, mock_playwright):
         """Test successful fetch with Playwright."""
         # Mock the Playwright context manager and page
@@ -130,7 +130,7 @@ class TestFetchWebpageWithPlaywright:
         assert text is not None
         assert "Content" in text
 
-    @patch('src.cover_letter_generator.job_parser.sync_playwright')
+    @patch("src.cover_letter_generator.job_parser.sync_playwright")
     def test_fetch_with_playwright_import_error(self, mock_playwright):
         """Test handling when Playwright is not installed."""
         mock_playwright.side_effect = ImportError("Playwright not found")
@@ -140,7 +140,7 @@ class TestFetchWebpageWithPlaywright:
         assert html is None
         assert text is None
 
-    @patch('src.cover_letter_generator.job_parser.sync_playwright')
+    @patch("src.cover_letter_generator.job_parser.sync_playwright")
     def test_fetch_with_playwright_navigation_error(self, mock_playwright):
         """Test handling of navigation errors."""
         mock_browser = Mock()
@@ -161,8 +161,8 @@ class TestFetchWebpageWithPlaywright:
         assert html is None
         assert text is None
 
-    @patch('src.cover_letter_generator.job_parser.sync_playwright')
-    @patch('src.cover_letter_generator.job_parser.Stealth')
+    @patch("src.cover_letter_generator.job_parser.sync_playwright")
+    @patch("src.cover_letter_generator.job_parser.Stealth")
     def test_fetch_with_playwright_stealth_mode(self, mock_stealth_class, mock_playwright):
         """Test that stealth mode is used when available."""
         mock_stealth = Mock()
@@ -329,14 +329,16 @@ class TestExtractTextFromHTML:
 class TestParseJobPostingWithLLM:
     """Tests for LLM-based job posting parsing."""
 
-    @patch('src.cover_letter_generator.job_parser.Groq')
-    @patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'})
+    @patch("src.cover_letter_generator.job_parser.Groq")
+    @patch.dict("os.environ", {"GROQ_API_KEY": "test-key"})
     def test_parse_job_posting_success(self, mock_groq_class):
         """Test successful job posting parsing."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 COMPANY: TechCorp
 TITLE: Software Engineer
 DESCRIPTION:
@@ -366,14 +368,16 @@ Benefits:
         assert "talented Software Engineer" in result.job_description
         assert result.url == url
 
-    @patch('src.cover_letter_generator.job_parser.Groq')
-    @patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'})
+    @patch("src.cover_letter_generator.job_parser.Groq")
+    @patch.dict("os.environ", {"GROQ_API_KEY": "test-key"})
     def test_parse_job_posting_cleans_verbose_response(self, mock_groq_class):
         """Test that verbose LLM responses are cleaned."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 COMPANY: The company name is TechCorp
 TITLE: The job title appears to be Software Engineer
 DESCRIPTION:
@@ -388,14 +392,16 @@ Job description here.
         assert result.company_name == "TechCorp"
         assert result.job_title == "Software Engineer"
 
-    @patch('src.cover_letter_generator.job_parser.Groq')
-    @patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'})
+    @patch("src.cover_letter_generator.job_parser.Groq")
+    @patch.dict("os.environ", {"GROQ_API_KEY": "test-key"})
     def test_parse_job_posting_handles_unknown_fields(self, mock_groq_class):
         """Test handling when company or title are unknown."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 COMPANY: Unknown
 TITLE: Unknown
 DESCRIPTION:
@@ -411,15 +417,15 @@ Description without clear company or title.
         assert result.company_name == "Unknown"
         assert result.job_title == "Unknown"
 
-    @patch.dict('os.environ', {'GROQ_API_KEY': ''})
+    @patch.dict("os.environ", {"GROQ_API_KEY": ""})
     def test_parse_job_posting_missing_api_key(self):
         """Test handling when API key is missing."""
         result = parse_job_posting_with_llm("text", "url")
 
         assert result is None
 
-    @patch('src.cover_letter_generator.job_parser.Groq')
-    @patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'})
+    @patch("src.cover_letter_generator.job_parser.Groq")
+    @patch.dict("os.environ", {"GROQ_API_KEY": "test-key"})
     def test_parse_job_posting_api_error(self, mock_groq_class):
         """Test handling of API errors."""
         mock_client = Mock()
@@ -430,8 +436,8 @@ Description without clear company or title.
 
         assert result is None
 
-    @patch('src.cover_letter_generator.job_parser.Groq')
-    @patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'})
+    @patch("src.cover_letter_generator.job_parser.Groq")
+    @patch.dict("os.environ", {"GROQ_API_KEY": "test-key"})
     def test_parse_job_posting_malformed_response(self, mock_groq_class):
         """Test handling of malformed LLM response."""
         mock_client = Mock()
@@ -446,14 +452,16 @@ Description without clear company or title.
         # Should return None or handle gracefully
         assert result is None or isinstance(result, JobPosting)
 
-    @patch('src.cover_letter_generator.job_parser.Groq')
-    @patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'})
+    @patch("src.cover_letter_generator.job_parser.Groq")
+    @patch.dict("os.environ", {"GROQ_API_KEY": "test-key"})
     def test_parse_job_posting_cleans_job_title(self, mock_groq_class):
         """Test that job titles are cleaned (parentheticals removed)."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 COMPANY: TechCorp
 TITLE: Software Engineer (Remote)
 DESCRIPTION:
@@ -467,14 +475,16 @@ Job description.
         # Title should be cleaned
         assert result.job_title == "Software Engineer"
 
-    @patch('src.cover_letter_generator.job_parser.Groq')
-    @patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'})
+    @patch("src.cover_letter_generator.job_parser.Groq")
+    @patch.dict("os.environ", {"GROQ_API_KEY": "test-key"})
     def test_parse_job_posting_flexible_matching(self, mock_groq_class):
         """Test flexible parsing when exact format isn't followed."""
         mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 company: TechCorp
 job title: Software Engineer
 job description:
@@ -493,9 +503,9 @@ Full description here.
 class TestParseJobFromURL:
     """Tests for complete job parsing from URL."""
 
-    @patch('src.cover_letter_generator.job_parser.fetch_webpage')
-    @patch('src.cover_letter_generator.job_parser.extract_text_from_html')
-    @patch('src.cover_letter_generator.job_parser.parse_job_posting_with_llm')
+    @patch("src.cover_letter_generator.job_parser.fetch_webpage")
+    @patch("src.cover_letter_generator.job_parser.extract_text_from_html")
+    @patch("src.cover_letter_generator.job_parser.parse_job_posting_with_llm")
     def test_parse_job_from_url_simple_site(self, mock_parse, mock_extract, mock_fetch):
         """Test parsing from a simple (non-JavaScript) site."""
         mock_fetch.return_value = "<html><body>Job content</body></html>"
@@ -504,7 +514,7 @@ class TestParseJobFromURL:
             company_name="TechCorp",
             job_title="Engineer",
             job_description="Description",
-            url="https://example.com"
+            url="https://example.com",
         )
 
         result = parse_job_from_url("https://example.com/jobs/123")
@@ -513,20 +523,19 @@ class TestParseJobFromURL:
         assert result.company_name == "TechCorp"
         mock_fetch.assert_called_once()
 
-    @patch('src.cover_letter_generator.job_parser.fetch_webpage_with_playwright')
+    @patch("src.cover_letter_generator.job_parser.fetch_webpage_with_playwright")
     def test_parse_job_from_url_js_heavy_site(self, mock_playwright):
         """Test parsing from JavaScript-heavy job board."""
-        mock_playwright.return_value = (
-            "<html><body>Content</body></html>",
-            "Clean text content"
-        )
+        mock_playwright.return_value = ("<html><body>Content</body></html>", "Clean text content")
 
-        with patch('src.cover_letter_generator.job_parser.parse_job_posting_with_llm') as mock_parse:
+        with patch(
+            "src.cover_letter_generator.job_parser.parse_job_posting_with_llm"
+        ) as mock_parse:
             mock_parse.return_value = JobPosting(
                 company_name="Greenhouse",
                 job_title="Engineer",
                 job_description="Desc",
-                url="https://greenhouse.io/job"
+                url="https://greenhouse.io/job",
             )
 
             result = parse_job_from_url("https://boards.greenhouse.io/company/job")
@@ -535,7 +544,7 @@ class TestParseJobFromURL:
             # Should use Playwright for greenhouse.io
             mock_playwright.assert_called_once()
 
-    @patch('src.cover_letter_generator.job_parser.fetch_webpage')
+    @patch("src.cover_letter_generator.job_parser.fetch_webpage")
     def test_parse_job_from_url_fetch_failure(self, mock_fetch):
         """Test handling when webpage fetch fails."""
         mock_fetch.return_value = None
@@ -544,9 +553,9 @@ class TestParseJobFromURL:
 
         assert result is None
 
-    @patch('src.cover_letter_generator.job_parser.fetch_webpage')
-    @patch('src.cover_letter_generator.job_parser.extract_text_from_html')
-    @patch('src.cover_letter_generator.job_parser.fetch_webpage_with_playwright')
+    @patch("src.cover_letter_generator.job_parser.fetch_webpage")
+    @patch("src.cover_letter_generator.job_parser.extract_text_from_html")
+    @patch("src.cover_letter_generator.job_parser.fetch_webpage_with_playwright")
     def test_parse_job_from_url_bot_detection_fallback(
         self, mock_playwright, mock_extract, mock_fetch
     ):
@@ -555,15 +564,14 @@ class TestParseJobFromURL:
         mock_extract.return_value = "Please enable JavaScript to continue"
         mock_playwright.return_value = (
             "<html><body>Real content</body></html>",
-            "Real job posting content"
+            "Real job posting content",
         )
 
-        with patch('src.cover_letter_generator.job_parser.parse_job_posting_with_llm') as mock_parse:
+        with patch(
+            "src.cover_letter_generator.job_parser.parse_job_posting_with_llm"
+        ) as mock_parse:
             mock_parse.return_value = JobPosting(
-                company_name="Company",
-                job_title="Role",
-                job_description="Desc",
-                url="url"
+                company_name="Company", job_title="Role", job_description="Desc", url="url"
             )
 
             result = parse_job_from_url("https://example.com/jobs/123")
@@ -571,25 +579,26 @@ class TestParseJobFromURL:
             # Should fallback to Playwright
             assert mock_playwright.called
 
-    @patch('src.cover_letter_generator.job_parser.fetch_webpage')
-    @patch('src.cover_letter_generator.job_parser.extract_text_from_html')
+    @patch("src.cover_letter_generator.job_parser.fetch_webpage")
+    @patch("src.cover_letter_generator.job_parser.extract_text_from_html")
     def test_parse_job_from_url_insufficient_text(self, mock_extract, mock_fetch):
         """Test handling when insufficient text is extracted."""
         mock_fetch.return_value = "<html><body>Short</body></html>"
         mock_extract.return_value = "X"  # Very short text
 
-        with patch('src.cover_letter_generator.job_parser.fetch_webpage_with_playwright') as mock_pw:
+        with patch(
+            "src.cover_letter_generator.job_parser.fetch_webpage_with_playwright"
+        ) as mock_pw:
             mock_pw.return_value = (
                 "<html><body>Full content</body></html>",
-                "Full job posting text here"
+                "Full job posting text here",
             )
 
-            with patch('src.cover_letter_generator.job_parser.parse_job_posting_with_llm') as mock_parse:
+            with patch(
+                "src.cover_letter_generator.job_parser.parse_job_posting_with_llm"
+            ) as mock_parse:
                 mock_parse.return_value = JobPosting(
-                    company_name="Co",
-                    job_title="Title",
-                    job_description="Desc",
-                    url="url"
+                    company_name="Co", job_title="Title", job_description="Desc", url="url"
                 )
 
                 result = parse_job_from_url("https://example.com/job")
@@ -640,7 +649,7 @@ class TestJobPostingDataclass:
             company_name="TestCorp",
             job_title="Test Engineer",
             job_description="Description",
-            url="https://example.com"
+            url="https://example.com",
         )
 
         str_repr = str(posting)
@@ -665,15 +674,17 @@ class TestEdgeCases:
         # Should still extract some text despite malformed HTML
         assert "Unclosed paragraph" in text or "Content" in text
 
-    @patch('src.cover_letter_generator.job_parser.Groq')
-    @patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'})
+    @patch("src.cover_letter_generator.job_parser.Groq")
+    @patch.dict("os.environ", {"GROQ_API_KEY": "test-key"})
     def test_parse_very_long_job_description(self, mock_groq_class):
         """Test parsing with very long job descriptions."""
         mock_client = Mock()
         mock_response = Mock()
         long_description = "Requirements: " + "x" * 10000
         mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = f"""
+        mock_response.choices[
+            0
+        ].message.content = f"""
 COMPANY: BigCorp
 TITLE: Engineer
 DESCRIPTION:

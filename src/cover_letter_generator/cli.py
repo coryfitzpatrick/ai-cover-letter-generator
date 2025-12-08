@@ -51,7 +51,14 @@ if _output_dir:
     DEFAULT_OUTPUT_DIR = Path(_output_dir)
 else:
     # Default to iCloud Documents/Cover Letters
-    icloud_path = Path.home() / "Library" / "Mobile Documents" / "com~apple~CloudDocs" / "Documents" / "Cover Letters"
+    icloud_path = (
+        Path.home()
+        / "Library"
+        / "Mobile Documents"
+        / "com~apple~CloudDocs"
+        / "Documents"
+        / "Cover Letters"
+    )
     if icloud_path.exists():
         DEFAULT_OUTPUT_DIR = icloud_path
     else:
@@ -75,7 +82,7 @@ def save_cover_letter(
     cover_letter: str,
     company_name: Optional[str] = None,
     job_title: Optional[str] = None,
-    output_dir: Optional[Path] = None
+    output_dir: Optional[Path] = None,
 ):
     """Save the cover letter to a PDF file and validate signature.
 
@@ -143,10 +150,7 @@ def save_cover_letter(
 
     # Validate signature (pass cover letter text for precise cut-off calculation)
     validation_result = validate_pdf_signature(
-        pdf_filepath,
-        user_name,
-        cover_letter_text=cover_letter,
-        verbose=True
+        pdf_filepath, user_name, cover_letter_text=cover_letter, verbose=True
     )
 
     return validation_result
@@ -165,7 +169,7 @@ def ensure_signature(cover_letter: str, user_name: str, print_preview: bool = Tr
     """
     signature_added = False
     if not cover_letter.strip().endswith(user_name):
-        cover_letter = cover_letter.rstrip() + f'\\n\\nSincerely,\\n{user_name}'
+        cover_letter = cover_letter.rstrip() + f"\\n\\nSincerely,\\n{user_name}"
         signature_added = True
 
     # Show signature in preview if we added it
@@ -175,20 +179,17 @@ def ensure_signature(cover_letter: str, user_name: str, print_preview: bool = Tr
     return cover_letter
 
 
-
-
-
 def initialize_components() -> Tuple[
     CoverLetterGenerator,
     Optional[FeedbackTracker],
     Optional[SystemImprover],
-    Optional[JobTracker]
+    Optional[JobTracker],
 ]:
     """Initialize all system components."""
     # Validate required environment variables
     if not USER_NAME:
         print("\nError: USER_NAME not set in .env file")
-        print("Please add USER_NAME=\"Your Full Name\" to your .env file")
+        print('Please add USER_NAME="Your Full Name" to your .env file')
         sys.exit(1)
 
     # Validate required contact information
@@ -217,7 +218,7 @@ def initialize_components() -> Tuple[
     print("      - Cost: ~$0.10-0.15 per cover letter (expensive)")
     print()
 
-    model_choice = get_user_choice(['1', '2'], default='1')
+    model_choice = get_user_choice(["1", "2"], default="1")
     model_name = "gpt-4o" if model_choice == "1" else "opus"
 
     # Initialize generator
@@ -264,11 +265,11 @@ def handle_feedback_loop(
     company_name: str,
     job_title: str,
     custom_context: Optional[str],
-    feedback_tracker: Optional[FeedbackTracker]
+    feedback_tracker: Optional[FeedbackTracker],
 ) -> str:
     """Handle the feedback and revision loop."""
     current_version = cover_letter
-    
+
     while True:
         print("\nOptions:")
         print("  (1) Save this version")
@@ -278,12 +279,12 @@ def handle_feedback_loop(
         print("  (4) Exit")
         print("  (5) Copy to clipboard")
 
-        choice = get_user_choice(['1', '2', '3', '4', '5'], default='1')
+        choice = get_user_choice(["1", "2", "3", "4", "5"], default="1")
 
-        if choice == '1':
+        if choice == "1":
             return current_version
-        
-        elif choice == '2':
+
+        elif choice == "2":
             print("\nWhat would you like to change?")
             print("(e.g. 'Make it more professional', 'Focus on leadership', 'Shorten it')")
             user_feedback = read_multiline_input("Feedback:")
@@ -296,31 +297,31 @@ def handle_feedback_loop(
                     job_description,
                     company_name,
                     job_title,
-                    custom_context=custom_context
+                    custom_context=custom_context,
                 )
-                
+
                 # Show preview
                 print("\n" + SEPARATOR_LINE)
                 print("REVISED VERSION (PREVIEW)")
                 print(SEPARATOR_LINE)
                 print(revised_letter)
                 print(SEPARATOR_LINE)
-                
+
                 print(f"\n💰 Revision cost: ${cost_info['revision_cost']:.4f}")
-                
+
                 # Ensure signature
                 revised_letter = ensure_signature(revised_letter, USER_NAME)
-                
+
                 # Ask to accept or discard
                 print("\nDo you want to keep this revision?")
                 print("  (1) Yes, keep it")
                 print("  (2) No, discard and go back")
-                keep_choice = get_user_choice(['1', '2'], default='1')
-                
-                if keep_choice == '1':
+                keep_choice = get_user_choice(["1", "2"], default="1")
+
+                if keep_choice == "1":
                     current_version = revised_letter
                     print("✓ Revision accepted")
-                    
+
                     # Track feedback
                     if feedback_tracker:
                         try:
@@ -329,51 +330,61 @@ def handle_feedback_loop(
                             pass
                 else:
                     print("✓ Revision discarded")
-            
-        elif choice == '3':
+
+        elif choice == "3":
             return None  # Signal to start over
-            
-        elif choice == '4':
+
+        elif choice == "4":
             print("\nExiting...")
 
             sys.exit(0)
 
-        elif choice == '5':
+        elif choice == "5":
             try:
                 # Try pyperclip first (cross-platform)
                 try:
                     import pyperclip
+
                     pyperclip.copy(current_version)
                     print("\n✓ Copied to clipboard!")
                 except ImportError:
                     # Fallback to platform-specific methods
                     import platform
+
                     system = platform.system()
 
                     if system == "Darwin":  # macOS
-                        process = subprocess.Popen('pbcopy', env={'LANG': 'en_US.UTF-8'}, stdin=subprocess.PIPE)
-                        process.communicate(current_version.encode('utf-8'))
+                        process = subprocess.Popen(
+                            "pbcopy", env={"LANG": "en_US.UTF-8"}, stdin=subprocess.PIPE
+                        )
+                        process.communicate(current_version.encode("utf-8"))
                         print("\n✓ Copied to clipboard!")
                     elif system == "Windows":
-                        process = subprocess.Popen(['clip'], stdin=subprocess.PIPE, shell=True)
-                        process.communicate(current_version.encode('utf-8'))
+                        process = subprocess.Popen(["clip"], stdin=subprocess.PIPE, shell=True)
+                        process.communicate(current_version.encode("utf-8"))
                         print("\n✓ Copied to clipboard!")
                     elif system == "Linux":
                         # Try xclip first, then xsel
                         try:
-                            process = subprocess.Popen(['xclip', '-selection', 'clipboard'], stdin=subprocess.PIPE)
-                            process.communicate(current_version.encode('utf-8'))
+                            process = subprocess.Popen(
+                                ["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE
+                            )
+                            process.communicate(current_version.encode("utf-8"))
                             print("\n✓ Copied to clipboard!")
                         except FileNotFoundError:
-                            process = subprocess.Popen(['xsel', '--clipboard', '--input'], stdin=subprocess.PIPE)
-                            process.communicate(current_version.encode('utf-8'))
+                            process = subprocess.Popen(
+                                ["xsel", "--clipboard", "--input"], stdin=subprocess.PIPE
+                            )
+                            process.communicate(current_version.encode("utf-8"))
                             print("\n✓ Copied to clipboard!")
                     else:
-                        print(f"\n⚠ Clipboard not supported on {system}. Please install pyperclip: pip install pyperclip")
+                        print(
+                            f"\n⚠ Clipboard not supported on {system}. Please install pyperclip: pip install pyperclip"
+                        )
             except Exception as e:
                 print(f"\nError copying to clipboard: {e}")
                 print("Tip: Install pyperclip for better clipboard support: pip install pyperclip")
-            
+
     return current_version
 
 
@@ -385,7 +396,7 @@ def handle_save_and_validate(
     job_description: str,
     job_tracker: Optional[JobTracker],
     job_url: Optional[str],
-    feedback_tracker: Optional[FeedbackTracker]
+    feedback_tracker: Optional[FeedbackTracker],
 ):
     """Handle saving and signature validation."""
     while True:
@@ -395,7 +406,7 @@ def handle_save_and_validate(
         # If valid or skipped, we're done with validation
         if validation_result.is_valid or validation_result.confidence == "low":
             break
-            
+
         # Handle invalid signature
         print("\n" + SEPARATOR_LINE)
         print("⚠ SIGNATURE ISSUE DETECTED")
@@ -407,34 +418,30 @@ def handle_save_and_validate(
         print("\nWhat would you like to do?")
         print("  (1) Regenerate a shorter version (Automatic)")
         print("  (2) Keep the current version")
-        
-        choice = get_user_choice(['1', '2'], default='1')
-        
-        if choice == '2':
+
+        choice = get_user_choice(["1", "2"], default="1")
+
+        if choice == "2":
             break
-            
+
         # Automatic shortening
         print("\nRegenerating with targeted shortening...")
         shortening_feedback = (
             "Revise the cover letter to be shorter to ensure the signature fits on one page. "
             "Remove 2-3 sentences."
         )
-        
+
         cover_letter_parts = []
         for chunk in generator.revise_cover_letter_stream(
-            cover_letter,
-            shortening_feedback,
-            job_description,
-            company_name,
-            job_title
+            cover_letter, shortening_feedback, job_description, company_name, job_title
         ):
-            print(chunk, end='', flush=True)
+            print(chunk, end="", flush=True)
             cover_letter_parts.append(chunk)
-            
-        cover_letter = ''.join(cover_letter_parts)
+
+        cover_letter = "".join(cover_letter_parts)
         cover_letter = ensure_signature(cover_letter, USER_NAME)
         print("\n✓ Shortened version generated.")
-        
+
         # Loop back to save and validate again
 
     # Job Tracking
@@ -442,13 +449,13 @@ def handle_save_and_validate(
         print("\n" + SEPARATOR_LINE)
         print("Would you like to add this to your job tracking sheet? (y/n) [y]")
         choice = input().strip().lower()
-        if choice != 'n':
+        if choice != "n":
             try:
                 duplicate = job_tracker.check_duplicate(job_url)
                 if duplicate:
                     print(f"⚠ Already in sheet: {duplicate}")
                     print("Add anyway? (y/n) [n]")
-                    if input().strip().lower() != 'y':
+                    if input().strip().lower() != "y":
                         return
 
                 job_tracker.add_job_application(company_name, job_title, job_url)
@@ -468,7 +475,7 @@ def main():
             if details is None:
                 print("\nExiting...")
                 break
-            
+
             company_name, job_title, job_description, job_url, custom_context = details
 
             # Ask for any final custom instructions
@@ -477,7 +484,7 @@ def main():
             print("(e.g., 'Focus on my startup experience', 'Keep it under 300 words')")
             print("Press Enter to skip.")
             print(DASH_LINE)
-            
+
             additional_instructions = input("Instructions: ").strip()
             if additional_instructions:
                 if custom_context:
@@ -488,7 +495,7 @@ def main():
 
             # Generate cover letter
             print(f"\nGenerating cover letter with {generator.model_name}...")
-            
+
             try:
                 cover_letter, cost_info = generator.generate_cover_letter(
                     job_description, company_name, job_title, custom_context=custom_context
@@ -498,9 +505,9 @@ def main():
                 print_header("GENERATED COVER LETTER")
                 print(cover_letter)
                 print(SEPARATOR_LINE)
-                
+
                 print(f"\n💰 Cost: ${cost_info['total_cost']:.4f}")
-                
+
                 # Ensure signature
                 cover_letter = ensure_signature(cover_letter, USER_NAME)
 
@@ -512,12 +519,12 @@ def main():
                     company_name,
                     job_title,
                     custom_context,
-                    feedback_tracker
+                    feedback_tracker,
                 )
-                
+
                 if final_version is None:
                     continue  # Start over
-                    
+
                 # Save and Validate
                 handle_save_and_validate(
                     generator,
@@ -527,7 +534,7 @@ def main():
                     job_description,
                     job_tracker,
                     job_url,
-                    feedback_tracker
+                    feedback_tracker,
                 )
 
             except Exception as e:

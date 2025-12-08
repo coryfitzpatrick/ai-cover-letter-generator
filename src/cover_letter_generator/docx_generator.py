@@ -49,20 +49,20 @@ def generate_cover_letter_docx(
 
     # Add Header if contact info is provided
     if contact_info:
-        name = contact_info.get('name', os.getenv('USER_NAME'))
-        email = contact_info.get('email', '')
-        phone = contact_info.get('phone', '')
-        location = contact_info.get('location', '')
-        linkedin = contact_info.get('linkedin', '')
-        portfolio = contact_info.get('portfolio', '')
+        name = contact_info.get("name", os.getenv("USER_NAME"))
+        email = contact_info.get("email", "")
+        phone = contact_info.get("phone", "")
+        location = contact_info.get("location", "")
+        linkedin = contact_info.get("linkedin", "")
+        portfolio = contact_info.get("portfolio", "")
 
         # Name (Large, Bold) - Matches PDF NameStyle
         name_para = doc.add_paragraph()
         name_run = name_para.add_run(name)
         name_run.bold = True
-        name_run.font.name = 'Arial' # Matches Helvetica-Bold in PDF
-        name_run.font.size = Pt(14) # Matches PDF size
-        name_para.paragraph_format.space_after = Pt(4) # Matches PDF spaceAfter=4
+        name_run.font.name = "Arial"  # Matches Helvetica-Bold in PDF
+        name_run.font.size = Pt(14)  # Matches PDF size
+        name_para.paragraph_format.space_after = Pt(4)  # Matches PDF spaceAfter=4
 
         # Contact Info (Location | Phone | Email) - Matches PDF CustomHeader
         contact_parts = []
@@ -72,15 +72,15 @@ def generate_cover_letter_docx(
             contact_parts.append(phone)
         if email:
             contact_parts.append(email)
-        
+
         if contact_parts:
             contact_para = doc.add_paragraph(" | ".join(contact_parts))
-            contact_para.style = 'Normal'
+            contact_para.style = "Normal"
             for run in contact_para.runs:
-                run.font.name = 'Arial' # Matches PDF font
-                run.font.size = Pt(10) # Matches PDF fontSize=10
-                run.font.color.rgb = None # Default black/dark grey
-            contact_para.paragraph_format.space_after = Pt(6) # Matches PDF spaceAfter=6
+                run.font.name = "Arial"  # Matches PDF font
+                run.font.size = Pt(10)  # Matches PDF fontSize=10
+                run.font.color.rgb = None  # Default black/dark grey
+            contact_para.paragraph_format.space_after = Pt(6)  # Matches PDF spaceAfter=6
 
         # Links (LinkedIn | Portfolio) - Matches PDF CustomHeader
         link_parts = []
@@ -88,23 +88,24 @@ def generate_cover_letter_docx(
             link_parts.append("LinkedIn")
         if portfolio:
             link_parts.append("Portfolio")
-        
+
         if link_parts:
             links_para = doc.add_paragraph(" | ".join(link_parts))
-            links_para.style = 'Normal'
+            links_para.style = "Normal"
             for run in links_para.runs:
-                run.font.name = 'Arial'
-                run.font.size = Pt(10) # Matches PDF fontSize=10
-            links_para.paragraph_format.space_after = Pt(12) # Matches spacer after header
+                run.font.name = "Arial"
+                run.font.size = Pt(10)  # Matches PDF fontSize=10
+            links_para.paragraph_format.space_after = Pt(12)  # Matches spacer after header
 
     # Add current date with tight spacing, aligned RIGHT to match PDF
     from docx.enum.text import WD_ALIGN_PARAGRAPH
+
     date_para = doc.add_paragraph(datetime.now().strftime("%B %d, %Y"))
-    date_para.style = 'Normal'
+    date_para.style = "Normal"
     date_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     date_run = date_para.runs[0] if date_para.runs else date_para.add_run()
-    date_run.font.name = 'Arial'
-    date_run.font.size = Pt(10) # Matches PDF date style size
+    date_run.font.name = "Arial"
+    date_run.font.size = Pt(10)  # Matches PDF date style size
 
     # Set tight spacing after date (matches PDF spacer)
     para_format = date_para.paragraph_format
@@ -112,14 +113,14 @@ def generate_cover_letter_docx(
     para_format.line_spacing = 1.0
 
     # Process the cover letter text
-    paragraphs = cover_letter_text.strip().split('\n\n')
+    paragraphs = cover_letter_text.strip().split("\n\n")
 
     for para_text in paragraphs:
         if para_text.strip():
-            clean_para = para_text.strip().replace('\n', ' ')
+            clean_para = para_text.strip().replace("\n", " ")
 
             # Handle "Sincerely," specially with tight spacing
-            if clean_para.startswith('Sincerely'):
+            if clean_para.startswith("Sincerely"):
                 # Add spacing before closing
                 spacer = doc.add_paragraph()
                 spacer_format = spacer.paragraph_format
@@ -127,33 +128,33 @@ def generate_cover_letter_docx(
                 spacer_format.line_spacing = 1.0
 
                 # Split "Sincerely," and name for tight spacing
-                if ',' in clean_para:
-                    lines = clean_para.split('\n')
+                if "," in clean_para:
+                    lines = clean_para.split("\n")
                     if len(lines) > 1:
                         # Already split by newline
                         sincerely_para = doc.add_paragraph(lines[0])
                         name_para = doc.add_paragraph(lines[1])
                     else:
                         # Handle "Sincerely, {Your Name}" on one line
-                        parts = clean_para.split(',', 1)
-                        sincerely_para = doc.add_paragraph(parts[0] + ',')
+                        parts = clean_para.split(",", 1)
+                        sincerely_para = doc.add_paragraph(parts[0] + ",")
                         if len(parts) > 1:
                             name_para = doc.add_paragraph(parts[1].strip())
 
                     # Format "Sincerely," with tight spacing
-                    sincerely_para.style = 'Normal'
+                    sincerely_para.style = "Normal"
                     for run in sincerely_para.runs:
-                        run.font.name = 'Arial'
+                        run.font.name = "Arial"
                         run.font.size = Pt(11)
                     sincerely_format = sincerely_para.paragraph_format
                     sincerely_format.space_after = Pt(0)  # Tight spacing to name
                     sincerely_format.line_spacing = 1.0
 
                     # Format name
-                    if 'name_para' in locals():
-                        name_para.style = 'Normal'
+                    if "name_para" in locals():
+                        name_para.style = "Normal"
                         for run in name_para.runs:
-                            run.font.name = 'Arial'
+                            run.font.name = "Arial"
                             run.font.size = Pt(11)
                         name_format = name_para.paragraph_format
                         name_format.space_after = Pt(10)
@@ -161,9 +162,9 @@ def generate_cover_letter_docx(
                 else:
                     # Just one paragraph
                     para = doc.add_paragraph(clean_para)
-                    para.style = 'Normal'
+                    para.style = "Normal"
                     for run in para.runs:
-                        run.font.name = 'Arial'
+                        run.font.name = "Arial"
                         run.font.size = Pt(11)
                     para_format = para.paragraph_format
                     para_format.space_after = Pt(10)
@@ -171,16 +172,16 @@ def generate_cover_letter_docx(
             else:
                 # Regular paragraph
                 para = doc.add_paragraph(clean_para)
-                para.style = 'Normal'
+                para.style = "Normal"
 
                 # Set font
                 for run in para.runs:
-                    run.font.name = 'Arial'
+                    run.font.name = "Arial"
                     run.font.size = Pt(11)
 
                 # Set spacing
                 para_format = para.paragraph_format
-                if clean_para.startswith('Dear '):
+                if clean_para.startswith("Dear "):
                     # Tight spacing after salutation
                     para_format.space_after = Pt(10)
                 else:

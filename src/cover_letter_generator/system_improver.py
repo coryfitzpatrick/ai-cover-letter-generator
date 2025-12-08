@@ -38,19 +38,16 @@ class SystemImprover:
         if not self.system_prompt_path.exists():
             raise FileNotFoundError(f"System prompt not found at {self.system_prompt_path}")
 
-        with open(self.system_prompt_path, 'r') as f:
+        with open(self.system_prompt_path, "r") as f:
             return f.read()
 
     def _write_system_prompt(self, content: str):
         """Write updated system prompt."""
-        with open(self.system_prompt_path, 'w') as f:
+        with open(self.system_prompt_path, "w") as f:
             f.write(content)
 
     def suggest_improvement(
-        self,
-        category: str,
-        example_feedbacks: list,
-        count: int
+        self, category: str, example_feedbacks: list, count: int
     ) -> Optional[Tuple[str, str]]:
         """Suggest a system prompt improvement based on feedback pattern.
 
@@ -108,7 +105,7 @@ Requirements:
                 model="meta-llama/llama-4-maverick-17b-128e-instruct",
                 messages=[
                     {"role": "system", "content": "You are an AI system improvement assistant."},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.7,
                 max_tokens=500,
@@ -124,27 +121,27 @@ Requirements:
 
             # Parse the response using regex for robustness
             import re
-            
+
             # Extract fields using regex (case insensitive, multiline)
             suggestion_match = re.search(
-                r'SUGGESTION:\s*(.*?)(?=\n(?:PLACEMENT|EXPLANATION|DATA_NOTE):|$)',
+                r"SUGGESTION:\s*(.*?)(?=\n(?:PLACEMENT|EXPLANATION|DATA_NOTE):|$)",
                 result,
-                re.IGNORECASE | re.DOTALL
+                re.IGNORECASE | re.DOTALL,
             )
             placement_match = re.search(
-                r'PLACEMENT:\s*(.*?)(?=\n(?:SUGGESTION|EXPLANATION|DATA_NOTE):|$)',
+                r"PLACEMENT:\s*(.*?)(?=\n(?:SUGGESTION|EXPLANATION|DATA_NOTE):|$)",
                 result,
-                re.IGNORECASE
+                re.IGNORECASE,
             )
             explanation_match = re.search(
-                r'EXPLANATION:\s*(.*?)(?=\n(?:SUGGESTION|PLACEMENT|DATA_NOTE):|$)',
+                r"EXPLANATION:\s*(.*?)(?=\n(?:SUGGESTION|PLACEMENT|DATA_NOTE):|$)",
                 result,
-                re.IGNORECASE | re.DOTALL
+                re.IGNORECASE | re.DOTALL,
             )
             data_note_match = re.search(
-                r'DATA_NOTE:\s*(.*?)(?=\n(?:SUGGESTION|PLACEMENT|EXPLANATION):|$)',
+                r"DATA_NOTE:\s*(.*?)(?=\n(?:SUGGESTION|PLACEMENT|EXPLANATION):|$)",
                 result,
-                re.IGNORECASE | re.DOTALL
+                re.IGNORECASE | re.DOTALL,
             )
 
             suggestion = suggestion_match.group(1).strip() if suggestion_match else None
@@ -199,12 +196,12 @@ Requirements:
         diff = difflib.unified_diff(
             original.splitlines(keepends=True),
             improved.splitlines(keepends=True),
-            fromfile='current_system_prompt.txt',
-            tofile='improved_system_prompt.txt',
-            lineterm=''
+            fromfile="current_system_prompt.txt",
+            tofile="improved_system_prompt.txt",
+            lineterm="",
         )
 
-        return ''.join(diff)
+        return "".join(diff)
 
     def apply_improvement(self, improved_prompt: str):
         """Apply the improved prompt to both system prompt files.
@@ -216,9 +213,9 @@ Requirements:
             improved_prompt: The improved prompt text
         """
         # 1. Update main system_prompt.txt
-        backup_path = self.system_prompt_path.with_suffix('.txt.backup')
+        backup_path = self.system_prompt_path.with_suffix(".txt.backup")
         current = self._read_system_prompt()
-        with open(backup_path, 'w') as f:
+        with open(backup_path, "w") as f:
             f.write(current)
 
         self._write_system_prompt(improved_prompt)
@@ -230,10 +227,10 @@ Requirements:
         if example_path.exists():
             try:
                 # Backup example file
-                example_backup_path = example_path.with_suffix('.txt.backup')
-                with open(example_path, 'r') as f:
+                example_backup_path = example_path.with_suffix(".txt.backup")
+                with open(example_path, "r") as f:
                     current_example = f.read()
-                with open(example_backup_path, 'w') as f:
+                with open(example_backup_path, "w") as f:
                     f.write(current_example)
 
                 # Apply same improvement to example (improvements are name-agnostic)
@@ -248,7 +245,7 @@ Requirements:
                         current_example.rstrip() + f"\n\n{improvement_marker}{improvement_section}"
                     )
 
-                    with open(example_path, 'w') as f:
+                    with open(example_path, "w") as f:
                         f.write(improved_example)
 
                     print("✓ Example system prompt updated")
@@ -262,10 +259,7 @@ Requirements:
                 print(f"⚠ Warning: Could not update example file: {e}")
 
     def suggest_and_show(
-        self,
-        category: str,
-        example_feedbacks: list,
-        count: int
+        self, category: str, example_feedbacks: list, count: int
     ) -> Optional[Tuple[str, str, str, str]]:
         """Suggest improvement and show diff.
 

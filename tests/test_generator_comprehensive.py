@@ -64,8 +64,8 @@ Philosophy: {leadership_philosophy}
 class TestCoverLetterGeneratorInit:
     """Tests for CoverLetterGenerator initialization."""
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
     def test_init_with_gpt4o_default(
         self, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
     ):
@@ -85,8 +85,8 @@ class TestCoverLetterGeneratorInit:
         assert generator.openai_client is not None
         assert generator.claude_client is None
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
     def test_init_with_opus_model(
         self, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
     ):
@@ -98,16 +98,15 @@ class TestCoverLetterGeneratorInit:
         mock_st.return_value = Mock()
 
         generator = CoverLetterGenerator(
-            system_prompt_path=str(system_prompt_file),
-            model_name="opus"
+            system_prompt_path=str(system_prompt_file), model_name="opus"
         )
 
         assert "opus" in generator.model_name
         assert generator.claude_client is not None
         assert generator.openai_client is None
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
     def test_init_missing_chromadb(self, mock_st, mock_chroma, mock_env_vars):
         """Test initialization fails when ChromaDB doesn't exist."""
         mock_chroma.side_effect = Exception("Collection not found")
@@ -116,8 +115,8 @@ class TestCoverLetterGeneratorInit:
         with pytest.raises(Exception):
             CoverLetterGenerator()
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
     def test_init_missing_system_prompt(self, mock_st, mock_chroma, mock_env_vars, mock_chroma_db):
         """Test initialization fails when system prompt doesn't exist."""
         mock_client = Mock()
@@ -129,9 +128,11 @@ class TestCoverLetterGeneratorInit:
         with pytest.raises(FileNotFoundError):
             CoverLetterGenerator(system_prompt_path="/nonexistent/prompt.txt")
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
-    def test_init_missing_groq_key(self, mock_st, mock_chroma, monkeypatch, mock_chroma_db, system_prompt_file):
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
+    def test_init_missing_groq_key(
+        self, mock_st, mock_chroma, monkeypatch, mock_chroma_db, system_prompt_file
+    ):
         """Test initialization fails when GROQ_API_KEY is missing."""
         monkeypatch.delenv("GROQ_API_KEY", raising=False)
         mock_st.return_value = Mock()
@@ -143,8 +144,8 @@ class TestCoverLetterGeneratorInit:
 class TestLoadLeadershipPhilosophy:
     """Tests for loading leadership philosophy."""
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
     def test_load_philosophy_from_docx(
         self, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
     ):
@@ -168,8 +169,8 @@ class TestLoadLeadershipPhilosophy:
         assert "leadership philosophy" in philosophy.lower()
         assert "empowering teams" in philosophy
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
     def test_load_philosophy_from_txt_fallback(
         self, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file, tmp_path
     ):
@@ -193,8 +194,8 @@ class TestLoadLeadershipPhilosophy:
         # Should attempt to load from txt if DOCX not found
         assert isinstance(philosophy, str)
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
     def test_load_philosophy_handles_missing_files(
         self, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
     ):
@@ -215,9 +216,9 @@ class TestLoadLeadershipPhilosophy:
 class TestRetrieveContext:
     """Tests for context retrieval from vector database."""
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
-    @patch('src.cover_letter_generator.generator.analyze_job_posting')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
+    @patch("src.cover_letter_generator.generator.analyze_job_posting")
     def test_get_relevant_context_basic(
         self, mock_analyze, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
     ):
@@ -228,7 +229,7 @@ class TestRetrieveContext:
         mock_collection.query.return_value = {
             "documents": [["Context document 1", "Context document 2"]],
             "distances": [[0.5, 0.7]],
-            "metadatas": [[{"source": "resume.pdf"}, {"source": "achievements.docx"}]]
+            "metadatas": [[{"source": "resume.pdf"}, {"source": "achievements.docx"}]],
         }
         mock_client.get_collection.return_value = mock_collection
         mock_chroma.return_value = mock_client
@@ -244,7 +245,7 @@ class TestRetrieveContext:
             job_type=JobType.PRODUCT,
             requirements=[],
             key_technologies=[],
-            team_size_mentioned=False
+            team_size_mentioned=False,
         )
 
         generator = CoverLetterGenerator(system_prompt_path=str(system_prompt_file))
@@ -253,9 +254,9 @@ class TestRetrieveContext:
         assert "Context document 1" in context or len(context) > 0
         mock_collection.query.assert_called()
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
-    @patch('src.cover_letter_generator.generator.analyze_job_posting')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
+    @patch("src.cover_letter_generator.generator.analyze_job_posting")
     def test_get_relevant_context_with_job_analysis(
         self, mock_analyze, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
     ):
@@ -265,7 +266,7 @@ class TestRetrieveContext:
         mock_collection.query.return_value = {
             "documents": [["Doc"]],
             "distances": [[0.5]],
-            "metadatas": [[{"source": "test.pdf"}]]
+            "metadatas": [[{"source": "test.pdf"}]],
         }
         mock_client.get_collection.return_value = mock_collection
         mock_chroma.return_value = mock_client
@@ -279,25 +280,22 @@ class TestRetrieveContext:
             job_type=JobType.STARTUP,
             requirements=[
                 JobRequirement("leadership", "Lead team", 1),
-                JobRequirement("technical", "Python", 1)
+                JobRequirement("technical", "Python", 1),
             ],
             key_technologies=["Python", "React"],
-            team_size_mentioned=True
+            team_size_mentioned=True,
         )
 
         generator = CoverLetterGenerator(system_prompt_path=str(system_prompt_file))
-        context = generator.get_relevant_context(
-            "Job description",
-            job_analysis=job_analysis
-        )
+        context = generator.get_relevant_context("Job description", job_analysis=job_analysis)
 
         # Should not call analyze_job_posting again
         mock_analyze.assert_not_called()
         assert isinstance(context, str)
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
-    @patch('src.cover_letter_generator.generator.analyze_job_posting')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
+    @patch("src.cover_letter_generator.generator.analyze_job_posting")
     def test_get_relevant_context_no_results(
         self, mock_analyze, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
     ):
@@ -307,7 +305,7 @@ class TestRetrieveContext:
         mock_collection.query.return_value = {
             "documents": [[]],
             "distances": [[]],
-            "metadatas": [[]]
+            "metadatas": [[]],
         }
         mock_client.get_collection.return_value = mock_collection
         mock_chroma.return_value = mock_client
@@ -321,7 +319,7 @@ class TestRetrieveContext:
             job_type=JobType.PRODUCT,
             requirements=[],
             key_technologies=[],
-            team_size_mentioned=False
+            team_size_mentioned=False,
         )
 
         generator = CoverLetterGenerator(system_prompt_path=str(system_prompt_file))
@@ -333,8 +331,8 @@ class TestRetrieveContext:
 class TestCostTracking:
     """Tests for API cost tracking."""
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
     def test_track_api_cost_gpt4o(
         self, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
     ):
@@ -354,8 +352,8 @@ class TestCostTracking:
         assert generator.total_cost > 0
         assert len(generator.api_calls) == 1
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
     def test_track_api_cost_opus(
         self, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
     ):
@@ -367,8 +365,7 @@ class TestCostTracking:
         mock_st.return_value = Mock()
 
         generator = CoverLetterGenerator(
-            system_prompt_path=str(system_prompt_file),
-            model_name="opus"
+            system_prompt_path=str(system_prompt_file), model_name="opus"
         )
 
         cost = generator._track_api_cost("claude-3-opus-20240229", 1000, 500)
@@ -377,8 +374,8 @@ class TestCostTracking:
         assert cost > 0
         assert generator.total_cost > 0
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
     def test_get_cost_summary(
         self, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
     ):
@@ -405,11 +402,17 @@ class TestCostTracking:
 class TestCallLLM:
     """Tests for LLM calling functionality."""
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
-    @patch('src.cover_letter_generator.generator.openai.Client')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
+    @patch("src.cover_letter_generator.generator.openai.Client")
     def test_call_llm_gpt4o(
-        self, mock_openai_class, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
+        self,
+        mock_openai_class,
+        mock_st,
+        mock_chroma,
+        mock_env_vars,
+        mock_chroma_db,
+        system_prompt_file,
     ):
         """Test calling GPT-4o."""
         mock_client = Mock()
@@ -435,11 +438,17 @@ class TestCallLLM:
         assert content == "Generated cover letter"
         assert cost > 0
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
-    @patch('src.cover_letter_generator.generator.Anthropic')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
+    @patch("src.cover_letter_generator.generator.Anthropic")
     def test_call_llm_claude(
-        self, mock_anthropic_class, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
+        self,
+        mock_anthropic_class,
+        mock_st,
+        mock_chroma,
+        mock_env_vars,
+        mock_chroma_db,
+        system_prompt_file,
     ):
         """Test calling Claude."""
         mock_client = Mock()
@@ -458,8 +467,7 @@ class TestCallLLM:
         mock_anthropic_class.return_value = mock_claude_client
 
         generator = CoverLetterGenerator(
-            system_prompt_path=str(system_prompt_file),
-            model_name="opus"
+            system_prompt_path=str(system_prompt_file), model_name="opus"
         )
         generator.claude_client = mock_claude_client
 
@@ -472,11 +480,18 @@ class TestCallLLM:
 class TestGenerateCoverLetter:
     """Tests for cover letter generation."""
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
-    @patch('src.cover_letter_generator.generator.analyze_job_posting')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
+    @patch("src.cover_letter_generator.generator.analyze_job_posting")
     def test_generate_cover_letter_basic(
-        self, mock_analyze, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file, tmp_path
+        self,
+        mock_analyze,
+        mock_st,
+        mock_chroma,
+        mock_env_vars,
+        mock_chroma_db,
+        system_prompt_file,
+        tmp_path,
     ):
         """Test basic cover letter generation."""
         # Setup mocks
@@ -485,7 +500,7 @@ class TestGenerateCoverLetter:
         mock_collection.query.return_value = {
             "documents": [["Context"]],
             "distances": [[0.5]],
-            "metadatas": [[{"source": "test.pdf"}]]
+            "metadatas": [[{"source": "test.pdf"}]],
         }
         mock_client.get_collection.return_value = mock_collection
         mock_chroma.return_value = mock_client
@@ -499,14 +514,15 @@ class TestGenerateCoverLetter:
             job_type=JobType.PRODUCT,
             requirements=[JobRequirement("leadership", "Lead team", 1)],
             key_technologies=["Python"],
-            team_size_mentioned=True
+            team_size_mentioned=True,
         )
 
         # Create critique prompt
         critique_dir = tmp_path / "prompts"
         critique_dir.mkdir()
         critique_file = critique_dir / "critique_prompt.txt"
-        critique_file.write_text("""Critique this draft:
+        critique_file.write_text(
+            """Critique this draft:
 
 Company: {company_name}
 Draft: {initial_draft}
@@ -515,32 +531,40 @@ Job: {job_description}
 NOTES: Good draft
 REFINED VERSION:
 Improved cover letter
-""")
+"""
+        )
 
         generator = CoverLetterGenerator(system_prompt_path=str(system_prompt_file))
         generator.project_root = tmp_path
 
         # Mock LLM calls
-        with patch.object(generator, '_call_llm') as mock_call_llm:
+        with patch.object(generator, "_call_llm") as mock_call_llm:
             mock_call_llm.side_effect = [
                 ("Initial draft cover letter", 0.01),
-                ("NOTES: Looks good\nREFINED VERSION:\nFinal cover letter", 0.01)
+                ("NOTES: Looks good\nREFINED VERSION:\nFinal cover letter", 0.01),
             ]
 
             letter, cost_info = generator.generate_cover_letter(
                 job_description="Job description",
                 company_name="TechCorp",
-                job_title="Engineering Manager"
+                job_title="Engineering Manager",
             )
 
             assert "Final cover letter" in letter
             assert cost_info["total_cost"] > 0
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
-    @patch('src.cover_letter_generator.generator.analyze_job_posting')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
+    @patch("src.cover_letter_generator.generator.analyze_job_posting")
     def test_generate_with_custom_context(
-        self, mock_analyze, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file, tmp_path
+        self,
+        mock_analyze,
+        mock_st,
+        mock_chroma,
+        mock_env_vars,
+        mock_chroma_db,
+        system_prompt_file,
+        tmp_path,
     ):
         """Test generation with custom context."""
         mock_client = Mock()
@@ -548,7 +572,7 @@ Improved cover letter
         mock_collection.query.return_value = {
             "documents": [["Context"]],
             "distances": [[0.5]],
-            "metadatas": [[{"source": "test.pdf"}]]
+            "metadatas": [[{"source": "test.pdf"}]],
         }
         mock_client.get_collection.return_value = mock_collection
         mock_chroma.return_value = mock_client
@@ -562,26 +586,24 @@ Improved cover letter
             job_type=JobType.PRODUCT,
             requirements=[],
             key_technologies=[],
-            team_size_mentioned=False
+            team_size_mentioned=False,
         )
 
         critique_file = tmp_path / "prompts" / "critique_prompt.txt"
         critique_file.parent.mkdir()
-        critique_file.write_text("Critique: {company_name}\n{initial_draft}\n{job_description}\nREFINED VERSION:\nFinal")
+        critique_file.write_text(
+            "Critique: {company_name}\n{initial_draft}\n{job_description}\nREFINED VERSION:\nFinal"
+        )
 
         generator = CoverLetterGenerator(system_prompt_path=str(system_prompt_file))
         generator.project_root = tmp_path
 
-        with patch.object(generator, '_call_llm') as mock_call_llm:
-            mock_call_llm.side_effect = [
-                ("Draft", 0.01),
-                ("REFINED VERSION:\nFinal", 0.01)
-            ]
+        with patch.object(generator, "_call_llm") as mock_call_llm:
+            mock_call_llm.side_effect = [("Draft", 0.01), ("REFINED VERSION:\nFinal", 0.01)]
 
             custom_context = "I have specific experience in healthcare."
             letter, cost_info = generator.generate_cover_letter(
-                job_description="Job description",
-                custom_context=custom_context
+                job_description="Job description", custom_context=custom_context
             )
 
             # Custom context should be used
@@ -591,9 +613,9 @@ Improved cover letter
 class TestReviseCoverLetter:
     """Tests for cover letter revision."""
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
-    @patch('src.cover_letter_generator.generator.analyze_job_posting')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
+    @patch("src.cover_letter_generator.generator.analyze_job_posting")
     def test_revise_cover_letter(
         self, mock_analyze, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
     ):
@@ -603,7 +625,7 @@ class TestReviseCoverLetter:
         mock_collection.query.return_value = {
             "documents": [["Context"]],
             "distances": [[0.5]],
-            "metadatas": [[{"source": "test.pdf"}]]
+            "metadatas": [[{"source": "test.pdf"}]],
         }
         mock_client.get_collection.return_value = mock_collection
         mock_chroma.return_value = mock_client
@@ -617,18 +639,18 @@ class TestReviseCoverLetter:
             job_type=JobType.PRODUCT,
             requirements=[],
             key_technologies=[],
-            team_size_mentioned=False
+            team_size_mentioned=False,
         )
 
         generator = CoverLetterGenerator(system_prompt_path=str(system_prompt_file))
 
-        with patch.object(generator, '_call_llm') as mock_call_llm:
+        with patch.object(generator, "_call_llm") as mock_call_llm:
             mock_call_llm.return_value = ("Revised cover letter", 0.01)
 
             revised, cost_info = generator.revise_cover_letter(
                 current_version="Old version",
                 feedback="Make it more concise",
-                job_description="Job description"
+                job_description="Job description",
             )
 
             assert revised == "Revised cover letter"
@@ -638,8 +660,8 @@ class TestReviseCoverLetter:
 class TestPreprocessContext:
     """Tests for context preprocessing."""
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
     def test_preprocess_context_no_custom_prompt(
         self, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
     ):
@@ -658,8 +680,8 @@ class TestPreprocessContext:
         # Should return unchanged if no managerial_prompt.txt
         assert processed == original_context
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
     def test_preprocess_context_with_custom_prompt(
         self, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file, tmp_path
     ):
@@ -677,7 +699,7 @@ class TestPreprocessContext:
         generator = CoverLetterGenerator(system_prompt_path=str(system_prompt_file))
         generator.project_root = tmp_path
 
-        with patch.object(generator, 'openai_client') as mock_openai:
+        with patch.object(generator, "openai_client") as mock_openai:
             mock_response = Mock()
             mock_response.choices = [Mock()]
             mock_response.choices[0].message.content = "Translated context"
@@ -691,8 +713,8 @@ class TestPreprocessContext:
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
 
-    @patch('src.cover_letter_generator.generator.chromadb.PersistentClient')
-    @patch('src.cover_letter_generator.generator.SentenceTransformer')
+    @patch("src.cover_letter_generator.generator.chromadb.PersistentClient")
+    @patch("src.cover_letter_generator.generator.SentenceTransformer")
     def test_unknown_model_cost_tracking(
         self, mock_st, mock_chroma, mock_env_vars, mock_chroma_db, system_prompt_file
     ):

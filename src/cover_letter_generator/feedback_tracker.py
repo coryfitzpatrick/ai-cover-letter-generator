@@ -18,6 +18,7 @@ load_dotenv()
 @dataclass
 class FeedbackEntry:
     """Single feedback entry."""
+
     timestamp: str
     feedback: str
     category: str  # e.g., "leadership", "technical_depth", "tone", "length"
@@ -58,7 +59,7 @@ class FeedbackTracker:
             return []
 
         try:
-            with open(self.feedback_file, 'r') as f:
+            with open(self.feedback_file, "r") as f:
                 data = json.load(f)
                 return [FeedbackEntry.from_dict(entry) for entry in data]
         except Exception as e:
@@ -68,7 +69,7 @@ class FeedbackTracker:
     def _save_feedback_history(self):
         """Save feedback history to file."""
         try:
-            with open(self.feedback_file, 'w') as f:
+            with open(self.feedback_file, "w") as f:
                 data = [entry.to_dict() for entry in self.feedback_history]
                 json.dump(data, f, indent=2)
         except Exception as e:
@@ -103,7 +104,7 @@ Respond with ONLY the category name, nothing else."""
                 model="meta-llama/llama-4-maverick-17b-128e-instruct",
                 messages=[
                     {"role": "system", "content": "You are a categorization assistant."},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.1,
                 max_tokens=20,
@@ -111,7 +112,14 @@ Respond with ONLY the category name, nothing else."""
 
             category = response.choices[0].message.content.strip().lower()
             # Validate category
-            valid_categories = ["leadership", "technical_depth", "tone", "length", "specificity", "general"]
+            valid_categories = [
+                "leadership",
+                "technical_depth",
+                "tone",
+                "length",
+                "specificity",
+                "general",
+            ]
             if category not in valid_categories:
                 category = "general"
 
@@ -121,12 +129,7 @@ Respond with ONLY the category name, nothing else."""
             print(f"Warning: Could not categorize feedback: {e}")
             return "general"
 
-    def add_feedback(
-        self,
-        feedback: str,
-        company: str = "",
-        job_title: str = ""
-    ):
+    def add_feedback(self, feedback: str, company: str = "", job_title: str = ""):
         """Add new feedback to history.
 
         Args:
@@ -141,7 +144,7 @@ Respond with ONLY the category name, nothing else."""
             feedback=feedback,
             category=category,
             company=company,
-            job_title=job_title
+            job_title=job_title,
         )
 
         self.feedback_history.append(entry)
@@ -175,10 +178,10 @@ Respond with ONLY the category name, nothing else."""
             if count >= threshold and category != "general":
                 # Get example feedbacks from this category
                 examples = [
-                    entry.feedback
-                    for entry in self.feedback_history
-                    if entry.category == category
-                ][-3:]  # Last 3 examples
+                    entry.feedback for entry in self.feedback_history if entry.category == category
+                ][
+                    -3:
+                ]  # Last 3 examples
 
                 return (category, count, examples)
 
@@ -194,11 +197,7 @@ Respond with ONLY the category name, nothing else."""
         Returns:
             List of feedback entries
         """
-        entries = [
-            entry
-            for entry in self.feedback_history
-            if entry.category == category
-        ]
+        entries = [entry for entry in self.feedback_history if entry.category == category]
         return entries[-limit:]
 
     def clear_category(self, category: str):
@@ -210,8 +209,6 @@ Respond with ONLY the category name, nothing else."""
             category: Category to clear
         """
         self.feedback_history = [
-            entry
-            for entry in self.feedback_history
-            if entry.category != category
+            entry for entry in self.feedback_history if entry.category != category
         ]
         self._save_feedback_history()

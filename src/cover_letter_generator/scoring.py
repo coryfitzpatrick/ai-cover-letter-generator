@@ -21,19 +21,28 @@ PROCESS_IMPROVEMENT_BOOST = 6
 # Engineering Manager specific boosts
 EM_TERM_BOOST = 12  # Increased from 8 to prioritize manager terms
 EM_TERMS = [
-    'hiring', 'recruiting', 'performance review', 'roadmap', 'stakeholder',
-    'budget', 'career growth', '1:1', 'one-on-one', 'promotion',
-    'conflict resolution', 'strategy', 'okr', 'kpi', 'headcount',
-    'direct report', 'mentoring', 'coaching'
+    "hiring",
+    "recruiting",
+    "performance review",
+    "roadmap",
+    "stakeholder",
+    "budget",
+    "career growth",
+    "1:1",
+    "one-on-one",
+    "promotion",
+    "conflict resolution",
+    "strategy",
+    "okr",
+    "kpi",
+    "headcount",
+    "direct report",
+    "mentoring",
+    "coaching",
 ]
 
 
-def score_document(
-    doc: str,
-    metadata: dict,
-    job_analysis: JobAnalysis,
-    distance: float
-) -> float:
+def score_document(doc: str, metadata: dict, job_analysis: JobAnalysis, distance: float) -> float:
     """Score a document's relevance based on multiple factors.
 
     Args:
@@ -84,35 +93,46 @@ def score_document(
             pass  # Invalid year format, skip boost
 
     # Boost for metrics/numbers (concrete achievements)
-    if re.search(r'\d+%', doc):  # Percentages
+    if re.search(r"\d+%", doc):  # Percentages
         score += PERCENTAGE_METRIC_BOOST
-    if re.search(r'\d+\s+(?:person|people|engineer|member)', doc_lower):  # Team sizes
+    if re.search(r"\d+\s+(?:person|people|engineer|member)", doc_lower):  # Team sizes
         score += TEAM_SIZE_METRIC_BOOST
 
     # Leadership indicators boost (especially for manager+ roles)
     if job_analysis.level in [JobLevel.MANAGER, JobLevel.SENIOR_MANAGER, JobLevel.DIRECTOR_VP]:
         leadership_terms = [
-            'led team', 'managed', 'mentored', 'coordinated',
-            'cross-functional', 'leadership', 'guided', 'coached'
+            "led team",
+            "managed",
+            "mentored",
+            "coordinated",
+            "cross-functional",
+            "leadership",
+            "guided",
+            "coached",
         ]
         for term in leadership_terms:
             if term in doc_lower:
                 score += LEADERSHIP_TERM_BOOST
                 break  # Only boost once
-        
+
         # Extra boost for Engineering Manager specific terms
         for term in EM_TERMS:
             if term in doc_lower:
                 score += EM_TERM_BOOST
-                # Don't break here, allow multiple EM terms to stack slightly? 
+                # Don't break here, allow multiple EM terms to stack slightly?
                 # Actually, let's cap it or just break to avoid over-boosting one doc
                 break
 
     # Technical depth boost for IC roles
     if job_analysis.level == JobLevel.IC_SENIOR:
         tech_terms = [
-            'architected', 'designed', 'implemented', 'built',
-            'migrated', 'optimized', 'developed'
+            "architected",
+            "designed",
+            "implemented",
+            "built",
+            "migrated",
+            "optimized",
+            "developed",
         ]
         for term in tech_terms:
             if term in doc_lower:
@@ -125,7 +145,7 @@ def score_document(
             score += TECHNOLOGY_MATCH_BOOST
 
     # Process improvement boost (valuable across all roles)
-    process_terms = ['reduced', 'improved', 'increased', 'optimized', 'streamlined']
+    process_terms = ["reduced", "improved", "increased", "optimized", "streamlined"]
     for term in process_terms:
         if term in doc_lower:
             score += PROCESS_IMPROVEMENT_BOOST

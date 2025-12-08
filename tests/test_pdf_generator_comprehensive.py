@@ -129,6 +129,7 @@ Alice Johnson"""
 
         # Use A4 size instead of letter
         from reportlab.lib.pagesizes import A4
+
         width, height = A4
 
         buffer = create_text_overlay(cover_letter, width, height)
@@ -153,9 +154,7 @@ class TestGenerateCoverLetterFromTemplate:
         output_path = tmp_path / "output.pdf"
 
         result = generate_cover_letter_from_template(
-            cover_letter_text=cover_letter,
-            template_path=template_path,
-            output_path=output_path
+            cover_letter_text=cover_letter, template_path=template_path, output_path=output_path
         )
 
         assert result == output_path
@@ -178,9 +177,7 @@ class TestGenerateCoverLetterFromTemplate:
         output_path = tmp_path / "output.pdf"
 
         generate_cover_letter_from_template(
-            cover_letter_text=cover_letter,
-            template_path=template_path,
-            output_path=output_path
+            cover_letter_text=cover_letter, template_path=template_path, output_path=output_path
         )
 
         # Output should exist and be valid
@@ -200,9 +197,7 @@ class TestGenerateCoverLetterFromTemplate:
 
         with pytest.raises(Exception):
             generate_cover_letter_from_template(
-                cover_letter_text=cover_letter,
-                template_path=template_path,
-                output_path=output_path
+                cover_letter_text=cover_letter, template_path=template_path, output_path=output_path
             )
 
     def test_generate_from_template_invalid_template(self, tmp_path):
@@ -215,16 +210,14 @@ class TestGenerateCoverLetterFromTemplate:
 
         with pytest.raises(Exception):
             generate_cover_letter_from_template(
-                cover_letter_text=cover_letter,
-                template_path=template_path,
-                output_path=output_path
+                cover_letter_text=cover_letter, template_path=template_path, output_path=output_path
             )
 
 
 class TestGenerateCoverLetterPDF:
     """Tests for main PDF generation function."""
 
-    @patch('src.cover_letter_generator.pdf_generator_template.get_data_directory')
+    @patch("src.cover_letter_generator.pdf_generator_template.get_data_directory")
     def test_generate_pdf_with_template(self, mock_get_data_dir, tmp_path):
         """Test PDF generation using template."""
         # Create a template
@@ -243,16 +236,14 @@ class TestGenerateCoverLetterPDF:
         output_dir.mkdir()
 
         output_path = generate_cover_letter_pdf(
-            cover_letter_text=cover_letter,
-            output_dir=output_dir,
-            use_template=True
+            cover_letter_text=cover_letter, output_dir=output_dir, use_template=True
         )
 
         assert output_path.exists()
         assert output_path.suffix == ".pdf"
 
-    @patch('src.cover_letter_generator.pdf_generator_template.get_data_directory')
-    @patch('src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf')
+    @patch("src.cover_letter_generator.pdf_generator_template.get_data_directory")
+    @patch("src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf")
     def test_generate_pdf_fallback_no_template(self, mock_create_pdf, mock_get_data_dir, tmp_path):
         """Test fallback to non-template generation when template missing."""
         mock_get_data_dir.return_value = tmp_path  # No template in this directory
@@ -263,9 +254,7 @@ class TestGenerateCoverLetterPDF:
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
         result = generate_cover_letter_pdf(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path,
-            use_template=True
+            cover_letter_text=cover_letter, output_dir=tmp_path, use_template=True
         )
 
         # Should fall back to non-template generation
@@ -275,16 +264,19 @@ class TestGenerateCoverLetterPDF:
         """Test PDF generation with default output directory."""
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
-        with patch('src.cover_letter_generator.pdf_generator_template.get_data_directory') as mock_dir:
+        with patch(
+            "src.cover_letter_generator.pdf_generator_template.get_data_directory"
+        ) as mock_dir:
             mock_dir.return_value = Path("/nonexistent")  # No template
 
-            with patch('src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf') as mock_create:
+            with patch(
+                "src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf"
+            ) as mock_create:
                 output = Path.cwd() / "test_output.pdf"
                 mock_create.return_value = output
 
                 result = generate_cover_letter_pdf(
-                    cover_letter_text=cover_letter,
-                    use_template=False
+                    cover_letter_text=cover_letter, use_template=False
                 )
 
                 # Should use current directory by default
@@ -294,10 +286,14 @@ class TestGenerateCoverLetterPDF:
         """Test PDF generation with custom filename."""
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
-        with patch('src.cover_letter_generator.pdf_generator_template.get_data_directory') as mock_dir:
+        with patch(
+            "src.cover_letter_generator.pdf_generator_template.get_data_directory"
+        ) as mock_dir:
             mock_dir.return_value = Path("/nonexistent")
 
-            with patch('src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf') as mock_create:
+            with patch(
+                "src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf"
+            ) as mock_create:
                 output = tmp_path / "custom_name.pdf"
                 mock_create.return_value = output
 
@@ -305,44 +301,43 @@ class TestGenerateCoverLetterPDF:
                     cover_letter_text=cover_letter,
                     output_dir=tmp_path,
                     filename="custom_name.pdf",
-                    use_template=False
+                    use_template=False,
                 )
 
                 assert result == output
 
-    @patch('src.cover_letter_generator.pdf_generator_template.get_data_directory')
+    @patch("src.cover_letter_generator.pdf_generator_template.get_data_directory")
     def test_generate_pdf_searches_multiple_template_locations(self, mock_get_data_dir, tmp_path):
         """Test that PDF generator searches multiple locations for template."""
         mock_get_data_dir.return_value = tmp_path
 
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
-        with patch('src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf') as mock_create:
+        with patch(
+            "src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf"
+        ) as mock_create:
             output = tmp_path / "output.pdf"
             mock_create.return_value = output
 
             # No template in any location, should fall back
             result = generate_cover_letter_pdf(
-                cover_letter_text=cover_letter,
-                output_dir=tmp_path,
-                use_template=True
+                cover_letter_text=cover_letter, output_dir=tmp_path, use_template=True
             )
 
             # Should have attempted fallback
             assert result is not None
 
-    @patch('src.cover_letter_generator.pdf_generator_template.get_data_directory')
+    @patch("src.cover_letter_generator.pdf_generator_template.get_data_directory")
     def test_generate_pdf_with_contact_info(self, mock_get_data_dir, tmp_path):
         """Test PDF generation with contact information."""
         mock_get_data_dir.return_value = tmp_path
 
         cover_letter = "Dear Hiring Manager,\n\nContent."
-        contact_info = {
-            "name": "Test User",
-            "email": "test@example.com"
-        }
+        contact_info = {"name": "Test User", "email": "test@example.com"}
 
-        with patch('src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf') as mock_create:
+        with patch(
+            "src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf"
+        ) as mock_create:
             output = tmp_path / "output.pdf"
             mock_create.return_value = output
 
@@ -350,7 +345,7 @@ class TestGenerateCoverLetterPDF:
                 cover_letter_text=cover_letter,
                 output_dir=tmp_path,
                 contact_info=contact_info,
-                use_template=False
+                use_template=False,
             )
 
             # Contact info should be passed to fallback generator
@@ -361,10 +356,15 @@ class TestGenerateCoverLetterPDF:
         """Test that default filename includes timestamp."""
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
-        with patch('src.cover_letter_generator.pdf_generator_template.get_data_directory') as mock_dir:
+        with patch(
+            "src.cover_letter_generator.pdf_generator_template.get_data_directory"
+        ) as mock_dir:
             mock_dir.return_value = Path("/nonexistent")
 
-            with patch('src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf') as mock_create:
+            with patch(
+                "src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf"
+            ) as mock_create:
+
                 def create_with_timestamp(*args):
                     # Simulate the actual behavior of creating a timestamped file
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -373,15 +373,13 @@ class TestGenerateCoverLetterPDF:
                 mock_create.side_effect = create_with_timestamp
 
                 result = generate_cover_letter_pdf(
-                    cover_letter_text=cover_letter,
-                    output_dir=tmp_path,
-                    use_template=False
+                    cover_letter_text=cover_letter, output_dir=tmp_path, use_template=False
                 )
 
                 # Filename should contain timestamp
                 assert "cover_letter_" in result.name
 
-    @patch('src.cover_letter_generator.pdf_generator_template.get_data_directory')
+    @patch("src.cover_letter_generator.pdf_generator_template.get_data_directory")
     def test_generate_pdf_prefers_google_drive_template(self, mock_get_data_dir, tmp_path):
         """Test that Google Drive template location is preferred."""
         # Create template in Google Drive location
@@ -398,9 +396,7 @@ class TestGenerateCoverLetterPDF:
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
         result = generate_cover_letter_pdf(
-            cover_letter_text=cover_letter,
-            output_dir=tmp_path,
-            use_template=True
+            cover_letter_text=cover_letter, output_dir=tmp_path, use_template=True
         )
 
         # Should successfully use the template
@@ -446,9 +442,7 @@ class TestEdgeCases:
         output_path = tmp_path / "output.pdf"
 
         generate_cover_letter_from_template(
-            cover_letter_text=cover_letter,
-            template_path=template_path,
-            output_path=output_path
+            cover_letter_text=cover_letter, template_path=template_path, output_path=output_path
         )
 
         # Output should have only one page (merged first template page with content)
@@ -467,21 +461,21 @@ class TestEdgeCases:
         reader = PdfReader(buffer)
         assert len(reader.pages) == 1
 
-    @patch('src.cover_letter_generator.pdf_generator_template.load_dotenv')
-    @patch('src.cover_letter_generator.pdf_generator_template.get_data_directory')
+    @patch("src.cover_letter_generator.pdf_generator_template.load_dotenv")
+    @patch("src.cover_letter_generator.pdf_generator_template.get_data_directory")
     def test_generate_pdf_loads_env_vars(self, mock_get_data_dir, mock_load_dotenv, tmp_path):
         """Test that environment variables are loaded."""
         mock_get_data_dir.return_value = tmp_path
 
         cover_letter = "Content"
 
-        with patch('src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf') as mock_create:
+        with patch(
+            "src.cover_letter_generator.pdf_generator_template.create_cover_letter_pdf"
+        ) as mock_create:
             mock_create.return_value = tmp_path / "output.pdf"
 
             generate_cover_letter_pdf(
-                cover_letter_text=cover_letter,
-                output_dir=tmp_path,
-                use_template=True
+                cover_letter_text=cover_letter, output_dir=tmp_path, use_template=True
             )
 
             # Should attempt to load environment variables

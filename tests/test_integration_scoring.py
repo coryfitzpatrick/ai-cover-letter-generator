@@ -23,7 +23,7 @@ class TestScoringIntegration:
                 JobRequirement(category="leadership", description="Project management", priority=1),
             ],
             key_technologies=["Python", "AWS"],
-            team_size_mentioned=True
+            team_size_mentioned=True,
         )
 
         # Document from recent work (last 2 years)
@@ -31,7 +31,7 @@ class TestScoringIntegration:
         recent_metadata = {
             "source": "resume.pdf",
             "company": "companyA",
-            "year": str(current_year - 1)  # Last year
+            "year": str(current_year - 1),  # Last year
         }
 
         # Document from older work (5+ years ago)
@@ -39,7 +39,7 @@ class TestScoringIntegration:
         old_metadata = {
             "source": "resume.pdf",
             "company": "companyB",
-            "year": str(current_year - 6)  # 6 years ago
+            "year": str(current_year - 6),  # 6 years ago
         }
 
         # Score both documents with same distance
@@ -60,13 +60,17 @@ class TestScoringIntegration:
             job_type=JobType.PRODUCT,
             requirements=[],
             key_technologies=[],
-            team_size_mentioned=False
+            team_size_mentioned=False,
         )
 
         doc = "Implemented a new caching system that reduced latency by 50%."
 
         # Achievement source
-        achievement_metadata = {"source": "achievements.pdf", "company": "unknown", "year": "unknown"}
+        achievement_metadata = {
+            "source": "achievements.pdf",
+            "company": "unknown",
+            "year": "unknown",
+        }
 
         # Resume source
         resume_metadata = {"source": "resume.pdf", "company": "unknown", "year": "unknown"}
@@ -86,7 +90,7 @@ class TestScoringIntegration:
             job_type=JobType.PRODUCT,
             requirements=[],
             key_technologies=[],
-            team_size_mentioned=False
+            team_size_mentioned=False,
         )
 
         ic_job = JobAnalysis(
@@ -94,7 +98,7 @@ class TestScoringIntegration:
             job_type=JobType.PRODUCT,
             requirements=[],
             key_technologies=[],
-            team_size_mentioned=False
+            team_size_mentioned=False,
         )
 
         # Document with leadership terms
@@ -115,7 +119,7 @@ class TestScoringIntegration:
             job_type=JobType.PRODUCT,
             requirements=[],
             key_technologies=[],
-            team_size_mentioned=False
+            team_size_mentioned=False,
         )
 
         # Document with EM-specific terms
@@ -140,7 +144,7 @@ class TestScoringIntegration:
             job_type=JobType.PRODUCT,
             requirements=[],
             key_technologies=["Python", "AWS"],
-            team_size_mentioned=False
+            team_size_mentioned=False,
         )
 
         job_with_java = JobAnalysis(
@@ -148,7 +152,7 @@ class TestScoringIntegration:
             job_type=JobType.PRODUCT,
             requirements=[],
             key_technologies=["Java", "GCP"],
-            team_size_mentioned=False
+            team_size_mentioned=False,
         )
 
         doc = "Built a Python application deployed on AWS infrastructure."
@@ -168,7 +172,7 @@ class TestScoringIntegration:
             job_type=JobType.PRODUCT,
             requirements=[],
             key_technologies=[],
-            team_size_mentioned=False
+            team_size_mentioned=False,
         )
 
         # Document with metrics
@@ -194,7 +198,7 @@ class TestScoringIntegration:
             job_type=JobType.PRODUCT,
             requirements=[],
             key_technologies=[],
-            team_size_mentioned=False
+            team_size_mentioned=False,
         )
 
         doc = "Software engineer with Python experience."
@@ -218,10 +222,12 @@ class TestScoringIntegration:
             job_type=JobType.PRODUCT,
             requirements=[
                 JobRequirement(category="leadership", description="Team leadership", priority=1),
-                JobRequirement(category="technical", description="Technical excellence", priority=1),
+                JobRequirement(
+                    category="technical", description="Technical excellence", priority=1
+                ),
             ],
             key_technologies=["Python", "Kubernetes"],
-            team_size_mentioned=True
+            team_size_mentioned=True,
         )
 
         # Ideal document: recent, from achievements, has metrics, leadership terms, tech match
@@ -232,16 +238,12 @@ class TestScoringIntegration:
         ideal_metadata = {
             "source": "achievements.pdf",
             "company": "techcorp",
-            "year": str(current_year - 1)
+            "year": str(current_year - 1),
         }
 
         # Poor document: old, generic source, no metrics, no leadership
         poor_doc = "Worked on software projects."
-        poor_metadata = {
-            "source": "other.pdf",
-            "company": "oldcorp",
-            "year": str(current_year - 7)
-        }
+        poor_metadata = {"source": "other.pdf", "company": "oldcorp", "year": str(current_year - 7)}
 
         distance = 0.5
         ideal_score = score_document(ideal_doc, ideal_metadata, job_analysis, distance)
@@ -251,4 +253,6 @@ class TestScoringIntegration:
         assert ideal_score > poor_score
 
         # Score difference should be substantial (multiple boost factors)
-        assert (ideal_score - poor_score) > 40, "Combined boosts should create significant difference"
+        assert (
+            ideal_score - poor_score
+        ) > 40, "Combined boosts should create significant difference"
