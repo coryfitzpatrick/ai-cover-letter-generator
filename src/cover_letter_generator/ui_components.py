@@ -6,7 +6,6 @@ try:
     from prompt_toolkit import print_formatted_text, prompt
     from prompt_toolkit.formatted_text import HTML
     from prompt_toolkit.history import InMemoryHistory
-    from prompt_toolkit.styles import Style
 
     HAS_PROMPT_TOOLKIT = True
 except ImportError:
