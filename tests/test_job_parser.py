@@ -1,11 +1,13 @@
 """Tests for job parser functionality."""
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+
 from src.cover_letter_generator.job_parser import (
-    is_valid_url,
-    clean_job_title,
     JobPosting,
+    clean_job_title,
+    is_valid_url,
 )
 
 
@@ -143,14 +145,12 @@ class TestJobParserIntegration:
         mock_groq_class.return_value = mock_client
 
         # Verify Groq client can be instantiated
-        from groq import Groq
 
         # This is just verifying the import works, actual parsing tests would need full mocking
 
     def test_html_cleaning_preserves_content(self):
         """Test that HTML tags are properly stripped while preserving content."""
         html_text = "<p>This is a <strong>job description</strong> with <em>HTML</em> tags.</p>"
-        expected = "This is a job description with HTML tags."
 
         # BeautifulSoup cleaning (as used in job_parser)
         from bs4 import BeautifulSoup
@@ -185,8 +185,9 @@ class TestJobParserIntegration:
         </html>
         """
 
-        from bs4 import BeautifulSoup
         import json
+
+        from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(html_with_json_ld, "html.parser")
         json_ld_scripts = soup.find_all("script", type="application/ld+json")
@@ -216,7 +217,7 @@ class TestErrorHandling:
         """Test handling of None inputs."""
         # Title cleaning should handle None gracefully
         try:
-            result = clean_job_title(None) if None else ""
+            clean_job_title(None) if None else ""
             # Should not raise exception
         except AttributeError:
             pytest.fail("clean_job_title should handle None input")

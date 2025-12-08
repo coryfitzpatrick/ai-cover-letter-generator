@@ -1,11 +1,11 @@
 """Comprehensive tests for company extraction from section headers."""
 
 import pytest
+
 from src.cover_letter_generator.prepare_data import (
+    chunk_text,
     extract_company_from_section_headers,
     parse_sections_by_company,
-    extract_text_from_docx,
-    chunk_text,
 )
 
 

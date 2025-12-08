@@ -12,16 +12,13 @@ This test suite covers:
 - Error handling
 """
 
-import os
-import tempfile
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock, mock_open
+from unittest.mock import Mock, patch
 
 import pytest
 from docx import Document
 
+from src.cover_letter_generator.analysis import JobAnalysis, JobLevel, JobRequirement, JobType
 from src.cover_letter_generator.generator import CoverLetterGenerator
-from src.cover_letter_generator.analysis import JobAnalysis, JobLevel, JobType, JobRequirement
 
 
 @pytest.fixture

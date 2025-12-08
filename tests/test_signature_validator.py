@@ -1,11 +1,10 @@
 """Tests for signature validation functionality."""
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
+
 from src.cover_letter_generator.signature_validator import (
     SignatureValidationResult,
-    validate_pdf_signature,
 )
 
 
@@ -113,7 +112,6 @@ class TestSignatureLengthCalculation:
     def test_calculate_expected_signature_length(self):
         """Test calculating expected signature length from cover letter text."""
         # This mirrors the logic in signature_validator.py
-        cover_letter = "Dear Hiring Manager,\n\nI am writing to apply...\n\nSincerely,\nJohn Doe"
 
         # Expected signature includes "Sincerely," and name
         # Plus typical spacing
@@ -176,7 +174,7 @@ class TestGracefulDegradation:
         """Test behavior when GROQ_API_KEY is not set."""
         import os
 
-        api_key = os.getenv("GROQ_API_KEY")
+        os.getenv("GROQ_API_KEY")
         # Should return None or handle gracefully
         # Actual validation function checks for this
 

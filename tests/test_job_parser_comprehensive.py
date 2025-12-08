@@ -9,21 +9,19 @@ This test suite covers:
 - URL validation and job title cleaning
 """
 
-import json
-from unittest.mock import Mock, patch, MagicMock, call
+from unittest.mock import Mock, patch
 
-import pytest
 import requests
 
 from src.cover_letter_generator.job_parser import (
+    JobPosting,
+    clean_job_title,
+    extract_text_from_html,
     fetch_webpage,
     fetch_webpage_with_playwright,
-    extract_text_from_html,
-    parse_job_posting_with_llm,
-    parse_job_from_url,
     is_valid_url,
-    clean_job_title,
-    JobPosting,
+    parse_job_from_url,
+    parse_job_posting_with_llm,
 )
 
 
@@ -574,7 +572,7 @@ class TestParseJobFromURL:
                 company_name="Company", job_title="Role", job_description="Desc", url="url"
             )
 
-            result = parse_job_from_url("https://example.com/jobs/123")
+            parse_job_from_url("https://example.com/jobs/123")
 
             # Should fallback to Playwright
             assert mock_playwright.called
@@ -601,7 +599,7 @@ class TestParseJobFromURL:
                     company_name="Co", job_title="Title", job_description="Desc", url="url"
                 )
 
-                result = parse_job_from_url("https://example.com/job")
+                parse_job_from_url("https://example.com/job")
 
                 # Should try Playwright due to insufficient text
                 assert mock_pw.called

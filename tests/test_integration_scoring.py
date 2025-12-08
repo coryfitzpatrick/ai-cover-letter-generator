@@ -1,9 +1,8 @@
 """Integration tests for the document scoring system."""
 
-import pytest
 from datetime import datetime
 
-from src.cover_letter_generator.analysis import JobAnalysis, JobLevel, JobType, JobRequirement
+from src.cover_letter_generator.analysis import JobAnalysis, JobLevel, JobRequirement, JobType
 from src.cover_letter_generator.scoring import score_document
 
 

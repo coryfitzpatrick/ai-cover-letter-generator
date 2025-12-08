@@ -1,6 +1,5 @@
 """Integration tests for data preparation and company extraction."""
 
-import pytest
 import re
 from pathlib import Path
 
@@ -219,5 +218,5 @@ Technologies: Python, Docker, Kubernetes, AWS."""
 
             # There should be some overlap
             # This is a soft assertion since paragraph-aware splitting may affect it
-            overlap_found = any(word in next_start for word in current_end.split() if len(word) > 3)
+            any(word in next_start for word in current_end.split() if len(word) > 3)
             # Note: We make this lenient because paragraph-aware splitting may break exact overlap

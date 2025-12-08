@@ -11,26 +11,20 @@ This test suite covers:
 """
 
 import json
-import os
-import shutil
-import tempfile
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
-import pytest
 from docx import Document
-from pypdf import PdfWriter
 
 from src.cover_letter_generator.prepare_data import (
-    extract_text_from_pdf,
-    extract_text_from_docx,
-    chunk_text,
-    process_linkedin_profile_csv,
-    process_linkedin_recommendations_csv,
-    process_csv_files,
-    process_json_files,
     DEFAULT_CHUNK_SIZE,
     DEFAULT_OVERLAP,
+    chunk_text,
+    extract_text_from_docx,
+    extract_text_from_pdf,
+    process_csv_files,
+    process_json_files,
+    process_linkedin_profile_csv,
+    process_linkedin_recommendations_csv,
 )
 
 
@@ -39,8 +33,8 @@ class TestExtractTextFromPDF:
 
     def test_extract_text_from_valid_pdf(self, tmp_path):
         """Test extracting text from a valid PDF file."""
-        from reportlab.pdfgen import canvas
         from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
 
         # Create a simple PDF with text
         pdf_path = tmp_path / "test.pdf"
@@ -60,8 +54,8 @@ class TestExtractTextFromPDF:
 
     def test_extract_text_from_multipage_pdf(self, tmp_path):
         """Test extracting text from a multi-page PDF."""
-        from reportlab.pdfgen import canvas
         from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
 
         pdf_path = tmp_path / "multipage.pdf"
         c = canvas.Canvas(str(pdf_path), pagesize=letter)
@@ -82,8 +76,8 @@ class TestExtractTextFromPDF:
 
     def test_extract_text_from_empty_pdf(self, tmp_path):
         """Test extracting text from an empty PDF."""
-        from reportlab.pdfgen import canvas
         from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
 
         pdf_path = tmp_path / "empty.pdf"
         c = canvas.Canvas(str(pdf_path), pagesize=letter)
@@ -116,8 +110,8 @@ class TestExtractTextFromPDF:
 
     def test_extract_text_preserves_newlines(self, tmp_path):
         """Test that text extraction preserves paragraph structure."""
-        from reportlab.pdfgen import canvas
         from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
 
         pdf_path = tmp_path / "newlines.pdf"
         c = canvas.Canvas(str(pdf_path), pagesize=letter)
@@ -212,7 +206,7 @@ class TestExtractTextFromDOCX:
         run1.bold = True
         run2 = p.add_run("italic text ")
         run2.italic = True
-        run3 = p.add_run("normal text")
+        p.add_run("normal text")
         doc.save(str(docx_path))
 
         text = extract_text_from_docx(str(docx_path))
@@ -568,8 +562,8 @@ class TestIntegrationScenarios:
     def test_mixed_data_sources(self, tmp_path):
         """Test processing mixed data sources (PDF, DOCX, CSV, JSON)."""
         # Create PDF
-        from reportlab.pdfgen import canvas
         from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
 
         pdf_path = tmp_path / "resume.pdf"
         c = canvas.Canvas(str(pdf_path), pagesize=letter)

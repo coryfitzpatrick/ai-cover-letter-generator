@@ -1,4 +1,5 @@
 import unittest
+
 from src.cover_letter_generator.prepare_data import chunk_text
 
 

@@ -6,14 +6,14 @@ from pathlib import Path
 from typing import Optional
 
 from pypdf import PdfReader, PdfWriter
-
-from .utils import get_data_directory
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Frame, Paragraph, Spacer
+
+from .utils import get_data_directory
 
 
 def create_text_overlay(cover_letter_text: str, width: float, height: float) -> BytesIO:
@@ -212,7 +212,6 @@ def generate_cover_letter_pdf(
 
     if use_template:
         # Look for template in multiple locations
-        import os
 
         from dotenv import load_dotenv
 

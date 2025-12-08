@@ -10,12 +10,12 @@ This test suite covers:
 
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch
 
 import pytest
-from pypdf import PdfReader, PdfWriter
-from reportlab.pdfgen import canvas
+from pypdf import PdfReader
 from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 from src.cover_letter_generator.pdf_generator_template import (
     create_text_overlay,
@@ -253,7 +253,7 @@ class TestGenerateCoverLetterPDF:
 
         cover_letter = "Dear Hiring Manager,\n\nContent."
 
-        result = generate_cover_letter_pdf(
+        generate_cover_letter_pdf(
             cover_letter_text=cover_letter, output_dir=tmp_path, use_template=True
         )
 
@@ -341,7 +341,7 @@ class TestGenerateCoverLetterPDF:
             output = tmp_path / "output.pdf"
             mock_create.return_value = output
 
-            result = generate_cover_letter_pdf(
+            generate_cover_letter_pdf(
                 cover_letter_text=cover_letter,
                 output_dir=tmp_path,
                 contact_info=contact_info,

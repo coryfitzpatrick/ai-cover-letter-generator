@@ -8,7 +8,6 @@ This test suite covers:
 - Edge cases and error handling
 """
 
-import os
 from datetime import datetime
 from pathlib import Path
 

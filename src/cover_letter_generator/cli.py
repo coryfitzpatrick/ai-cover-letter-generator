@@ -1,7 +1,6 @@
 """Command-line interface for cover letter generation."""
 
 import os
-
 import subprocess
 import sys
 from datetime import datetime

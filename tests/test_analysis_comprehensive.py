@@ -10,14 +10,12 @@ This test suite covers:
 
 from unittest.mock import Mock, patch
 
-import pytest
-
 from src.cover_letter_generator.analysis import (
-    analyze_job_posting,
-    JobLevel,
-    JobType,
-    JobRequirement,
     JobAnalysis,
+    JobLevel,
+    JobRequirement,
+    JobType,
+    analyze_job_posting,
 )
 
 
@@ -339,7 +337,7 @@ TEAM_SIZE_MENTIONED: yes
         mock_client.chat.completions.create.return_value = mock_response
         mock_groq_class.return_value = mock_client
 
-        result = analyze_job_posting(
+        analyze_job_posting(
             mock_client, "test-model", "Job description", "Senior Engineering Manager"
         )
 
@@ -460,7 +458,7 @@ TEAM_SIZE_MENTIONED: no
         # Create a very long description (10,000 characters)
         long_description = "x" * 10000
 
-        result = analyze_job_posting(mock_client, "test-model", long_description)
+        analyze_job_posting(mock_client, "test-model", long_description)
 
         # Verify API was called
         call_args = mock_client.chat.completions.create.call_args

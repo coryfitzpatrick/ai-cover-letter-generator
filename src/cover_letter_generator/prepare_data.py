@@ -706,7 +706,7 @@ def main():
 
             # Format output message with detailed breakdown
             print(f"  Created {len(file_chunks)} chunks total (Year: {inferred_year})")
-            print(f"  Breakdown by company:")
+            print("  Breakdown by company:")
 
             # Group chunks by company for display
             chunks_by_company = {}
@@ -724,11 +724,11 @@ def main():
                     lines = chunk.split("\n")
                     # Skip metadata lines (SOURCE DOCUMENT, COMPANY, YEAR)
                     content_lines = [
-                        l
-                        for l in lines
-                        if not l.startswith("SOURCE DOCUMENT:")
-                        and not l.startswith("COMPANY:")
-                        and not l.startswith("YEAR:")
+                        line
+                        for line in lines
+                        if not line.startswith("SOURCE DOCUMENT:")
+                        and not line.startswith("COMPANY:")
+                        and not line.startswith("YEAR:")
                     ]
                     content = "\n".join(content_lines).strip()
                     preview = content[:150].replace("\n", " ")
