@@ -3,7 +3,7 @@
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import List
+from typing import Optional, List
 
 from groq import Groq
 
@@ -47,7 +47,7 @@ class JobAnalysis:
 
 
 def analyze_job_posting(
-    client: Groq, model: str, job_description: str, job_title: str = None
+    client: Groq, model: str, job_description: str, job_title: Optional[str] = None
 ) -> JobAnalysis:
     """Analyze job posting to extract requirements and classify job type.
 

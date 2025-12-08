@@ -36,7 +36,7 @@ class FeedbackEntry:
 class FeedbackTracker:
     """Track and analyze user feedback patterns."""
 
-    def __init__(self, feedback_file: Path = None):
+    def __init__(self, feedback_file: Optional[Path] = None):
         """Initialize feedback tracker.
 
         Args:

@@ -182,8 +182,8 @@ def generate_cover_letter_from_template(
 
 def generate_cover_letter_pdf(
     cover_letter_text: str,
-    output_dir: Path = None,
-    filename: str = None,
+    output_dir: Optional[Path] = None,
+    filename: Optional[str] = None,
     contact_info: Optional[dict] = None,
     use_template: bool = True,
 ) -> Path:

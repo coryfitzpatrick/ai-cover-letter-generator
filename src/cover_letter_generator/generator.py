@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Optional
 
 # Disable warnings and telemetry BEFORE importing libraries
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -65,7 +66,7 @@ class CoverLetterGenerator:
     TECHNOLOGY_RESULTS = 10  # Results per technology query
     MAX_CHUNKS_PER_SOURCE = 8  # Limit chunks from same source for diversity
 
-    def __init__(self, system_prompt_path: str = None, model_name: str = None):
+    def __init__(self, system_prompt_path: Optional[str] = None, model_name: Optional[str] = None):
         """Initialize the cover letter generator.
 
         Args:
@@ -142,7 +143,7 @@ class CoverLetterGenerator:
 
         # Cost tracking
         self.total_cost = 0.0
-        self.api_calls = []
+        self.api_calls: list[dict[str, float]] = []
 
         # Load system prompt
         # Load system prompt
@@ -262,7 +263,7 @@ class CoverLetterGenerator:
 
         return leadership_philosophy
 
-    def analyze_job_posting(self, job_description: str, job_title: str = None) -> JobAnalysis:
+    def analyze_job_posting(self, job_description: str, job_title: Optional[str] = None) -> JobAnalysis:
         """Analyze job posting to extract requirements and classify job type.
 
         Args:
@@ -290,9 +291,9 @@ class CoverLetterGenerator:
     def get_relevant_context(
         self,
         job_description: str,
-        n_results: int = None,
-        job_title: str = None,
-        job_analysis: JobAnalysis = None,
+        n_results: Optional[int] = None,
+        job_title: Optional[str] = None,
+        job_analysis: Optional[JobAnalysis] = None,
     ) -> str:
         """Retrieve relevant context from the vector database using intelligent multi-stage retrieval.
 
@@ -419,7 +420,7 @@ class CoverLetterGenerator:
         total_chars = 0
 
         # Ensure diversity in sources
-        source_counts = {}
+        source_counts: dict[str, int] = {}
 
         for doc, _, metadata, _ in scored_docs:
             source = metadata.get("source", "Unknown")
@@ -504,9 +505,9 @@ class CoverLetterGenerator:
     def generate_cover_letter(
         self,
         job_description: str,
-        company_name: str = None,
-        job_title: str = None,
-        custom_context: str = None,
+        company_name: Optional[str] = None,
+        job_title: Optional[str] = None,
+        custom_context: Optional[str] = None,
     ) -> tuple[str, dict]:
         """Generate cover letter using Claude with two-stage refinement process.
 
@@ -661,9 +662,9 @@ KEY REQUIREMENTS: {len(job_analysis.requirements)} identified"""
         current_version: str,
         feedback: str,
         job_description: str,
-        company_name: str = None,
-        job_title: str = None,
-        custom_context: str = None,
+        company_name: Optional[str] = None,
+        job_title: Optional[str] = None,
+        custom_context: Optional[str] = None,
     ) -> tuple[str, dict]:
         """Revise cover letter with Claude based on user feedback.
 
@@ -741,9 +742,9 @@ Write the complete revised cover letter."""
         current_letter: str,
         user_feedback: str,
         job_description: str,
-        company_name: str = None,
-        job_title: str = None,
-        custom_context: str = None,
+        company_name: Optional[str] = None,
+        job_title: Optional[str] = None,
+        custom_context: Optional[str] = None,
     ):
         """Revise cover letter with Claude in streaming mode (yields chunks as they arrive).
 

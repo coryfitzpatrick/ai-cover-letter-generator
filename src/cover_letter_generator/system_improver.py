@@ -15,7 +15,7 @@ load_dotenv()
 class SystemImprover:
     """Suggest and apply improvements to system prompt based on feedback patterns."""
 
-    def __init__(self, system_prompt_path: Path = None):
+    def __init__(self, system_prompt_path: Optional[Path] = None):
         """Initialize system improver.
 
         Args:
